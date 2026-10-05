@@ -2,7 +2,8 @@
 "use client";
 
 import { useActivityStore } from "@/store/useActivityStore";
-import { FaPlus, FaTrash, FaCheck, FaTrophy, FaImage } from "react-icons/fa";
+import { revokeObjectUrl, validateImageFile } from "@/lib/imageUtils";
+import { FaPlus, FaTrash, FaTrophy, FaImage } from "react-icons/fa";
 
 export default function ActivityForm({ onNext }: { onNext: () => void }) {
   const store = useActivityStore();
@@ -10,15 +11,22 @@ export default function ActivityForm({ onNext }: { onNext: () => void }) {
   // ฟังก์ชันอัปโหลดรูปภาพเข้ากิจกรรม
   const handleImageUpload = (activityId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files[0]) {
-      const imageUrl = URL.createObjectURL(files[0]);
-      store.addImageToActivity(activityId, imageUrl);
+    const file = files?.[0];
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      e.target.value = "";
+      return;
     }
+
+    const imageUrl = URL.createObjectURL(file);
+    store.addImageToActivity(activityId, imageUrl);
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("บันทึกข้อมูลผลงานและกิจกรรมเรียบร้อย!");
     onNext();
   };
 
@@ -76,6 +84,7 @@ export default function ActivityForm({ onNext }: { onNext: () => void }) {
                   value={act.description} 
                   onChange={(e) => store.updateActivity(act.id, 'description', e.target.value)} 
                   rows={3}
+                  maxLength={700}
                   placeholder="อธิบายสั้นๆ เกี่ยวกับกิจกรรมนี้ เช่น ได้รับรางวัลรองชนะเลิศอันดับ 1..." 
                   className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:border-blue-500 resize-none" 
                   required 
@@ -95,7 +104,10 @@ export default function ActivityForm({ onNext }: { onNext: () => void }) {
                       <img src={img} alt={`Activity ${imgIdx}`} className="w-full h-full object-cover" />
                       <button 
                         type="button"
-                        onClick={() => store.removeImageFromActivity(act.id, imgIdx)}
+                        onClick={() => {
+                          revokeObjectUrl(img);
+                          store.removeImageFromActivity(act.id, imgIdx);
+                        }}
                         className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs"
                       >
                         <FaTrash />
@@ -108,7 +120,7 @@ export default function ActivityForm({ onNext }: { onNext: () => void }) {
                   <label className="w-20 h-20 border-2 border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors text-slate-500 hover:text-blue-600">
                     <FaImage className="text-xl mb-1" />
                     <span className="text-[10px] font-bold">เพิ่มรูป</span>
-                    <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => handleImageUpload(act.id, e)} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleImageUpload(act.id, e)} />
                   </label>
                   )}
                 </div>
@@ -130,7 +142,7 @@ export default function ActivityForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-        💾 บันทึกข้อมูลผลงานและกิจกรรม
+        ถัดไป →
       </button>
 
     </form>
