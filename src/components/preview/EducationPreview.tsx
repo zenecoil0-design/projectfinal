@@ -2,51 +2,78 @@
 
 import { useEducationStore } from "@/store/useEducationStore";
 import { FaGraduationCap } from "react-icons/fa";
+import A4Page from "@/components/preview/A4Page";
+
+const ITEMS_PER_PAGE = 4;
 
 export default function EducationPreview() {
-  const store = useEducationStore();
+  const { educations } = useEducationStore();
+  const pages = [];
+
+  for (let index = 0; index < educations.length; index += ITEMS_PER_PAGE) {
+    pages.push(educations.slice(index, index + ITEMS_PER_PAGE));
+  }
+
+  if (pages.length === 0) {
+    pages.push([]);
+  }
 
   return (
-    // โครงสร้างกระดาษ A4 สีขาวจำลอง
-    <div className="bg-white w-[210mm] min-h-[297mm] shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
-      
-      {/* ส่วนหัว */}
-      <div className="flex items-center gap-3 border-b pb-4 mb-8">
-        <h2 className="text-3xl font-bold tracking-wider">ประวัติการศึกษา</h2>
-      </div>
-
-      {/* ส่วนเนื้อหา: ลูปแสดงรายการประวัติการศึกษา */}
-      <div className="flex-1 flex flex-col gap-6">
-        {store.educations && store.educations.map((edu, index) => (
-          <div key={edu.id} className="flex gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50">
-            
-            {/* โลโก้สถานศึกษา */}
-            <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-              {edu.logoUrl ? (
-                <img src={edu.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <FaGraduationCap className="text-2xl text-slate-400" />
-              )}
-            </div>
-
-            {/* รายละเอียดการศึกษา */}
-            <div className="flex flex-col justify-center text-sm gap-1">
-              <span className="text-xs font-bold text-blue-600">ช่วงการศึกษาที่ {index + 1}</span>
-              <h3 className="font-bold text-base text-slate-800">{edu.schoolName || "ชื่อสถานศึกษา / โรงเรียน"}</h3>
-              <p className="text-slate-600"><span className="font-semibold">ระดับชั้น :</span> {edu.level || "-"}</p>
-              <p className="text-slate-600"><span className="font-semibold">แผนการเรียน :</span> {edu.studyPlan || "-"}</p>
-              <p className="text-slate-600"><span className="font-semibold">เกรดเฉลี่ย (GPAX) :</span> {edu.gpa || "-"}</p>
-            </div>
-
+    <div className="flex flex-col gap-10">
+      {pages.map((pageItems, pageIndex) => (
+        <A4Page
+          key={pageIndex}
+          className="flex flex-col justify-between p-16 text-slate-800"
+        >
+          <div className="mb-8 flex items-center justify-between border-b pb-4">
+            <h2 className="text-3xl font-bold tracking-wider">
+              ประวัติการศึกษา
+            </h2>
+            {pages.length > 1 && (
+              <span className="text-sm font-semibold text-slate-400">
+                หน้า {pageIndex + 1} / {pages.length}
+              </span>
+            )}
           </div>
-        ))}
-      </div>
 
-      {/* ส่วนท้ายกระดาษ */}
-      <div className="border-t pt-4 mt-6 text-center text-xs text-slate-400">
-        Portfolio - หน้าประวัติการศึกษา
-      </div>
+          <div className="min-h-0 flex-1 space-y-5 overflow-hidden">
+            {pageItems.map((education, itemIndex) => (
+              <div
+                key={education.id}
+                className="flex gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white shadow-sm">
+                  {education.logoUrl ? (
+                    <img
+                      src={education.logoUrl}
+                      alt="School logo"
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <FaGraduationCap className="text-2xl text-slate-400" />
+                  )}
+                </div>
 
+                <div className="min-w-0 text-sm">
+                  <span className="text-xs font-bold text-blue-600">
+                    ช่วงการศึกษาที่ {pageIndex * ITEMS_PER_PAGE + itemIndex + 1}
+                  </span>
+                  <h3 className="truncate text-base font-bold text-slate-800">
+                    {education.schoolName || "ชื่อสถานศึกษา / โรงเรียน"}
+                  </h3>
+                  <p><b>ระดับชั้น :</b> {education.level || "-"}</p>
+                  <p className="truncate"><b>แผนการเรียน :</b> {education.studyPlan || "-"}</p>
+                  <p><b>เกรดเฉลี่ย (GPAX) :</b> {education.gpa || "-"}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 border-t pt-4 text-center text-xs text-slate-400">
+            Portfolio - หน้าประวัติการศึกษา
+          </div>
+        </A4Page>
+      ))}
     </div>
   );
 }
