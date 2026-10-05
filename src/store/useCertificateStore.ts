@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface CertificateItem {
   id: string;
@@ -33,70 +32,62 @@ interface CertificateState {
 }
 
 export const useCertificateStore =
-  create<CertificateState>()(
-    persist(
-      (set) => ({
-        certificates: [],
+  create<CertificateState>((set) => ({
+    certificates: [],
 
-        setCertificates: (
-          certificates
-        ) =>
-          set({
-            certificates,
-          }),
-
-        addCertificate: () =>
-          set((state) => ({
-            certificates: [
-              ...state.certificates,
-              {
-                id: crypto.randomUUID(),
-                title: "",
-                description: "",
-                issuedBy: "",
-                issuedDate: "",
-                images: [],
-              },
-            ],
-          })),
-
-        updateCertificate: (
-          id,
-          field,
-          value
-        ) =>
-          set((state) => ({
-            certificates:
-              state.certificates.map(
-                (certificate) =>
-                  certificate.id === id
-                    ? {
-                        ...certificate,
-                        [field]: value,
-                      }
-                    : certificate
-              ),
-          })),
-
-        removeCertificate: (
-          id
-        ) =>
-          set((state) => ({
-            certificates:
-              state.certificates.filter(
-                (certificate) =>
-                  certificate.id !== id
-              ),
-          })),
-
-        clearCertificates: () =>
-          set({
-            certificates: [],
-          }),
+    setCertificates: (
+      certificates
+    ) =>
+      set({
+        certificates,
       }),
-      {
-        name:
-          "portfolio-certificate-storage",
-      }
-    )
-  );
+
+    addCertificate: () =>
+      set((state) => ({
+        certificates: [
+          ...state.certificates,
+          {
+            id: crypto.randomUUID(),
+            title: "",
+            description: "",
+            issuedBy: "",
+            issuedDate: "",
+            images: [],
+          },
+        ],
+      })),
+
+    updateCertificate: (
+      id,
+      field,
+      value
+    ) =>
+      set((state) => ({
+        certificates:
+          state.certificates.map(
+            (certificate) =>
+              certificate.id === id
+                ? {
+                    ...certificate,
+                    [field]: value,
+                  }
+                : certificate
+          ),
+      })),
+
+    removeCertificate: (
+      id
+    ) =>
+      set((state) => ({
+        certificates:
+          state.certificates.filter(
+            (certificate) =>
+              certificate.id !== id
+          ),
+      })),
+
+    clearCertificates: () =>
+      set({
+        certificates: [],
+      }),
+  }));

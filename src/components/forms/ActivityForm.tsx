@@ -9,6 +9,10 @@ import {
 import Link from "next/link";
 
 import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
   FaCheck,
   FaFilter,
   FaImage,
@@ -31,53 +35,42 @@ type UserTag = {
 
 type LibraryActivityImage = {
   id: string;
-
   image_url: string;
-
   sort_order: number;
 };
 
 type LibraryActivity = {
   id: string;
-
   title: string;
-
   description: string;
-
   activity_date: string | null;
-
   organization: string | null;
-
   tagIds: string[];
-
   images: LibraryActivityImage[];
 };
 
 type ActivityRow = {
   id: string;
-
   title: string;
-
   description: string;
-
   activity_date: string | null;
-
   organization: string | null;
 };
 
 type ActivityTagRow = {
   activity_id: string;
-
   tag_id: string;
 };
 
 type ActivityImageRow = {
   id: string;
-
   activity_id: string;
-
   image_url: string;
+  sort_order: number;
+};
 
+type PortfolioActivityRow = {
+  activity_id: string;
   sort_order: number;
 };
 
@@ -86,6 +79,12 @@ export default function ActivityForm({
 }: {
   onNext: () => void;
 }) {
+  const searchParams =
+    useSearchParams();
+
+  const portfolioId =
+    searchParams.get("portfolio");
+
   const supabase = useMemo(
     () => createClient(),
     []
@@ -110,287 +109,33 @@ export default function ActivityForm({
   const [
     selectedFilterTag,
     setSelectedFilterTag,
-  ] =
-    useState<
-      string | null
-    >(null);
+  ] = useState<
+    string | null
+  >(null);
 
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [isSaving, setIsSaving] =
+    useState(false);
+
   const [loadError, setLoadError] =
     useState("");
 
-  useEffect(() => {
-    const loadLibrary =
-      async () => {
-        setIsLoading(true);
+  const [
+    saveError,
+    setSaveError,
+  ] = useState("");
 
-        setLoadError("");
-
-        const {
-          data: { user },
-          error: userError,
-        } =
-          await supabase.auth.getUser();
-
-        if (
-          userError ||
-          !user
-        ) {
-          setLoadError(
-            "ไม่สามารถตรวจสอบผู้ใช้งานได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        const [
-          {
-            data:
-              activityData,
-
-            error:
-              activityError,
-          },
-
-          {
-            data:
-              tagData,
-
-            error:
-              tagError,
-          },
-
-          {
-            data:
-              activityTagData,
-
-            error:
-              activityTagError,
-          },
-
-          {
-            data:
-              activityImageData,
-
-            error:
-              activityImageError,
-          },
-        ] =
-          await Promise.all([
-            supabase
-              .from(
-                "user_library_activities"
-              )
-              .select(
-                `
-                id,
-                title,
-                description,
-                activity_date,
-                organization
-              `
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "created_at",
-                {
-                  ascending:
-                    false,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_tags"
-              )
-              .select(
-                "id, name"
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "name",
-                {
-                  ascending:
-                    true,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_library_activity_tags"
-              )
-              .select(
-                "activity_id, tag_id"
-              ),
-
-            supabase
-              .from(
-                "user_library_activity_images"
-              )
-              .select(
-                "id, activity_id, image_url, sort_order"
-              )
-              .order(
-                "sort_order",
-                {
-                  ascending:
-                    true,
-                }
-              ),
-          ]);
-
-        if (
-          activityError
-        ) {
-          console.error(
-            "Load activities error:",
-            activityError
-          );
-
-          setLoadError(
-            "ไม่สามารถโหลดผลงานและกิจกรรมได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        if (tagError) {
-          console.error(
-            "Load tags error:",
-            tagError
-          );
-        }
-
-        if (
-          activityTagError
-        ) {
-          console.error(
-            "Load activity tags error:",
-            activityTagError
-          );
-        }
-
-        if (
-          activityImageError
-        ) {
-          console.error(
-            "Load activity images error:",
-            activityImageError
-          );
-        }
-
-        const activityRows:
-          ActivityRow[] =
-          activityData ?? [];
-
-        const tagRows:
-          ActivityTagRow[] =
-          activityTagData ??
-          [];
-
-        const imageRows:
-          ActivityImageRow[] =
-          activityImageData ??
-          [];
-
-        setTags(
-          tagData ?? []
-        );
-
-        setLibraryActivities(
-          activityRows.map(
-            (
-              activity
-            ) => ({
-              ...activity,
-
-              tagIds:
-                tagRows
-                  .filter(
-                    (
-                      relation
-                    ) =>
-                      relation.activity_id ===
-                      activity.id
-                  )
-                  .map(
-                    (
-                      relation
-                    ) =>
-                      relation.tag_id
-                  ),
-
-              images:
-                imageRows
-                  .filter(
-                    (
-                      image
-                    ) =>
-                      image.activity_id ===
-                      activity.id
-                  )
-                  .sort(
-                    (
-                      a,
-                      b
-                    ) =>
-                      a.sort_order -
-                      b.sort_order
-                  )
-                  .map(
-                    (
-                      image
-                    ) => ({
-                      id:
-                        image.id,
-
-                      image_url:
-                        image.image_url,
-
-                      sort_order:
-                        image.sort_order,
-                    })
-                  ),
-            })
-          )
-        );
-
-        setIsLoading(false);
-      };
-
-    loadLibrary();
-  }, [supabase]);
-
-  const selectedIds =
-    activities.map(
-      (activity) =>
-        activity.id
-    );
-
-  const isSelected = (
-    id: string
-  ) =>
-    selectedIds.includes(
-      id
-    );
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
 
   const mapLibraryActivityToStore = (
     activity: LibraryActivity
   ): ActivityItem => ({
-    id:
-      activity.id,
+    id: activity.id,
 
     title:
       activity.title ??
@@ -415,9 +160,359 @@ export default function ActivityForm({
       ),
   });
 
+  useEffect(() => {
+    const loadData =
+      async () => {
+        setIsLoading(true);
+
+        setLoadError("");
+        setSaveError("");
+        setSuccessMessage("");
+
+        setActivities([]);
+
+        if (!portfolioId) {
+          setLoadError(
+            "ไม่พบ Portfolio ID"
+          );
+
+          setIsLoading(false);
+
+          return;
+        }
+
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } =
+            await supabase.auth.getUser();
+
+          if (
+            userError ||
+            !user
+          ) {
+            throw new Error(
+              "ไม่สามารถตรวจสอบผู้ใช้งานได้"
+            );
+          }
+
+          const [
+            {
+              data:
+                activityData,
+              error:
+                activityError,
+            },
+
+            {
+              data: tagData,
+              error: tagError,
+            },
+
+            {
+              data:
+                activityTagData,
+              error:
+                activityTagError,
+            },
+
+            {
+              data:
+                activityImageData,
+              error:
+                activityImageError,
+            },
+
+            {
+              data:
+                portfolioActivityData,
+              error:
+                portfolioActivityError,
+            },
+          ] =
+            await Promise.all([
+              supabase
+                .from(
+                  "user_library_activities"
+                )
+                .select(
+                  `
+                    id,
+                    title,
+                    description,
+                    activity_date,
+                    organization
+                  `
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "created_at",
+                  {
+                    ascending:
+                      false,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "user_tags"
+                )
+                .select(
+                  "id, name"
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "name",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "user_library_activity_tags"
+                )
+                .select(
+                  "activity_id, tag_id"
+                ),
+
+              supabase
+                .from(
+                  "user_library_activity_images"
+                )
+                .select(
+                  "id, activity_id, image_url, sort_order"
+                )
+                .order(
+                  "sort_order",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "portfolio_activities"
+                )
+                .select(
+                  "activity_id, sort_order"
+                )
+                .eq(
+                  "portfolio_id",
+                  portfolioId
+                )
+                .order(
+                  "sort_order",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+            ]);
+
+          if (
+            activityError
+          ) {
+            throw activityError;
+          }
+
+          if (tagError) {
+            console.error(
+              "Load activity tags error:",
+              tagError
+            );
+          }
+
+          if (
+            activityTagError
+          ) {
+            console.error(
+              "Load activity tag relations error:",
+              activityTagError
+            );
+          }
+
+          if (
+            activityImageError
+          ) {
+            console.error(
+              "Load activity images error:",
+              activityImageError
+            );
+          }
+
+          if (
+            portfolioActivityError
+          ) {
+            throw portfolioActivityError;
+          }
+
+          const activityRows:
+            ActivityRow[] =
+            activityData ?? [];
+
+          const tagRows:
+            ActivityTagRow[] =
+            activityTagData ??
+            [];
+
+          const imageRows:
+            ActivityImageRow[] =
+            activityImageData ??
+            [];
+
+          const portfolioRows:
+            PortfolioActivityRow[] =
+            portfolioActivityData ??
+            [];
+
+          const mappedLibrary:
+            LibraryActivity[] =
+            activityRows.map(
+              (
+                activity
+              ) => ({
+                ...activity,
+
+                tagIds:
+                  tagRows
+                    .filter(
+                      (
+                        relation
+                      ) =>
+                        relation.activity_id ===
+                        activity.id
+                    )
+                    .map(
+                      (
+                        relation
+                      ) =>
+                        relation.tag_id
+                    ),
+
+                images:
+                  imageRows
+                    .filter(
+                      (
+                        image
+                      ) =>
+                        image.activity_id ===
+                        activity.id
+                    )
+                    .sort(
+                      (
+                        a,
+                        b
+                      ) =>
+                        a.sort_order -
+                        b.sort_order
+                    )
+                    .map(
+                      (
+                        image
+                      ) => ({
+                        id:
+                          image.id,
+
+                        image_url:
+                          image.image_url,
+
+                        sort_order:
+                          image.sort_order,
+                      })
+                    ),
+              })
+            );
+
+          setTags(
+            tagData ?? []
+          );
+
+          setLibraryActivities(
+            mappedLibrary
+          );
+
+          const selectedItems =
+            portfolioRows
+              .map(
+                (
+                  relation
+                ) =>
+                  mappedLibrary.find(
+                    (
+                      activity
+                    ) =>
+                      activity.id ===
+                      relation.activity_id
+                  )
+              )
+              .filter(
+                (
+                  activity
+                ): activity is LibraryActivity =>
+                  Boolean(
+                    activity
+                  )
+              )
+              .map(
+                mapLibraryActivityToStore
+              );
+
+          setActivities(
+            selectedItems
+          );
+        } catch (
+          error: any
+        ) {
+          console.error(
+            "Load activity form error:",
+            error
+          );
+
+          setLoadError(
+            error?.message ||
+              "ไม่สามารถโหลดผลงานและกิจกรรมได้"
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+    loadData();
+  }, [
+    portfolioId,
+    supabase,
+    setActivities,
+  ]);
+
+  const selectedIds =
+    activities.map(
+      (activity) =>
+        activity.id
+    );
+
+  const isSelected = (
+    id: string
+  ) =>
+    selectedIds.includes(
+      id
+    );
+
   const toggleActivity = (
     activity: LibraryActivity
   ) => {
+    setSaveError("");
+    setSuccessMessage("");
+
     if (
       isSelected(
         activity.id
@@ -453,12 +548,97 @@ export default function ActivityForm({
         )
       : libraryActivities;
 
-  const handleNext = (
+  const handleNext = async (
     event: React.FormEvent
   ) => {
     event.preventDefault();
 
-    onNext();
+    if (!portfolioId) {
+      setSaveError(
+        "ไม่พบ Portfolio ID"
+      );
+
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError("");
+    setSuccessMessage("");
+
+    try {
+      const {
+        error:
+          deleteError,
+      } = await supabase
+        .from(
+          "portfolio_activities"
+        )
+        .delete()
+        .eq(
+          "portfolio_id",
+          portfolioId
+        );
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      if (
+        activities.length > 0
+      ) {
+        const rowsToInsert =
+          activities.map(
+            (
+              activity,
+              index
+            ) => ({
+              portfolio_id:
+                portfolioId,
+
+              activity_id:
+                activity.id,
+
+              sort_order:
+                index,
+            })
+          );
+
+        const {
+          error:
+            insertError,
+        } = await supabase
+          .from(
+            "portfolio_activities"
+          )
+          .insert(
+            rowsToInsert
+          );
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+
+      setSuccessMessage(
+        "บันทึกผลงานและกิจกรรมเรียบร้อยแล้ว"
+      );
+
+      onNext();
+    } catch (
+      error: any
+    ) {
+      console.error(
+        "Save portfolio activities error:",
+        error
+      );
+
+      setSaveError(
+        error?.message ||
+          "ไม่สามารถบันทึกผลงานและกิจกรรมได้"
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -466,8 +646,6 @@ export default function ActivityForm({
       onSubmit={handleNext}
       className="flex flex-col gap-5 pb-10"
     >
-      {/* HEADER */}
-
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -478,8 +656,8 @@ export default function ActivityForm({
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
               เลือกผลงานหรือกิจกรรมจากคลังข้อมูล
-              รายการที่เลือกจะถูกนำไปแสดงใน
-              Portfolio
+              รายการที่เลือกจะถูกบันทึกเฉพาะ
+              Portfolio เล่มนี้
             </p>
           </div>
 
@@ -492,8 +670,6 @@ export default function ActivityForm({
           </span>
         </div>
       </div>
-
-      {/* FILTER */}
 
       {tags.length > 0 && (
         <div className="rounded-xl border border-slate-200 bg-white p-3">
@@ -541,17 +717,13 @@ export default function ActivityForm({
                 >
                   <FaTag className="text-[9px]" />
 
-                  {
-                    tag.name
-                  }
+                  {tag.name}
                 </button>
               )
             )}
           </div>
         </div>
       )}
-
-      {/* LOADING */}
 
       {isLoading && (
         <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
@@ -565,20 +737,14 @@ export default function ActivityForm({
         </div>
       )}
 
-      {/* ERROR */}
-
       {!isLoading &&
         loadError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4">
             <p className="text-sm font-bold text-red-700">
-              {
-                loadError
-              }
+              {loadError}
             </p>
           </div>
         )}
-
-      {/* EMPTY */}
 
       {!isLoading &&
         !loadError &&
@@ -604,12 +770,11 @@ export default function ActivityForm({
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
             >
               <FaPlus />
+
               ไปเพิ่มข้อมูล
             </Link>
           </div>
         )}
-
-      {/* NO FILTER RESULT */}
 
       {!isLoading &&
         !loadError &&
@@ -624,8 +789,6 @@ export default function ActivityForm({
             </p>
           </div>
         )}
-
-      {/* ACTIVITY LIST */}
 
       {!isLoading &&
         !loadError &&
@@ -669,8 +832,6 @@ export default function ActivityForm({
                     }`}
                   >
                     <div className="flex gap-3">
-                      {/* CHECK */}
-
                       <div
                         className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
                           selected
@@ -680,8 +841,6 @@ export default function ActivityForm({
                       >
                         <FaCheck className="text-[10px]" />
                       </div>
-
-                      {/* MAIN */}
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
@@ -725,8 +884,6 @@ export default function ActivityForm({
                           </p>
                         )}
 
-                        {/* IMAGES */}
-
                         {activity.images.length >
                           0 && (
                           <div className="mt-3 flex gap-2 overflow-hidden">
@@ -755,21 +912,8 @@ export default function ActivityForm({
                                   </div>
                                 )
                               )}
-
-                            {activity.images.length >
-                              4 && (
-                              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500">
-                                +
-                                {
-                                  activity.images.length -
-                                  4
-                                }
-                              </div>
-                            )}
                           </div>
                         )}
-
-                        {/* TAGS */}
 
                         {itemTags.length >
                           0 && (
@@ -801,8 +945,6 @@ export default function ActivityForm({
           </div>
         )}
 
-      {/* LIBRARY LINK */}
-
       {libraryActivities.length >
         0 && (
         <Link
@@ -810,18 +952,36 @@ export default function ActivityForm({
           className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
         >
           <FaImage />
+
           จัดการผลงานและกิจกรรมในคลัง
         </Link>
       )}
 
-      {/* NEXT */}
+      {saveError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
+          {saveError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
+          {successMessage}
+        </div>
+      )}
 
       <button
         type="submit"
-        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900"
+        disabled={
+          isLoading ||
+          isSaving
+        }
+        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <FaCheck />
-        ยืนยันผลงานและกิจกรรม
+
+        {isSaving
+          ? "กำลังบันทึก..."
+          : "ยืนยันผลงานและกิจกรรม"}
       </button>
     </form>
   );

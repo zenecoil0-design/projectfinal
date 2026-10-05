@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface SocialMedia {
   id: string;
@@ -62,6 +61,16 @@ interface ProfileState {
     value: string
   ) => void;
 
+  setSocials: (
+    socials: SocialMedia[]
+  ) => void;
+
+  setCustomFields: (
+    customFields: CustomField[]
+  ) => void;
+
+  resetProfile: () => void;
+
   addSocial: () => void;
 
   updateSocial: (
@@ -87,10 +96,69 @@ interface ProfileState {
   ) => void;
 }
 
+const createDefaultSocials =
+  (): SocialMedia[] => [
+    {
+      id: crypto.randomUUID(),
+      platform: "facebook",
+      link: "",
+    },
+  ];
+
 export const useProfileStore =
-  create<ProfileState>()(
-    persist(
-      (set) => ({
+  create<ProfileState>((set) => ({
+    profileImage: "",
+
+    firstName: "",
+    lastName: "",
+    nickname: "",
+
+    birthday: "",
+
+    nationality: "",
+    ethnicity: "",
+    religion: "",
+
+    phone: "",
+    email: "",
+    address: "",
+
+    socials:
+      createDefaultSocials(),
+
+    school: "",
+    plan: "",
+    gpax: "",
+
+    skills: "",
+    motto: "",
+
+    customFields: [],
+
+    setProfile: (
+      field,
+      value
+    ) =>
+      set({
+        [field]: value,
+      }),
+
+    setSocials: (
+      socials
+    ) =>
+      set({
+        socials,
+      }),
+
+    setCustomFields: (
+      customFields
+    ) =>
+      set({
+        customFields,
+      }),
+
+    resetProfile: () =>
+      set({
         profileImage: "",
 
         firstName: "",
@@ -107,13 +175,8 @@ export const useProfileStore =
         email: "",
         address: "",
 
-        socials: [
-          {
-            id: "1",
-            platform: "facebook",
-            link: "",
-          },
-        ],
+        socials:
+          createDefaultSocials(),
 
         school: "",
         plan: "",
@@ -123,116 +186,92 @@ export const useProfileStore =
         motto: "",
 
         customFields: [],
-
-        setProfile: (
-          field,
-          value
-        ) =>
-          set({
-            [field]: value,
-          }),
-
-        addSocial: () =>
-          set((state) => ({
-            socials: [
-              ...state.socials,
-
-              {
-                id: crypto.randomUUID(),
-
-                platform: "line",
-
-                link: "",
-              },
-            ],
-          })),
-
-        updateSocial: (
-          id,
-          field,
-          value
-        ) =>
-          set((state) => ({
-            socials:
-              state.socials.map(
-                (social) =>
-                  social.id === id
-                    ? {
-                        ...social,
-
-                        [field]:
-                          value,
-                      }
-                    : social
-              ),
-          })),
-
-        removeSocial: (
-          id
-        ) =>
-          set((state) => ({
-            socials:
-              state.socials.filter(
-                (social) =>
-                  social.id !== id
-              ),
-          })),
-
-        addCustomField: () =>
-          set((state) => ({
-            customFields: [
-              ...state.customFields,
-
-              {
-                id: crypto.randomUUID(),
-
-                title: "",
-
-                value: "",
-              },
-            ],
-          })),
-
-        updateCustomField: (
-          id,
-          field,
-          value
-        ) =>
-          set((state) => ({
-            customFields:
-              state.customFields.map(
-                (
-                  customField
-                ) =>
-                  customField.id ===
-                  id
-                    ? {
-                        ...customField,
-
-                        [field]:
-                          value,
-                      }
-                    : customField
-              ),
-          })),
-
-        removeCustomField: (
-          id
-        ) =>
-          set((state) => ({
-            customFields:
-              state.customFields.filter(
-                (
-                  customField
-                ) =>
-                  customField.id !==
-                  id
-              ),
-          })),
       }),
-      {
-        name:
-          "portfolio-profile-storage",
-      }
-    )
-  );
+
+    addSocial: () =>
+      set((state) => ({
+        socials: [
+          ...state.socials,
+          {
+            id: crypto.randomUUID(),
+            platform: "line",
+            link: "",
+          },
+        ],
+      })),
+
+    updateSocial: (
+      id,
+      field,
+      value
+    ) =>
+      set((state) => ({
+        socials:
+          state.socials.map(
+            (social) =>
+              social.id === id
+                ? {
+                    ...social,
+                    [field]: value,
+                  }
+                : social
+          ),
+      })),
+
+    removeSocial: (
+      id
+    ) =>
+      set((state) => ({
+        socials:
+          state.socials.filter(
+            (social) =>
+              social.id !== id
+          ),
+      })),
+
+    addCustomField: () =>
+      set((state) => ({
+        customFields: [
+          ...state.customFields,
+          {
+            id: crypto.randomUUID(),
+            title: "",
+            value: "",
+          },
+        ],
+      })),
+
+    updateCustomField: (
+      id,
+      field,
+      value
+    ) =>
+      set((state) => ({
+        customFields:
+          state.customFields.map(
+            (
+              customField
+            ) =>
+              customField.id ===
+              id
+                ? {
+                    ...customField,
+                    [field]: value,
+                  }
+                : customField
+          ),
+      })),
+
+    removeCustomField: (
+      id
+    ) =>
+      set((state) => ({
+        customFields:
+          state.customFields.filter(
+            (
+              customField
+            ) =>
+              customField.id !== id
+          ),
+      })),
+  }));

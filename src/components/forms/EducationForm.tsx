@@ -9,6 +9,10 @@ import {
 import Link from "next/link";
 
 import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
   FaBook,
   FaCheck,
   FaFilter,
@@ -73,11 +77,22 @@ type EducationTagRow = {
   tag_id: string;
 };
 
+type PortfolioEducationRow = {
+  education_id: string;
+  sort_order: number;
+};
+
 export default function EducationForm({
   onNext,
 }: {
   onNext: () => void;
 }) {
+  const searchParams =
+    useSearchParams();
+
+  const portfolioId =
+    searchParams.get("portfolio");
+
   const supabase = useMemo(
     () => createClient(),
     []
@@ -109,201 +124,25 @@ export default function EducationForm({
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [isSaving, setIsSaving] =
+    useState(false);
+
   const [loadError, setLoadError] =
     useState("");
 
-  useEffect(() => {
-    const loadLibrary =
-      async () => {
-        setIsLoading(true);
-        setLoadError("");
+  const [
+    saveError,
+    setSaveError,
+  ] = useState("");
 
-        const {
-          data: { user },
-          error: userError,
-        } =
-          await supabase.auth.getUser();
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
 
-        if (
-          userError ||
-          !user
-        ) {
-          setLoadError(
-            "ไม่สามารถตรวจสอบผู้ใช้งานได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        const [
-          {
-            data:
-              educationData,
-            error:
-              educationError,
-          },
-
-          {
-            data: tagData,
-            error: tagError,
-          },
-
-          {
-            data:
-              educationTagData,
-            error:
-              educationTagError,
-          },
-        ] =
-          await Promise.all([
-            supabase
-              .from(
-                "user_library_educations"
-              )
-              .select(
-                `
-                id,
-                level,
-                school_name,
-                study_plan,
-                gpa,
-                logo_url,
-                start_year,
-                end_year
-              `
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "created_at",
-                {
-                  ascending:
-                    false,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_tags"
-              )
-              .select(
-                "id, name"
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "name",
-                {
-                  ascending:
-                    true,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_library_education_tags"
-              )
-              .select(
-                "education_id, tag_id"
-              ),
-          ]);
-
-        if (
-          educationError
-        ) {
-          console.error(
-            "Load education library error:",
-            educationError
-          );
-
-          setLoadError(
-            "ไม่สามารถโหลดประวัติการศึกษาได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        if (tagError) {
-          console.error(
-            "Load education tags error:",
-            tagError
-          );
-        }
-
-        if (
-          educationTagError
-        ) {
-          console.error(
-            "Load education tag links error:",
-            educationTagError
-          );
-        }
-
-        const rows:
-          EducationRow[] =
-          educationData ?? [];
-
-        const tagRows:
-          EducationTagRow[] =
-          educationTagData ??
-          [];
-
-        setTags(
-          tagData ?? []
-        );
-
-        setLibraryEducations(
-          rows.map(
-            (
-              education
-            ) => ({
-              ...education,
-
-              tagIds:
-                tagRows
-                  .filter(
-                    (
-                      relation
-                    ) =>
-                      relation.education_id ===
-                      education.id
-                  )
-                  .map(
-                    (
-                      relation
-                    ) =>
-                      relation.tag_id
-                  ),
-            })
-          )
-        );
-
-        setIsLoading(false);
-      };
-
-    loadLibrary();
-  }, [supabase]);
-
-  const selectedIds =
-    educations.map(
-      (education) =>
-        education.id
-    );
-
-  const isSelected = (
-    id: string
-  ) =>
-    selectedIds.includes(
-      id
-    );
+  // =====================================================
+  // MAP LIBRARY -> STORE
+  // =====================================================
 
   const mapLibraryEducationToStore = (
     education: LibraryEducation
@@ -311,8 +150,7 @@ export default function EducationForm({
     id: education.id,
 
     level:
-      education.level ??
-      "",
+      education.level ?? "",
 
     schoolName:
       education.school_name ??
@@ -323,8 +161,7 @@ export default function EducationForm({
       "",
 
     gpa:
-      education.gpa ===
-      null
+      education.gpa === null
         ? ""
         : String(
             education.gpa
@@ -343,9 +180,337 @@ export default function EducationForm({
       "",
   });
 
+  // =====================================================
+  // LOAD LIBRARY + PORTFOLIO SELECTION
+  // =====================================================
+
+  useEffect(() => {
+    const loadData =
+      async () => {
+        setIsLoading(true);
+
+        setLoadError("");
+        setSaveError("");
+        setSuccessMessage("");
+
+        /*
+          สำคัญ:
+          เคลียร์ค่าที่ค้างใน Zustand ก่อน
+
+          เพื่อไม่ให้ Portfolio ก่อนหน้า
+          โผล่มาชั่วคราวใน Portfolio ใหม่
+        */
+        setEducations([]);
+
+        if (!portfolioId) {
+          setLoadError(
+            "ไม่พบ Portfolio ID"
+          );
+
+          setIsLoading(false);
+
+          return;
+        }
+
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } =
+            await supabase.auth.getUser();
+
+          if (
+            userError ||
+            !user
+          ) {
+            throw new Error(
+              "ไม่สามารถตรวจสอบผู้ใช้งานได้"
+            );
+          }
+
+          const [
+            {
+              data:
+                educationData,
+              error:
+                educationError,
+            },
+
+            {
+              data: tagData,
+              error: tagError,
+            },
+
+            {
+              data:
+                educationTagData,
+              error:
+                educationTagError,
+            },
+
+            {
+              data:
+                portfolioEducationData,
+              error:
+                portfolioEducationError,
+            },
+          ] =
+            await Promise.all([
+              // =========================================
+              // Library Educations
+              // =========================================
+
+              supabase
+                .from(
+                  "user_library_educations"
+                )
+                .select(
+                  `
+                    id,
+                    level,
+                    school_name,
+                    study_plan,
+                    gpa,
+                    logo_url,
+                    start_year,
+                    end_year
+                  `
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "created_at",
+                  {
+                    ascending:
+                      false,
+                  }
+                ),
+
+              // =========================================
+              // Tags
+              // =========================================
+
+              supabase
+                .from(
+                  "user_tags"
+                )
+                .select(
+                  "id, name"
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "name",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+
+              // =========================================
+              // Education <-> Tag
+              // =========================================
+
+              supabase
+                .from(
+                  "user_library_education_tags"
+                )
+                .select(
+                  "education_id, tag_id"
+                ),
+
+              // =========================================
+              // Portfolio <-> Education
+              // =========================================
+
+              supabase
+                .from(
+                  "portfolio_educations"
+                )
+                .select(
+                  "education_id, sort_order"
+                )
+                .eq(
+                  "portfolio_id",
+                  portfolioId
+                )
+                .order(
+                  "sort_order",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+            ]);
+
+          if (
+            educationError
+          ) {
+            throw educationError;
+          }
+
+          if (tagError) {
+            console.error(
+              "Load education tags error:",
+              tagError
+            );
+          }
+
+          if (
+            educationTagError
+          ) {
+            console.error(
+              "Load education tag relations error:",
+              educationTagError
+            );
+          }
+
+          if (
+            portfolioEducationError
+          ) {
+            throw portfolioEducationError;
+          }
+
+          const rows:
+            EducationRow[] =
+            educationData ?? [];
+
+          const tagRows:
+            EducationTagRow[] =
+            educationTagData ??
+            [];
+
+          const portfolioRows:
+            PortfolioEducationRow[] =
+            portfolioEducationData ??
+            [];
+
+          // =========================================
+          // สร้าง Library พร้อม tagIds
+          // =========================================
+
+          const mappedLibrary:
+            LibraryEducation[] =
+            rows.map(
+              (
+                education
+              ) => ({
+                ...education,
+
+                tagIds:
+                  tagRows
+                    .filter(
+                      (
+                        relation
+                      ) =>
+                        relation.education_id ===
+                        education.id
+                    )
+                    .map(
+                      (
+                        relation
+                      ) =>
+                        relation.tag_id
+                    ),
+              })
+            );
+
+          setTags(
+            tagData ?? []
+          );
+
+          setLibraryEducations(
+            mappedLibrary
+          );
+
+          // =========================================
+          // โหลด Education ที่ Portfolio นี้เลือกไว้
+          // =========================================
+
+          const selectedItems =
+            portfolioRows
+              .map(
+                (
+                  relation
+                ) =>
+                  mappedLibrary.find(
+                    (
+                      education
+                    ) =>
+                      education.id ===
+                      relation.education_id
+                  )
+              )
+              .filter(
+                (
+                  education
+                ): education is LibraryEducation =>
+                  Boolean(
+                    education
+                  )
+              )
+              .map(
+                mapLibraryEducationToStore
+              );
+
+          setEducations(
+            selectedItems
+          );
+        } catch (
+          error: any
+        ) {
+          console.error(
+            "Load education form error:",
+            error
+          );
+
+          setLoadError(
+            error?.message ||
+              "ไม่สามารถโหลดประวัติการศึกษาได้"
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+    loadData();
+  }, [
+    portfolioId,
+    supabase,
+    setEducations,
+  ]);
+
+  // =====================================================
+  // SELECTED IDS
+  // =====================================================
+
+  const selectedIds =
+    educations.map(
+      (education) =>
+        education.id
+    );
+
+  const isSelected = (
+    id: string
+  ) =>
+    selectedIds.includes(
+      id
+    );
+
+  // =====================================================
+  // TOGGLE EDUCATION
+  // =====================================================
+
   const toggleEducation = (
     education: LibraryEducation
   ) => {
+    setSaveError("");
+    setSuccessMessage("");
+
     if (
       isSelected(
         education.id
@@ -371,6 +536,10 @@ export default function EducationForm({
     ]);
   };
 
+  // =====================================================
+  // FILTER
+  // =====================================================
+
   const filteredEducations =
     selectedFilterTag
       ? libraryEducations.filter(
@@ -381,13 +550,115 @@ export default function EducationForm({
         )
       : libraryEducations;
 
-  const handleNext = (
+  // =====================================================
+  // SAVE PORTFOLIO EDUCATIONS
+  // =====================================================
+
+  const handleNext = async (
     event: React.FormEvent
   ) => {
     event.preventDefault();
 
-    onNext();
+    if (!portfolioId) {
+      setSaveError(
+        "ไม่พบ Portfolio ID"
+      );
+
+      return;
+    }
+
+    setIsSaving(true);
+
+    setSaveError("");
+    setSuccessMessage("");
+
+    try {
+      // =========================================
+      // 1. ลบ relation เดิมของ Portfolio นี้
+      // =========================================
+
+      const {
+        error:
+          deleteError,
+      } = await supabase
+        .from(
+          "portfolio_educations"
+        )
+        .delete()
+        .eq(
+          "portfolio_id",
+          portfolioId
+        );
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // =========================================
+      // 2. Insert รายการที่เลือกใหม่
+      // =========================================
+
+      if (
+        educations.length > 0
+      ) {
+        const rowsToInsert =
+          educations.map(
+            (
+              education,
+              index
+            ) => ({
+              portfolio_id:
+                portfolioId,
+
+              education_id:
+                education.id,
+
+              sort_order:
+                index,
+            })
+          );
+
+        const {
+          error:
+            insertError,
+        } = await supabase
+          .from(
+            "portfolio_educations"
+          )
+          .insert(
+            rowsToInsert
+          );
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+
+      setSuccessMessage(
+        "บันทึกประวัติการศึกษาเรียบร้อยแล้ว"
+      );
+
+      onNext();
+    } catch (
+      error: any
+    ) {
+      console.error(
+        "Save portfolio educations error:",
+        error
+      );
+
+      setSaveError(
+        error?.message ||
+          "ไม่สามารถบันทึกประวัติการศึกษาได้"
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <form
@@ -406,8 +677,8 @@ export default function EducationForm({
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
               เลือกประวัติการศึกษาจากคลังข้อมูลของคุณ
-              รายการที่เลือกจะปรากฏใน
-              Portfolio
+              รายการที่เลือกจะถูกบันทึกเฉพาะ
+              Portfolio เล่มนี้
             </p>
           </div>
 
@@ -427,6 +698,7 @@ export default function EducationForm({
         <div className="rounded-xl border border-slate-200 bg-white p-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
             <FaFilter />
+
             กรองด้วย Tag
           </div>
 
@@ -469,9 +741,7 @@ export default function EducationForm({
                 >
                   <FaTag className="text-[9px]" />
 
-                  {
-                    tag.name
-                  }
+                  {tag.name}
                 </button>
               )
             )}
@@ -493,7 +763,7 @@ export default function EducationForm({
         </div>
       )}
 
-      {/* ERROR */}
+      {/* LOAD ERROR */}
 
       {!isLoading &&
         loadError && (
@@ -506,7 +776,7 @@ export default function EducationForm({
           </div>
         )}
 
-      {/* EMPTY */}
+      {/* EMPTY LIBRARY */}
 
       {!isLoading &&
         !loadError &&
@@ -532,6 +802,7 @@ export default function EducationForm({
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
             >
               <FaPlus />
+
               ไปเพิ่มข้อมูล
             </Link>
           </div>
@@ -722,18 +993,42 @@ export default function EducationForm({
           className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
         >
           <FaBook />
+
           จัดการประวัติการศึกษาในคลัง
         </Link>
       )}
 
-      {/* NEXT */}
+      {/* SAVE ERROR */}
+
+      {saveError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
+          {saveError}
+        </div>
+      )}
+
+      {/* SUCCESS */}
+
+      {successMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
+          {successMessage}
+        </div>
+      )}
+
+      {/* SAVE */}
 
       <button
         type="submit"
-        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900"
+        disabled={
+          isLoading ||
+          isSaving
+        }
+        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <FaCheck />
-        ยืนยันประวัติการศึกษา
+
+        {isSaving
+          ? "กำลังบันทึก..."
+          : "ยืนยันประวัติการศึกษา"}
       </button>
     </form>
   );

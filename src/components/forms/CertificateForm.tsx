@@ -9,6 +9,10 @@ import {
 import Link from "next/link";
 
 import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
   FaAward,
   FaCheck,
   FaFilter,
@@ -65,11 +69,22 @@ type CertificateImageRow = {
   sort_order: number;
 };
 
+type PortfolioCertificateRow = {
+  certificate_id: string;
+  sort_order: number;
+};
+
 export default function CertificateForm({
   onNext,
 }: {
   onNext: () => void;
 }) {
+  const searchParams =
+    useSearchParams();
+
+  const portfolioId =
+    searchParams.get("portfolio");
+
   const supabase = useMemo(
     () => createClient(),
     []
@@ -101,272 +116,26 @@ export default function CertificateForm({
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [isSaving, setIsSaving] =
+    useState(false);
+
   const [loadError, setLoadError] =
     useState("");
 
-  useEffect(() => {
-    const loadLibrary =
-      async () => {
-        setIsLoading(true);
-        setLoadError("");
+  const [
+    saveError,
+    setSaveError,
+  ] = useState("");
 
-        const {
-          data: { user },
-          error: userError,
-        } =
-          await supabase.auth.getUser();
-
-        if (
-          userError ||
-          !user
-        ) {
-          setLoadError(
-            "ไม่สามารถตรวจสอบผู้ใช้งานได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        const [
-          {
-            data:
-              certificateData,
-            error:
-              certificateError,
-          },
-
-          {
-            data: tagData,
-            error: tagError,
-          },
-
-          {
-            data:
-              certificateTagData,
-            error:
-              certificateTagError,
-          },
-
-          {
-            data:
-              certificateImageData,
-            error:
-              certificateImageError,
-          },
-        ] =
-          await Promise.all([
-            supabase
-              .from(
-                "user_library_certificates"
-              )
-              .select(
-                `
-                id,
-                title,
-                description,
-                issued_by,
-                issued_date
-              `
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "created_at",
-                {
-                  ascending:
-                    false,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_tags"
-              )
-              .select(
-                "id, name"
-              )
-              .eq(
-                "user_id",
-                user.id
-              )
-              .order(
-                "name",
-                {
-                  ascending:
-                    true,
-                }
-              ),
-
-            supabase
-              .from(
-                "user_library_certificate_tags"
-              )
-              .select(
-                "certificate_id, tag_id"
-              ),
-
-            supabase
-              .from(
-                "user_library_certificate_images"
-              )
-              .select(
-                "id, certificate_id, image_url, sort_order"
-              )
-              .order(
-                "sort_order",
-                {
-                  ascending:
-                    true,
-                }
-              ),
-          ]);
-
-        if (
-          certificateError
-        ) {
-          console.error(
-            "Load certificates error:",
-            certificateError
-          );
-
-          setLoadError(
-            "ไม่สามารถโหลดเกียรติบัตรได้"
-          );
-
-          setIsLoading(false);
-
-          return;
-        }
-
-        if (tagError) {
-          console.error(
-            "Load tags error:",
-            tagError
-          );
-        }
-
-        if (
-          certificateTagError
-        ) {
-          console.error(
-            "Load certificate tags error:",
-            certificateTagError
-          );
-        }
-
-        if (
-          certificateImageError
-        ) {
-          console.error(
-            "Load certificate images error:",
-            certificateImageError
-          );
-        }
-
-        const certificateRows:
-          CertificateRow[] =
-          certificateData ?? [];
-
-        const tagRows:
-          CertificateTagRow[] =
-          certificateTagData ??
-          [];
-
-        const imageRows:
-          CertificateImageRow[] =
-          certificateImageData ??
-          [];
-
-        setTags(
-          tagData ?? []
-        );
-
-        setLibraryCertificates(
-          certificateRows.map(
-            (
-              certificate
-            ) => ({
-              ...certificate,
-
-              tagIds:
-                tagRows
-                  .filter(
-                    (
-                      relation
-                    ) =>
-                      relation.certificate_id ===
-                      certificate.id
-                  )
-                  .map(
-                    (
-                      relation
-                    ) =>
-                      relation.tag_id
-                  ),
-
-              images:
-                imageRows
-                  .filter(
-                    (
-                      image
-                    ) =>
-                      image.certificate_id ===
-                      certificate.id
-                  )
-                  .sort(
-                    (
-                      a,
-                      b
-                    ) =>
-                      a.sort_order -
-                      b.sort_order
-                  )
-                  .map(
-                    (
-                      image
-                    ) => ({
-                      id:
-                        image.id,
-
-                      image_url:
-                        image.image_url,
-
-                      sort_order:
-                        image.sort_order,
-                    })
-                  ),
-            })
-          )
-        );
-
-        setIsLoading(false);
-      };
-
-    loadLibrary();
-  }, [supabase]);
-
-  const selectedIds =
-    certificates.map(
-      (certificate) =>
-        certificate.id
-    );
-
-  const isSelected = (
-    id: string
-  ) =>
-    selectedIds.includes(
-      id
-    );
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
 
   const mapLibraryCertificateToStore = (
     certificate: LibraryCertificate
   ): CertificateItem => ({
-    id:
-      certificate.id,
+    id: certificate.id,
 
     title:
       certificate.title ??
@@ -391,9 +160,359 @@ export default function CertificateForm({
       ),
   });
 
+  useEffect(() => {
+    const loadData =
+      async () => {
+        setIsLoading(true);
+
+        setLoadError("");
+        setSaveError("");
+        setSuccessMessage("");
+
+        setCertificates([]);
+
+        if (!portfolioId) {
+          setLoadError(
+            "ไม่พบ Portfolio ID"
+          );
+
+          setIsLoading(false);
+
+          return;
+        }
+
+        try {
+          const {
+            data: { user },
+            error: userError,
+          } =
+            await supabase.auth.getUser();
+
+          if (
+            userError ||
+            !user
+          ) {
+            throw new Error(
+              "ไม่สามารถตรวจสอบผู้ใช้งานได้"
+            );
+          }
+
+          const [
+            {
+              data:
+                certificateData,
+              error:
+                certificateError,
+            },
+
+            {
+              data: tagData,
+              error: tagError,
+            },
+
+            {
+              data:
+                certificateTagData,
+              error:
+                certificateTagError,
+            },
+
+            {
+              data:
+                certificateImageData,
+              error:
+                certificateImageError,
+            },
+
+            {
+              data:
+                portfolioCertificateData,
+              error:
+                portfolioCertificateError,
+            },
+          ] =
+            await Promise.all([
+              supabase
+                .from(
+                  "user_library_certificates"
+                )
+                .select(
+                  `
+                    id,
+                    title,
+                    description,
+                    issued_by,
+                    issued_date
+                  `
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "created_at",
+                  {
+                    ascending:
+                      false,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "user_tags"
+                )
+                .select(
+                  "id, name"
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                )
+                .order(
+                  "name",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "user_library_certificate_tags"
+                )
+                .select(
+                  "certificate_id, tag_id"
+                ),
+
+              supabase
+                .from(
+                  "user_library_certificate_images"
+                )
+                .select(
+                  "id, certificate_id, image_url, sort_order"
+                )
+                .order(
+                  "sort_order",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+
+              supabase
+                .from(
+                  "portfolio_certificates"
+                )
+                .select(
+                  "certificate_id, sort_order"
+                )
+                .eq(
+                  "portfolio_id",
+                  portfolioId
+                )
+                .order(
+                  "sort_order",
+                  {
+                    ascending:
+                      true,
+                  }
+                ),
+            ]);
+
+          if (
+            certificateError
+          ) {
+            throw certificateError;
+          }
+
+          if (tagError) {
+            console.error(
+              "Load certificate tags error:",
+              tagError
+            );
+          }
+
+          if (
+            certificateTagError
+          ) {
+            console.error(
+              "Load certificate tag relations error:",
+              certificateTagError
+            );
+          }
+
+          if (
+            certificateImageError
+          ) {
+            console.error(
+              "Load certificate images error:",
+              certificateImageError
+            );
+          }
+
+          if (
+            portfolioCertificateError
+          ) {
+            throw portfolioCertificateError;
+          }
+
+          const certificateRows:
+            CertificateRow[] =
+            certificateData ?? [];
+
+          const tagRows:
+            CertificateTagRow[] =
+            certificateTagData ??
+            [];
+
+          const imageRows:
+            CertificateImageRow[] =
+            certificateImageData ??
+            [];
+
+          const portfolioRows:
+            PortfolioCertificateRow[] =
+            portfolioCertificateData ??
+            [];
+
+          const mappedLibrary:
+            LibraryCertificate[] =
+            certificateRows.map(
+              (
+                certificate
+              ) => ({
+                ...certificate,
+
+                tagIds:
+                  tagRows
+                    .filter(
+                      (
+                        relation
+                      ) =>
+                        relation.certificate_id ===
+                        certificate.id
+                    )
+                    .map(
+                      (
+                        relation
+                      ) =>
+                        relation.tag_id
+                    ),
+
+                images:
+                  imageRows
+                    .filter(
+                      (
+                        image
+                      ) =>
+                        image.certificate_id ===
+                        certificate.id
+                    )
+                    .sort(
+                      (
+                        a,
+                        b
+                      ) =>
+                        a.sort_order -
+                        b.sort_order
+                    )
+                    .map(
+                      (
+                        image
+                      ) => ({
+                        id:
+                          image.id,
+
+                        image_url:
+                          image.image_url,
+
+                        sort_order:
+                          image.sort_order,
+                      })
+                    ),
+              })
+            );
+
+          setTags(
+            tagData ?? []
+          );
+
+          setLibraryCertificates(
+            mappedLibrary
+          );
+
+          const selectedItems =
+            portfolioRows
+              .map(
+                (
+                  relation
+                ) =>
+                  mappedLibrary.find(
+                    (
+                      certificate
+                    ) =>
+                      certificate.id ===
+                      relation.certificate_id
+                  )
+              )
+              .filter(
+                (
+                  certificate
+                ): certificate is LibraryCertificate =>
+                  Boolean(
+                    certificate
+                  )
+              )
+              .map(
+                mapLibraryCertificateToStore
+              );
+
+          setCertificates(
+            selectedItems
+          );
+        } catch (
+          error: any
+        ) {
+          console.error(
+            "Load certificate form error:",
+            error
+          );
+
+          setLoadError(
+            error?.message ||
+              "ไม่สามารถโหลดเกียรติบัตรได้"
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+    loadData();
+  }, [
+    portfolioId,
+    supabase,
+    setCertificates,
+  ]);
+
+  const selectedIds =
+    certificates.map(
+      (certificate) =>
+        certificate.id
+    );
+
+  const isSelected = (
+    id: string
+  ) =>
+    selectedIds.includes(
+      id
+    );
+
   const toggleCertificate = (
     certificate: LibraryCertificate
   ) => {
+    setSaveError("");
+    setSuccessMessage("");
+
     if (
       isSelected(
         certificate.id
@@ -431,12 +550,98 @@ export default function CertificateForm({
         )
       : libraryCertificates;
 
-  const handleNext = (
+  const handleNext = async (
     event: React.FormEvent
   ) => {
     event.preventDefault();
 
-    onNext();
+    if (!portfolioId) {
+      setSaveError(
+        "ไม่พบ Portfolio ID"
+      );
+
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError("");
+    setSuccessMessage("");
+
+    try {
+      const {
+        error:
+          deleteError,
+      } = await supabase
+        .from(
+          "portfolio_certificates"
+        )
+        .delete()
+        .eq(
+          "portfolio_id",
+          portfolioId
+        );
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      if (
+        certificates.length >
+        0
+      ) {
+        const rowsToInsert =
+          certificates.map(
+            (
+              certificate,
+              index
+            ) => ({
+              portfolio_id:
+                portfolioId,
+
+              certificate_id:
+                certificate.id,
+
+              sort_order:
+                index,
+            })
+          );
+
+        const {
+          error:
+            insertError,
+        } = await supabase
+          .from(
+            "portfolio_certificates"
+          )
+          .insert(
+            rowsToInsert
+          );
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+
+      setSuccessMessage(
+        "บันทึกเกียรติบัตรเรียบร้อยแล้ว"
+      );
+
+      onNext();
+    } catch (
+      error: any
+    ) {
+      console.error(
+        "Save portfolio certificates error:",
+        error
+      );
+
+      setSaveError(
+        error?.message ||
+          "ไม่สามารถบันทึกเกียรติบัตรได้"
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -454,8 +659,8 @@ export default function CertificateForm({
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
               เลือกเกียรติบัตรหรือรางวัลจากคลังข้อมูล
-              รายการที่เลือกจะถูกนำไปแสดงใน
-              Portfolio
+              รายการที่เลือกจะถูกบันทึกเฉพาะ
+              Portfolio เล่มนี้
             </p>
           </div>
 
@@ -473,6 +678,7 @@ export default function CertificateForm({
         <div className="rounded-xl border border-slate-200 bg-white p-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
             <FaFilter />
+
             กรองด้วย Tag
           </div>
 
@@ -515,9 +721,7 @@ export default function CertificateForm({
                 >
                   <FaTag className="text-[9px]" />
 
-                  {
-                    tag.name
-                  }
+                  {tag.name}
                 </button>
               )
             )}
@@ -541,9 +745,7 @@ export default function CertificateForm({
         loadError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4">
             <p className="text-sm font-bold text-red-700">
-              {
-                loadError
-              }
+              {loadError}
             </p>
           </div>
         )}
@@ -572,6 +774,7 @@ export default function CertificateForm({
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
             >
               <FaPlus />
+
               ไปเพิ่มข้อมูล
             </Link>
           </div>
@@ -753,16 +956,36 @@ export default function CertificateForm({
           className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
         >
           <FaImage />
+
           จัดการเกียรติบัตรในคลัง
         </Link>
       )}
 
+      {saveError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
+          {saveError}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
+          {successMessage}
+        </div>
+      )}
+
       <button
         type="submit"
-        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900"
+        disabled={
+          isLoading ||
+          isSaving
+        }
+        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <FaCheck />
-        ยืนยันเกียรติบัตร
+
+        {isSaving
+          ? "กำลังบันทึก..."
+          : "ยืนยันเกียรติบัตร"}
       </button>
     </form>
   );
