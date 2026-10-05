@@ -9,6 +9,7 @@ import {
   FaSignOutAlt,
   FaPlus,
   FaEnvelope,
+  FaDatabase,
 } from "react-icons/fa";
 
 import { createClient } from "@/lib/supabase/client";
@@ -283,6 +284,46 @@ export default function DashboardPage() {
                 <span className="mt-8 text-sm font-bold text-blue-600">
                   เริ่มสร้าง →
                 </span>
+              </Link>
+              <Link
+                    href="/my-data"
+                    className="
+                      group
+                      flex
+                      min-h-[280px]
+                      flex-col
+                      justify-between
+                      overflow-hidden
+                      rounded-[26px]
+                      border
+                      border-slate-200
+                      bg-white
+                      p-6
+                      transition-all
+                      duration-300
+                      hover:-translate-y-1
+                      hover:border-violet-300
+                      hover:shadow-xl
+                    "
+                  >
+                    <div>
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 transition-all group-hover:bg-violet-600 group-hover:text-white">
+                        <FaDatabase />
+                      </div>
+
+                      <h3 className="mt-6 text-xl font-black leading-snug text-slate-900">
+                        คลังข้อมูลของฉัน
+                      </h3>
+
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        เก็บประวัติการศึกษา ผลงาน กิจกรรม และเกียรติบัตร
+                        เพื่อเลือกใช้ซ้ำกับ Portfolio หลายเล่ม
+                      </p>
+                    </div>
+
+                    <span className="mt-8 text-sm font-bold text-violet-600">
+                      จัดการข้อมูล →
+                    </span>
               </Link>
             </div>
           </section>
