@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 
 import SidebarMenu from "@/components/layout/SidebarMenu";
@@ -16,10 +16,49 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 export default function EditorPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
+  const previewContainerRef = useRef<HTMLElement | null>(null);
+
+  const previewRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const scrollPreviewToStep = (step: number) => {
+    const container = previewContainerRef.current;
+    const target = previewRefs.current[step - 1];
+
+    if (!container || !target) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+
+    const nextTop =
+      container.scrollTop +
+      targetRect.top -
+      containerRect.top -
+      24;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
+      behavior: "smooth",
+    });
+  };
+
+  const handleStepChange = (step: number) => {
+    setCurrentStep(step);
+
+    requestAnimationFrame(() => {
+      scrollPreviewToStep(step);
+    });
+  };
+
   const handleNext = () => {
     setCurrentStep((prev) => {
       if (prev < 6) {
-        return prev + 1;
+        const nextStep = prev + 1;
+
+        requestAnimationFrame(() => {
+          scrollPreviewToStep(nextStep);
+        });
+
+        return nextStep;
       }
 
       return prev;
@@ -27,9 +66,9 @@ export default function EditorPage() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-100">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-slate-100">
       {/* ================= HEADER ================= */}
-      <header className="flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white px-5">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
         <Link
           href="/"
           className="text-lg font-black tracking-tight text-slate-900 transition-colors hover:text-blue-600"
@@ -51,84 +90,103 @@ export default function EditorPage() {
         </div>
       </header>
 
-      {/* ================= EDITOR BODY ================= */}
+      {/* ================= BODY ================= */}
       <div
-        className="grid w-full overflow-hidden"
+        className="grid min-h-0 flex-1 overflow-hidden"
         style={{
-          height: "calc(100vh - 56px)",
-          gridTemplateColumns: "430px minmax(0, 1fr)",
+          gridTemplateColumns: "30% 70%",
         }}
       >
         {/* ================================================= */}
-        {/* LEFT PANEL                                        */}
+        {/* LEFT - 30%                                       */}
         {/* ================================================= */}
+        <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
+          {/* เมนูด้านบน */}
+          <div className="shrink-0">
+            <SidebarMenu
+              currentStep={currentStep}
+              setCurrentStep={handleStepChange}
+            />
+          </div>
 
-        <aside className="h-full w-[430px] overflow-hidden border-r border-slate-300 bg-white">
-          <div
-            className="grid h-full overflow-hidden"
-            style={{
-              gridTemplateRows: "auto minmax(0, 1fr)",
-            }}
-          >
-            {/* Step Menu */}
-            <div className="w-full overflow-hidden">
-              <SidebarMenu
-                currentStep={currentStep}
-                setCurrentStep={setCurrentStep}
-              />
-            </div>
-
-            {/* Current Form */}
-            <div className="min-h-0 w-full overflow-hidden">
-              <FormContainer
-                currentStep={currentStep}
-                onNext={handleNext}
-              />
-            </div>
+          {/* Form */}
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+            <FormContainer
+              currentStep={currentStep}
+              onNext={handleNext}
+            />
           </div>
         </aside>
 
         {/* ================================================= */}
-        {/* RIGHT DOCUMENT PREVIEW                            */}
+        {/* RIGHT - 70%                                      */}
         {/* ================================================= */}
-
-        <main className="h-full min-w-0 overflow-y-auto overflow-x-auto bg-[#334155]">
-          {/* Document workspace */}
-          <div className="min-h-full min-w-[900px] px-12 py-10">
-            {/* กระดาษทั้งหมดเรียงต่อกันเหมือน Word */}
-            <div className="mx-auto flex w-max flex-col items-center gap-10">
-
-              {/* ================= PAGE 1 ================= */}
-              <div className="preview-page">
-                <CoverPreview />
-              </div>
-
-              {/* ================= PAGE 2 ================= */}
-              <div className="preview-page">
-                <PrefacePreview />
-              </div>
-
-              {/* ================= PAGE 3 ================= */}
-              <div className="preview-page">
-                <ProfilePreview />
-              </div>
-
-              {/* ================= PAGE 4 ================= */}
-              <div className="preview-page">
-                <EducationPreview />
-              </div>
-
-              {/* ================= PAGE 5+ ================= */}
-              <div className="preview-page">
-                <ActivityPreview />
-              </div>
-
-              {/* ================= LAST PAGE(S) ================= */}
-              <div className="preview-page">
-                <CertificatePreview />
-              </div>
-
+        <main
+          ref={previewContainerRef}
+          className="min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300"
+        >
+          <div className="flex min-h-full w-full flex-col items-center gap-10 px-8 py-8">
+            {/* PAGE 1 */}
+            <div
+              ref={(element) => {
+                previewRefs.current[0] = element;
+              }}
+              className="shrink-0"
+            >
+              <CoverPreview />
             </div>
+
+            {/* PAGE 2 */}
+            <div
+              ref={(element) => {
+                previewRefs.current[1] = element;
+              }}
+              className="shrink-0"
+            >
+              <PrefacePreview />
+            </div>
+
+            {/* PAGE 3 */}
+            <div
+              ref={(element) => {
+                previewRefs.current[2] = element;
+              }}
+              className="shrink-0"
+            >
+              <ProfilePreview />
+            </div>
+
+            {/* PAGE 4 */}
+            <div
+              ref={(element) => {
+                previewRefs.current[3] = element;
+              }}
+              className="shrink-0"
+            >
+              <EducationPreview />
+            </div>
+
+            {/* PAGE 5+ */}
+            <div
+              ref={(element) => {
+                previewRefs.current[4] = element;
+              }}
+              className="shrink-0"
+            >
+              <ActivityPreview />
+            </div>
+
+            {/* PAGE 6+ */}
+            <div
+              ref={(element) => {
+                previewRefs.current[5] = element;
+              }}
+              className="shrink-0"
+            >
+              <CertificatePreview />
+            </div>
+
+            <div className="h-8 shrink-0" />
           </div>
         </main>
       </div>
