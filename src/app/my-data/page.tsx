@@ -18,6 +18,8 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
+import EducationLibrary from "@/components/my-data/EducationLibrary";
+
 type TabType = "education" | "activity" | "certificate";
 
 type UserTag = {
@@ -572,14 +574,10 @@ export default function MyDataPage() {
           </section>
         )}
 
-        {/* EDUCATION PLACEHOLDER */}
-        {activeTab === "education" && (
-          <ComingSoon
-            title="ประวัติการศึกษา"
-            description="ขั้นต่อไปเราจะเชื่อมคลังประวัติการศึกษาเข้ากับฐานข้อมูล"
-          />
-        )}
-
+        {/* EDUCATION */}
+            {activeTab === "education" && (
+            <EducationLibrary />
+            )}
         {/* CERTIFICATE PLACEHOLDER */}
         {activeTab === "certificate" && (
           <ComingSoon
