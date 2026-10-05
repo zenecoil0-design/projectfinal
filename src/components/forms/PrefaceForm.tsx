@@ -2,14 +2,12 @@
 "use client";
 
 import { useCoverStore } from "@/store/useCoverStore";
-import { FaCheck } from "react-icons/fa";
 
 export default function PrefaceForm({ onNext }: { onNext: () => void }) {
   const store = useCoverStore();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("บันทึกข้อมูลหน้าคำนำเรียบร้อย!");
     onNext();
   };
 
@@ -62,7 +60,7 @@ export default function PrefaceForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-        💾 บันทึกข้อมูลคำนำ
+        ถัดไป →
       </button>
 
     </form>
