@@ -15,10 +15,17 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 export default function EditorPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const previewRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const formScrollRef = useRef<HTMLDivElement | null>(null);
 
   const moveToStep = (step: number) => {
     setCurrentStep(step);
+
     requestAnimationFrame(() => {
+      formScrollRef.current?.scrollTo({
+        top: 0,
+        behavior: "auto",
+      });
+
       previewRefs.current[step - 1]?.scrollIntoView({
         behavior: "smooth",
         block: "start",
@@ -46,6 +53,7 @@ export default function EditorPage() {
           <span className="hidden text-xs font-semibold text-slate-400 md:block">
             Portfolio Editor
           </span>
+
           <Link
             href="/dashboard"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
@@ -56,49 +64,85 @@ export default function EditorPage() {
       </header>
 
       <div
-        className="grid w-full overflow-hidden"
+        className="grid min-h-0 w-full overflow-hidden"
         style={{
           height: "calc(100vh - 56px)",
           gridTemplateColumns: "430px minmax(0, 1fr)",
         }}
       >
-        <aside className="h-full w-[430px] overflow-hidden border-r border-slate-300 bg-white">
-          <div
-            className="grid h-full overflow-hidden"
-            style={{ gridTemplateRows: "auto minmax(0, 1fr)" }}
-          >
-            <div className="w-full overflow-hidden">
-              <SidebarMenu
-                currentStep={currentStep}
-                setCurrentStep={moveToStep}
-              />
-            </div>
+        <aside className="grid min-h-0 w-[430px] grid-rows-[auto_minmax(0,1fr)] overflow-hidden border-r border-slate-300 bg-white">
+          <div className="w-full shrink-0 border-b border-slate-200">
+            <SidebarMenu
+              currentStep={currentStep}
+              setCurrentStep={moveToStep}
+            />
+          </div>
 
-            <div className="min-h-0 w-full overflow-hidden">
-              <FormContainer currentStep={currentStep} onNext={handleNext} />
-            </div>
+          <div
+            ref={formScrollRef}
+            className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain bg-white"
+          >
+            <FormContainer
+              currentStep={currentStep}
+              onNext={handleNext}
+            />
           </div>
         </aside>
 
-        <main className="h-full min-w-0 overflow-auto bg-slate-300">
+        <main className="h-full min-w-0 overflow-auto overscroll-contain bg-slate-300">
           <div className="min-h-full min-w-[900px] px-12 py-10">
             <div className="mx-auto flex w-max flex-col items-center gap-10">
-              <div ref={(el) => { previewRefs.current[0] = el; }} className="scroll-mt-10">
+              <div
+                ref={(element) => {
+                  previewRefs.current[0] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <CoverPreview />
               </div>
-              <div ref={(el) => { previewRefs.current[1] = el; }} className="scroll-mt-10">
+
+              <div
+                ref={(element) => {
+                  previewRefs.current[1] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <PrefacePreview />
               </div>
-              <div ref={(el) => { previewRefs.current[2] = el; }} className="scroll-mt-10">
+
+              <div
+                ref={(element) => {
+                  previewRefs.current[2] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <ProfilePreview />
               </div>
-              <div ref={(el) => { previewRefs.current[3] = el; }} className="scroll-mt-10">
+
+              <div
+                ref={(element) => {
+                  previewRefs.current[3] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <EducationPreview />
               </div>
-              <div ref={(el) => { previewRefs.current[4] = el; }} className="scroll-mt-10">
+
+              <div
+                ref={(element) => {
+                  previewRefs.current[4] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <ActivityPreview />
               </div>
-              <div ref={(el) => { previewRefs.current[5] = el; }} className="scroll-mt-10">
+
+              <div
+                ref={(element) => {
+                  previewRefs.current[5] = element;
+                }}
+                className="scroll-mt-10"
+              >
                 <CertificatePreview />
               </div>
             </div>
