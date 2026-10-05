@@ -41,7 +41,7 @@ export default function EditorPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-100">
-      <header className="flex h-14 w-full items-center justify-between border-b border-slate-200 bg-white px-5">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
         <Link
           href="/"
           className="text-lg font-black tracking-tight text-slate-900 transition-colors hover:text-blue-600"
@@ -70,8 +70,8 @@ export default function EditorPage() {
           gridTemplateColumns: "430px minmax(0, 1fr)",
         }}
       >
-        <aside className="grid min-h-0 w-[430px] grid-rows-[auto_minmax(0,1fr)] overflow-hidden border-r border-slate-300 bg-white">
-          <div className="w-full shrink-0 border-b border-slate-200">
+        <aside className="flex h-full min-h-0 w-[430px] flex-col overflow-hidden border-r border-slate-300 bg-white">
+          <div className="w-full shrink-0">
             <SidebarMenu
               currentStep={currentStep}
               setCurrentStep={moveToStep}
@@ -80,7 +80,7 @@ export default function EditorPage() {
 
           <div
             ref={formScrollRef}
-            className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain bg-white"
+            className="h-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain bg-white"
           >
             <FormContainer
               currentStep={currentStep}
