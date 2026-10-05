@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ระบบสร้างแฟ้มสะสมผลงาน",
-  description: "ระบบเว็บแอปพลิเคชันสำหรับสร้างแฟ้มสะสมผลงานอัตโนมัติ ใช้งานง่าย จัดหน้าให้เอง โหลดเป็น PDF ได้ทันที",
+  title: {
+    default: "Auto - Portfolio",
+    template: "%s | Auto - Portfolio",
+  },
+  description:
+    "เว็บแอปพลิเคชันสำหรับสร้างและจัดรูปแบบแฟ้มสะสมผลงานแบบเป็นขั้นตอน พร้อม Live Preview ขนาด A4",
 };
 
 export default function RootLayout({
@@ -24,10 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="th"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
