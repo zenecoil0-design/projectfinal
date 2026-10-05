@@ -9,23 +9,27 @@ import {
   FaDatabase,
 } from "react-icons/fa";
 
+import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
+
 export default function HomeSidebar() {
   return (
     <aside className="hidden w-24 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
       <div className="flex flex-1 flex-col items-center gap-3 px-3 py-6">
         {/* Create */}
-        <Link
-          href="/editor"
-          className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-2 py-4 transition-all hover:border-blue-300 hover:bg-blue-100"
-        >
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-200 transition-transform group-hover:scale-105">
-            <FaPlus />
-          </div>
+        <CreatePortfolioModal>
+          <button
+            type="button"
+            className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-2 py-4 transition-all hover:border-blue-300 hover:bg-blue-100"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-200 transition-transform group-hover:scale-105">
+              <FaPlus />
+            </div>
 
-          <span className="text-[11px] font-bold text-blue-600">
-            สร้าง
-          </span>
-        </Link>
+            <span className="text-[11px] font-bold text-blue-600">
+              สร้าง
+            </span>
+          </button>
+        </CreatePortfolioModal>
 
         {/* My Data */}
         <Link
