@@ -1,52 +1,147 @@
 "use client";
 
+import {
+  FaGraduationCap,
+} from "react-icons/fa";
+
 import { useEducationStore } from "@/store/useEducationStore";
-import { FaGraduationCap } from "react-icons/fa";
 
 export default function EducationPreview() {
-  const store = useEducationStore();
+  const educations =
+    useEducationStore(
+      (state) =>
+        state.educations
+    );
 
   return (
-    // โครงสร้างกระดาษ A4 สีขาวจำลอง
-    <div className="bg-white w-[210mm] min-h-[297mm] shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
-      
-      {/* ส่วนหัว */}
-      <div className="flex items-center gap-3 border-b pb-4 mb-8">
-        <h2 className="text-3xl font-bold tracking-wider">ประวัติการศึกษา</h2>
+    <div className="relative mx-auto my-auto flex min-h-[297mm] w-[210mm] flex-col overflow-hidden rounded-sm border border-slate-300 bg-white p-16 text-slate-800 shadow-2xl">
+      {/* HEADER */}
+
+      <div className="mb-8 flex items-center gap-3 border-b pb-4">
+        <h2 className="text-3xl font-bold tracking-wider">
+          ประวัติการศึกษา
+        </h2>
       </div>
 
-      {/* ส่วนเนื้อหา: ลูปแสดงรายการประวัติการศึกษา */}
-      <div className="flex-1 flex flex-col gap-6">
-        {store.educations && store.educations.map((edu, index) => (
-          <div key={edu.id} className="flex gap-4 p-4 rounded-xl border border-slate-200 bg-slate-50">
-            
-            {/* โลโก้สถานศึกษา */}
-            <div className="w-16 h-16 bg-white rounded-lg border flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-              {edu.logoUrl ? (
-                <img src={edu.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <FaGraduationCap className="text-2xl text-slate-400" />
-              )}
-            </div>
+      {/* EMPTY STATE */}
 
-            {/* รายละเอียดการศึกษา */}
-            <div className="flex flex-col justify-center text-sm gap-1">
-              <span className="text-xs font-bold text-blue-600">ช่วงการศึกษาที่ {index + 1}</span>
-              <h3 className="font-bold text-base text-slate-800">{edu.schoolName || "ชื่อสถานศึกษา / โรงเรียน"}</h3>
-              <p className="text-slate-600"><span className="font-semibold">ระดับชั้น :</span> {edu.level || "-"}</p>
-              <p className="text-slate-600"><span className="font-semibold">แผนการเรียน :</span> {edu.studyPlan || "-"}</p>
-              <p className="text-slate-600"><span className="font-semibold">เกรดเฉลี่ย (GPAX) :</span> {edu.gpa || "-"}</p>
-            </div>
-
+      {educations.length ===
+      0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100 text-3xl text-slate-300">
+            <FaGraduationCap />
           </div>
-        ))}
-      </div>
 
-      {/* ส่วนท้ายกระดาษ */}
-      <div className="border-t pt-4 mt-6 text-center text-xs text-slate-400">
-        Portfolio - หน้าประวัติการศึกษา
-      </div>
+          <h3 className="mt-5 text-lg font-bold text-slate-500">
+            ยังไม่ได้เลือกประวัติการศึกษา
+          </h3>
 
+          <p className="mt-2 max-w-sm text-sm leading-6 text-slate-400">
+            เลือกประวัติการศึกษาจากแบบฟอร์มด้านซ้าย
+            แล้วข้อมูลจะปรากฏในหน้านี้
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-1 flex-col gap-6">
+          {educations.map(
+            (
+              education,
+              index
+            ) => (
+              <div
+                key={
+                  education.id
+                }
+                className="flex gap-5 rounded-xl border border-slate-200 bg-slate-50 p-5"
+              >
+                {/* LOGO */}
+
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                  {education.logoUrl ? (
+                    <img
+                      src={
+                        education.logoUrl
+                      }
+                      alt={
+                        education.schoolName
+                      }
+                      className="h-full w-full object-contain p-2"
+                    />
+                  ) : (
+                    <FaGraduationCap className="text-2xl text-slate-300" />
+                  )}
+                </div>
+
+                {/* CONTENT */}
+
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                  <span className="text-xs font-bold text-blue-600">
+                    ช่วงการศึกษาที่{" "}
+                    {index + 1}
+                  </span>
+
+                  <h3 className="mt-1 text-lg font-bold text-slate-800">
+                    {education.schoolName ||
+                      "ชื่อสถานศึกษา"}
+                  </h3>
+
+                  <p className="mt-1 text-sm text-slate-600">
+                    <span className="font-semibold">
+                      ระดับการศึกษา:
+                    </span>{" "}
+                    {education.level ||
+                      "-"}
+                  </p>
+
+                  {education.studyPlan && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      <span className="font-semibold">
+                        แผนการเรียน /
+                        สาขา:
+                      </span>{" "}
+                      {
+                        education.studyPlan
+                      }
+                    </p>
+                  )}
+
+                  {education.gpa && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      <span className="font-semibold">
+                        GPAX:
+                      </span>{" "}
+                      {
+                        education.gpa
+                      }
+                    </p>
+                  )}
+
+                  {(education.startYear ||
+                    education.endYear) && (
+                    <p className="mt-1 text-sm text-slate-500">
+                      <span className="font-semibold">
+                        ช่วงปีการศึกษา:
+                      </span>{" "}
+                      {education.startYear ||
+                        "?"}{" "}
+                      -{" "}
+                      {education.endYear ||
+                        "ปัจจุบัน"}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      {/* FOOTER */}
+
+      <div className="mt-6 border-t pt-4 text-center text-xs text-slate-400">
+        Portfolio -
+        หน้าประวัติการศึกษา
+      </div>
     </div>
   );
 }

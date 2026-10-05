@@ -6,6 +6,7 @@ import {
   FaPlus,
   FaFolderOpen,
   FaUserCircle,
+  FaDatabase,
 } from "react-icons/fa";
 
 export default function HomeSidebar() {
@@ -23,6 +24,20 @@ export default function HomeSidebar() {
 
           <span className="text-[11px] font-bold text-blue-600">
             สร้าง
+          </span>
+        </Link>
+
+        {/* My Data */}
+        <Link
+          href="/my-data"
+          className="group flex w-full flex-col items-center gap-2 rounded-2xl px-2 py-4 transition-all hover:bg-violet-50"
+        >
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-50 text-violet-600 transition-all group-hover:bg-violet-600 group-hover:text-white">
+            <FaDatabase />
+          </div>
+
+          <span className="text-center text-[11px] font-bold text-slate-500 transition-colors group-hover:text-violet-600">
+            คลังข้อมูล
           </span>
         </Link>
 

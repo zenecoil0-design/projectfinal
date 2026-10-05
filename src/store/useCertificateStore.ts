@@ -1,43 +1,102 @@
-// src/store/useCertificateStore.ts
-import { create } from 'zustand';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CertificateItem {
   id: string;
-  title: string;       // ชื่อเกียรติบัตร
-  description: string; // รายละเอียด/หน่วยงานที่ออกให้
-  imageUrl: string;    // รูปเกียรติบัตร
+  title: string;
+  description: string;
+  issuedBy: string;
+  issuedDate: string;
+  images: string[];
 }
 
 interface CertificateState {
   certificates: CertificateItem[];
-  
+
+  setCertificates: (
+    certificates: CertificateItem[]
+  ) => void;
+
   addCertificate: () => void;
-  updateCertificate: (id: string, field: keyof CertificateItem, value: string) => void;
-  removeCertificate: (id: string) => void;
-  setCertificateImage: (id: string, imageUrl: string) => void;
+
+  updateCertificate: (
+    id: string,
+    field: keyof CertificateItem,
+    value: string | string[]
+  ) => void;
+
+  removeCertificate: (
+    id: string
+  ) => void;
+
+  clearCertificates: () => void;
 }
 
-export const useCertificateStore = create<CertificateState>((set) => ({
-  certificates: [
-    { id: '1', title: '', description: '', imageUrl: '' }
-  ],
+export const useCertificateStore =
+  create<CertificateState>()(
+    persist(
+      (set) => ({
+        certificates: [],
 
-  addCertificate: () => set((state) => ({
-    certificates: [
-      ...state.certificates,
-      { id: Date.now().toString(), title: '', description: '', imageUrl: '' }
-    ]
-  })),
+        setCertificates: (
+          certificates
+        ) =>
+          set({
+            certificates,
+          }),
 
-  updateCertificate: (id, field, value) => set((state) => ({
-    certificates: state.certificates.map((cert) => cert.id === id ? { ...cert, [field]: value } : cert)
-  })),
+        addCertificate: () =>
+          set((state) => ({
+            certificates: [
+              ...state.certificates,
+              {
+                id: crypto.randomUUID(),
+                title: "",
+                description: "",
+                issuedBy: "",
+                issuedDate: "",
+                images: [],
+              },
+            ],
+          })),
 
-  removeCertificate: (id) => set((state) => ({
-    certificates: state.certificates.filter((cert) => cert.id !== id)
-  })),
+        updateCertificate: (
+          id,
+          field,
+          value
+        ) =>
+          set((state) => ({
+            certificates:
+              state.certificates.map(
+                (certificate) =>
+                  certificate.id === id
+                    ? {
+                        ...certificate,
+                        [field]: value,
+                      }
+                    : certificate
+              ),
+          })),
 
-  setCertificateImage: (id, imageUrl) => set((state) => ({
-    certificates: state.certificates.map((cert) => cert.id === id ? { ...cert, imageUrl } : cert)
-  })),
-}));
+        removeCertificate: (
+          id
+        ) =>
+          set((state) => ({
+            certificates:
+              state.certificates.filter(
+                (certificate) =>
+                  certificate.id !== id
+              ),
+          })),
+
+        clearCertificates: () =>
+          set({
+            certificates: [],
+          }),
+      }),
+      {
+        name:
+          "portfolio-certificate-storage",
+      }
+    )
+  );

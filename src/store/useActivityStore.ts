@@ -1,62 +1,159 @@
-// src/store/useActivityStore.ts
-import { create } from 'zustand';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-// โครงสร้างข้อมูลของแต่ละกิจกรรม
 export interface ActivityItem {
   id: string;
-  title: string;       // ชื่อกิจกรรม
-  description: string; // รายละเอียดกิจกรรม
-  images: string[];    // รูปภาพประกอบกิจกรรม (รองรับหลายรูปตาม Layout)
+  title: string;
+  description: string;
+  activityDate: string;
+  organization: string;
+  images: string[];
 }
 
 interface ActivityState {
   activities: ActivityItem[];
-  
-  // ฟังก์ชันจัดการกิจกรรม
+
+  setActivities: (
+    activities: ActivityItem[]
+  ) => void;
+
   addActivity: () => void;
-  updateActivity: (id: string, field: keyof ActivityItem, value: any) => void;
-  removeActivity: (id: string) => void;
-  addImageToActivity: (activityId: string, imageUrl: string) => void;
-  removeImageFromActivity: (activityId: string, imageIndex: number) => void;
+
+  updateActivity: (
+    id: string,
+    field: keyof ActivityItem,
+    value: string | string[]
+  ) => void;
+
+  removeActivity: (
+    id: string
+  ) => void;
+
+  addImageToActivity: (
+    activityId: string,
+    imageUrl: string
+  ) => void;
+
+  removeImageFromActivity: (
+    activityId: string,
+    imageIndex: number
+  ) => void;
+
+  clearActivities: () => void;
 }
 
-export const useActivityStore = create<ActivityState>((set) => ({
-  // ค่าเริ่มต้น ให้มีกิจกรรมตัวอย่างสัก 1 รายการ
-  activities: [
-    {
-      id: '1',
-      title: '',
-      description: '',
-      images: [],
-    }
-  ],
+export const useActivityStore =
+  create<ActivityState>()(
+    persist(
+      (set) => ({
+        activities: [],
 
-  addActivity: () => set((state) => ({
-    activities: [
-      ...state.activities,
-      { id: Date.now().toString(), title: '', description: '', images: [] }
-    ]
-  })),
+        setActivities: (
+          activities
+        ) =>
+          set({
+            activities,
+          }),
 
-  updateActivity: (id, field, value) => set((state) => ({
-    activities: state.activities.map((act) => act.id === id ? { ...act, [field]: value } : act)
-  })),
+        addActivity: () =>
+          set((state) => ({
+            activities: [
+              ...state.activities,
+              {
+                id: crypto.randomUUID(),
+                title: "",
+                description: "",
+                activityDate: "",
+                organization: "",
+                images: [],
+              },
+            ],
+          })),
 
-  removeActivity: (id) => set((state) => ({
-    activities: state.activities.filter((act) => act.id !== id)
-  })),
+        updateActivity: (
+          id,
+          field,
+          value
+        ) =>
+          set((state) => ({
+            activities:
+              state.activities.map(
+                (activity) =>
+                  activity.id === id
+                    ? {
+                        ...activity,
+                        [field]: value,
+                      }
+                    : activity
+              ),
+          })),
 
-  addImageToActivity: (activityId, imageUrl) => set((state) => ({
-    activities: state.activities.map((act) => 
-      act.id === activityId ? { ...act, images: [...act.images, imageUrl] } : act
+        removeActivity: (
+          id
+        ) =>
+          set((state) => ({
+            activities:
+              state.activities.filter(
+                (activity) =>
+                  activity.id !== id
+              ),
+          })),
+
+        addImageToActivity: (
+          activityId,
+          imageUrl
+        ) =>
+          set((state) => ({
+            activities:
+              state.activities.map(
+                (activity) =>
+                  activity.id ===
+                  activityId
+                    ? {
+                        ...activity,
+                        images: [
+                          ...activity.images,
+                          imageUrl,
+                        ],
+                      }
+                    : activity
+              ),
+          })),
+
+        removeImageFromActivity: (
+          activityId,
+          imageIndex
+        ) =>
+          set((state) => ({
+            activities:
+              state.activities.map(
+                (activity) =>
+                  activity.id ===
+                  activityId
+                    ? {
+                        ...activity,
+                        images:
+                          activity.images.filter(
+                            (
+                              _,
+                              index
+                            ) =>
+                              index !==
+                              imageIndex
+                          ),
+                      }
+                    : activity
+              ),
+          })),
+
+        clearActivities: () =>
+          set({
+            activities: [],
+          }),
+      }),
+      {
+        name:
+          "portfolio-activity-storage",
+      }
     )
-  })),
-
-  removeImageFromActivity: (activityId, imageIndex) => set((state) => ({
-    activities: state.activities.map((act) => 
-      act.id === activityId 
-        ? { ...act, images: act.images.filter((_, idx) => idx !== imageIndex) } 
-        : act
-    )
-  })),
-}));
+  );

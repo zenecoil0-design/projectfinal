@@ -1,77 +1,768 @@
-// src/components/CertificateForm.tsx
 "use client";
 
-import { useCertificateStore } from "@/store/useCertificateStore";
-import { FaPlus, FaTrash, FaCheck, FaAward, FaImage } from "react-icons/fa";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-export default function CertificateForm({ onNext }: { onNext: () => void }) {
-  const store = useCertificateStore();
+import Link from "next/link";
 
-  const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      store.setCertificateImage(id, imageUrl);
+import {
+  FaAward,
+  FaCheck,
+  FaFilter,
+  FaImage,
+  FaPlus,
+  FaTag,
+} from "react-icons/fa";
+
+import {
+  CertificateItem,
+  useCertificateStore,
+} from "@/store/useCertificateStore";
+
+import { createClient } from "@/lib/supabase/client";
+
+type UserTag = {
+  id: string;
+  name: string;
+};
+
+type LibraryCertificateImage = {
+  id: string;
+  image_url: string;
+  sort_order: number;
+};
+
+type LibraryCertificate = {
+  id: string;
+  title: string;
+  description: string;
+  issued_by: string | null;
+  issued_date: string | null;
+  tagIds: string[];
+  images: LibraryCertificateImage[];
+};
+
+type CertificateRow = {
+  id: string;
+  title: string;
+  description: string;
+  issued_by: string | null;
+  issued_date: string | null;
+};
+
+type CertificateTagRow = {
+  certificate_id: string;
+  tag_id: string;
+};
+
+type CertificateImageRow = {
+  id: string;
+  certificate_id: string;
+  image_url: string;
+  sort_order: number;
+};
+
+export default function CertificateForm({
+  onNext,
+}: {
+  onNext: () => void;
+}) {
+  const supabase = useMemo(
+    () => createClient(),
+    []
+  );
+
+  const {
+    certificates,
+    setCertificates,
+  } = useCertificateStore();
+
+  const [
+    libraryCertificates,
+    setLibraryCertificates,
+  ] =
+    useState<
+      LibraryCertificate[]
+    >([]);
+
+  const [tags, setTags] =
+    useState<UserTag[]>([]);
+
+  const [
+    selectedFilterTag,
+    setSelectedFilterTag,
+  ] = useState<
+    string | null
+  >(null);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState("");
+
+  useEffect(() => {
+    const loadLibrary =
+      async () => {
+        setIsLoading(true);
+        setLoadError("");
+
+        const {
+          data: { user },
+          error: userError,
+        } =
+          await supabase.auth.getUser();
+
+        if (
+          userError ||
+          !user
+        ) {
+          setLoadError(
+            "ไม่สามารถตรวจสอบผู้ใช้งานได้"
+          );
+
+          setIsLoading(false);
+
+          return;
+        }
+
+        const [
+          {
+            data:
+              certificateData,
+            error:
+              certificateError,
+          },
+
+          {
+            data: tagData,
+            error: tagError,
+          },
+
+          {
+            data:
+              certificateTagData,
+            error:
+              certificateTagError,
+          },
+
+          {
+            data:
+              certificateImageData,
+            error:
+              certificateImageError,
+          },
+        ] =
+          await Promise.all([
+            supabase
+              .from(
+                "user_library_certificates"
+              )
+              .select(
+                `
+                id,
+                title,
+                description,
+                issued_by,
+                issued_date
+              `
+              )
+              .eq(
+                "user_id",
+                user.id
+              )
+              .order(
+                "created_at",
+                {
+                  ascending:
+                    false,
+                }
+              ),
+
+            supabase
+              .from(
+                "user_tags"
+              )
+              .select(
+                "id, name"
+              )
+              .eq(
+                "user_id",
+                user.id
+              )
+              .order(
+                "name",
+                {
+                  ascending:
+                    true,
+                }
+              ),
+
+            supabase
+              .from(
+                "user_library_certificate_tags"
+              )
+              .select(
+                "certificate_id, tag_id"
+              ),
+
+            supabase
+              .from(
+                "user_library_certificate_images"
+              )
+              .select(
+                "id, certificate_id, image_url, sort_order"
+              )
+              .order(
+                "sort_order",
+                {
+                  ascending:
+                    true,
+                }
+              ),
+          ]);
+
+        if (
+          certificateError
+        ) {
+          console.error(
+            "Load certificates error:",
+            certificateError
+          );
+
+          setLoadError(
+            "ไม่สามารถโหลดเกียรติบัตรได้"
+          );
+
+          setIsLoading(false);
+
+          return;
+        }
+
+        if (tagError) {
+          console.error(
+            "Load tags error:",
+            tagError
+          );
+        }
+
+        if (
+          certificateTagError
+        ) {
+          console.error(
+            "Load certificate tags error:",
+            certificateTagError
+          );
+        }
+
+        if (
+          certificateImageError
+        ) {
+          console.error(
+            "Load certificate images error:",
+            certificateImageError
+          );
+        }
+
+        const certificateRows:
+          CertificateRow[] =
+          certificateData ?? [];
+
+        const tagRows:
+          CertificateTagRow[] =
+          certificateTagData ??
+          [];
+
+        const imageRows:
+          CertificateImageRow[] =
+          certificateImageData ??
+          [];
+
+        setTags(
+          tagData ?? []
+        );
+
+        setLibraryCertificates(
+          certificateRows.map(
+            (
+              certificate
+            ) => ({
+              ...certificate,
+
+              tagIds:
+                tagRows
+                  .filter(
+                    (
+                      relation
+                    ) =>
+                      relation.certificate_id ===
+                      certificate.id
+                  )
+                  .map(
+                    (
+                      relation
+                    ) =>
+                      relation.tag_id
+                  ),
+
+              images:
+                imageRows
+                  .filter(
+                    (
+                      image
+                    ) =>
+                      image.certificate_id ===
+                      certificate.id
+                  )
+                  .sort(
+                    (
+                      a,
+                      b
+                    ) =>
+                      a.sort_order -
+                      b.sort_order
+                  )
+                  .map(
+                    (
+                      image
+                    ) => ({
+                      id:
+                        image.id,
+
+                      image_url:
+                        image.image_url,
+
+                      sort_order:
+                        image.sort_order,
+                    })
+                  ),
+            })
+          )
+        );
+
+        setIsLoading(false);
+      };
+
+    loadLibrary();
+  }, [supabase]);
+
+  const selectedIds =
+    certificates.map(
+      (certificate) =>
+        certificate.id
+    );
+
+  const isSelected = (
+    id: string
+  ) =>
+    selectedIds.includes(
+      id
+    );
+
+  const mapLibraryCertificateToStore = (
+    certificate: LibraryCertificate
+  ): CertificateItem => ({
+    id:
+      certificate.id,
+
+    title:
+      certificate.title ??
+      "",
+
+    description:
+      certificate.description ??
+      "",
+
+    issuedBy:
+      certificate.issued_by ??
+      "",
+
+    issuedDate:
+      certificate.issued_date ??
+      "",
+
+    images:
+      certificate.images.map(
+        (image) =>
+          image.image_url
+      ),
+  });
+
+  const toggleCertificate = (
+    certificate: LibraryCertificate
+  ) => {
+    if (
+      isSelected(
+        certificate.id
+      )
+    ) {
+      setCertificates(
+        certificates.filter(
+          (item) =>
+            item.id !==
+            certificate.id
+        )
+      );
+
+      return;
     }
+
+    setCertificates([
+      ...certificates,
+
+      mapLibraryCertificateToStore(
+        certificate
+      ),
+    ]);
   };
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("บันทึกข้อมูลเกีตรติบัตรเรียบร้อย!");
+
+  const filteredCertificates =
+    selectedFilterTag
+      ? libraryCertificates.filter(
+          (
+            certificate
+          ) =>
+            certificate.tagIds.includes(
+              selectedFilterTag
+            )
+        )
+      : libraryCertificates;
+
+  const handleNext = (
+    event: React.FormEvent
+  ) => {
+    event.preventDefault();
+
     onNext();
   };
 
   return (
-    <form onSubmit={handleSave} className="flex flex-col gap-6 pb-10">
-      <div className="flex flex-col gap-3">
-        <h3 className="text-sm font-bold text-slate-800 border-l-4 border-blue-500 pl-2">
-          หน้าที่ 6: เกียรติบัตร (Certificates)
-        </h3>
-        
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-4">
-          {store.certificates.map((cert, index) => (
-            <div key={cert.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-              <div className="flex justify-between items-center border-b pb-2">
-                <span className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
-                  <FaAward /> เกียรติบัตรใบที่ {index + 1}
-                </span>
-                {store.certificates.length > 1 && (
-                  <button type="button" onClick={() => store.removeCertificate(cert.id)} className="text-red-500 text-xs"><FaTrash /></button>
-                )}
-              </div>
+    <form
+      onSubmit={handleNext}
+      className="flex flex-col gap-5 pb-10"
+    >
+      <div>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">
+              หน้าที่ 6:
+              เกียรติบัตร
+            </h3>
 
-              <input 
-                placeholder="ชื่อเกียรติบัตร" 
-                value={cert.title}
-                onChange={(e) => store.updateCertificate(cert.id, 'title', e.target.value)}
-                className="w-full text-sm border p-2 rounded-md outline-none"
-              />
-              <textarea 
-                placeholder="รายละเอียดเพิ่มเติม (เช่น หน่วยงานที่ออกให้)" 
-                value={cert.description}
-                onChange={(e) => store.updateCertificate(cert.id, 'description', e.target.value)}
-                className="w-full text-sm border p-2 rounded-md outline-none"
-              />
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              เลือกเกียรติบัตรหรือรางวัลจากคลังข้อมูล
+              รายการที่เลือกจะถูกนำไปแสดงใน
+              Portfolio
+            </p>
+          </div>
 
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-slate-100 rounded border flex items-center justify-center overflow-hidden">
-                  {cert.imageUrl ? <img src={cert.imageUrl} className="w-full h-full object-cover"/> : <FaImage className="text-slate-400"/>}
-                </div>
-                <label className="text-xs bg-slate-100 p-2 rounded cursor-pointer hover:bg-slate-200">
-                  อัปโหลดรูป
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(cert.id, e)} />
-                </label>
-              </div>
-            </div>
-          ))}
-
-          <button type="button" onClick={store.addCertificate} className="text-xs text-blue-600 font-bold flex items-center justify-center gap-2 border border-dashed p-3 rounded-lg hover:bg-blue-50">
-            <FaPlus /> เพิ่มเกียรติบัตรอีก
-          </button>
+          <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
+            เลือกแล้ว{" "}
+            {
+              certificates.length
+            }{" "}
+            รายการ
+          </span>
         </div>
       </div>
 
-      <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-       💾 บันทึกข้อมูลเกียรติบัตรทั้งหมด
+      {tags.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+            <FaFilter />
+            กรองด้วย Tag
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedFilterTag(
+                  null
+                )
+              }
+              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                selectedFilterTag ===
+                null
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+              }`}
+            >
+              ทั้งหมด
+            </button>
+
+            {tags.map(
+              (tag) => (
+                <button
+                  key={
+                    tag.id
+                  }
+                  type="button"
+                  onClick={() =>
+                    setSelectedFilterTag(
+                      tag.id
+                    )
+                  }
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                    selectedFilterTag ===
+                    tag.id
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
+                  }`}
+                >
+                  <FaTag className="text-[9px]" />
+
+                  {
+                    tag.name
+                  }
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+          <div className="text-center">
+            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+
+            <p className="mt-3 text-xs font-medium text-slate-500">
+              กำลังโหลดเกียรติบัตร...
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading &&
+        loadError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <p className="text-sm font-bold text-red-700">
+              {
+                loadError
+              }
+            </p>
+          </div>
+        )}
+
+      {!isLoading &&
+        !loadError &&
+        libraryCertificates.length ===
+          0 && (
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <FaAward />
+            </div>
+
+            <h4 className="mt-3 text-sm font-bold text-slate-800">
+              ยังไม่มีเกียรติบัตรในคลัง
+            </h4>
+
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              เพิ่มเกียรติบัตรในคลังข้อมูลก่อน
+              แล้วกลับมาเลือกใช้ใน
+              Portfolio
+            </p>
+
+            <Link
+              href="/my-data"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
+            >
+              <FaPlus />
+              ไปเพิ่มข้อมูล
+            </Link>
+          </div>
+        )}
+
+      {!isLoading &&
+        !loadError &&
+        libraryCertificates.length >
+          0 &&
+        filteredCertificates.length ===
+          0 && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center">
+            <p className="text-xs font-semibold text-slate-500">
+              ไม่มีเกียรติบัตรที่ตรงกับ
+              Tag นี้
+            </p>
+          </div>
+        )}
+
+      {!isLoading &&
+        !loadError &&
+        filteredCertificates.length >
+          0 && (
+          <div className="flex flex-col gap-3">
+            {filteredCertificates.map(
+              (
+                certificate
+              ) => {
+                const selected =
+                  isSelected(
+                    certificate.id
+                  );
+
+                const itemTags =
+                  tags.filter(
+                    (
+                      tag
+                    ) =>
+                      certificate.tagIds.includes(
+                        tag.id
+                      )
+                  );
+
+                return (
+                  <button
+                    key={
+                      certificate.id
+                    }
+                    type="button"
+                    onClick={() =>
+                      toggleCertificate(
+                        certificate
+                      )
+                    }
+                    className={`w-full rounded-xl border p-4 text-left transition ${
+                      selected
+                        ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200"
+                        : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div
+                        className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
+                          selected
+                            ? "border-blue-600 bg-blue-600 text-white"
+                            : "border-slate-300 bg-white text-transparent"
+                        }`}
+                      >
+                        <FaCheck className="text-[10px]" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h4 className="break-words text-sm font-black text-slate-800">
+                              {
+                                certificate.title
+                              }
+                            </h4>
+
+                            {certificate.issued_by && (
+                              <p className="mt-1 text-xs font-semibold text-slate-500">
+                                {
+                                  certificate.issued_by
+                                }
+                              </p>
+                            )}
+                          </div>
+
+                          {selected && (
+                            <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-bold text-white">
+                              เลือกแล้ว
+                            </span>
+                          )}
+                        </div>
+
+                        {certificate.description && (
+                          <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">
+                            {
+                              certificate.description
+                            }
+                          </p>
+                        )}
+
+                        {certificate.issued_date && (
+                          <p className="mt-2 text-[11px] font-medium text-slate-400">
+                            วันที่ได้รับ{" "}
+                            {
+                              certificate.issued_date
+                            }
+                          </p>
+                        )}
+
+                        {certificate.images.length >
+                          0 && (
+                          <div className="mt-3 flex gap-2 overflow-hidden">
+                            {certificate.images
+                              .slice(
+                                0,
+                                4
+                              )
+                              .map(
+                                (
+                                  image
+                                ) => (
+                                  <div
+                                    key={
+                                      image.id
+                                    }
+                                    className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white"
+                                  >
+                                    <img
+                                      src={
+                                        image.image_url
+                                      }
+                                      alt=""
+                                      className="h-full w-full object-contain"
+                                    />
+                                  </div>
+                                )
+                              )}
+                          </div>
+                        )}
+
+                        {itemTags.length >
+                          0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {itemTags.map(
+                              (
+                                tag
+                              ) => (
+                                <span
+                                  key={
+                                    tag.id
+                                  }
+                                  className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500"
+                                >
+                                  {
+                                    tag.name
+                                  }
+                                </span>
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              }
+            )}
+          </div>
+        )}
+
+      {libraryCertificates.length >
+        0 && (
+        <Link
+          href="/my-data"
+          className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+        >
+          <FaImage />
+          จัดการเกียรติบัตรในคลัง
+        </Link>
+      )}
+
+      <button
+        type="submit"
+        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900"
+      >
+        <FaCheck />
+        ยืนยันเกียรติบัตร
       </button>
     </form>
   );

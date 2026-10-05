@@ -1,43 +1,106 @@
-// src/store/useEducationStore.ts
-import { create } from 'zustand';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface EducationItem {
   id: string;
-  level: string;      // ระดับการศึกษา 
-  schoolName: string; // ชื่อโรงเรียน
-  studyPlan: string;  // แผนการเรียน
-  gpa: string;        // เกรดเฉลี่ย
-  logoUrl: string;    // โลโก้โรงเรียน
+  level: string;
+  schoolName: string;
+  studyPlan: string;
+  gpa: string;
+  logoUrl: string;
+  startYear: string;
+  endYear: string;
 }
 
 interface EducationState {
   educations: EducationItem[];
+
+  setEducations: (
+    educations: EducationItem[]
+  ) => void;
+
   addEducation: () => void;
-  updateEducation: (id: string, field: keyof EducationItem, value: string) => void;
-  removeEducation: (id: string) => void;
+
+  updateEducation: (
+    id: string,
+    field: keyof EducationItem,
+    value: string
+  ) => void;
+
+  removeEducation: (
+    id: string
+  ) => void;
+
+  clearEducations: () => void;
 }
 
-export const useEducationStore = create<EducationState>((set) => ({
-  educations: [
-    { 
-      id: '1', 
-      level: 'มัธยมศึกษาตอนปลาย', 
-      schoolName: '', 
-      studyPlan: '', 
-      gpa: '', 
-      logoUrl: '' 
-    }
-  ],
-  addEducation: () => set((state) => ({
-    educations: [
-      ...state.educations, 
-      { id: Date.now().toString(), level: 'มัธยมศึกษาตอนต้น', schoolName: '', studyPlan: '', gpa: '', logoUrl: '' }
-    ]
-  })),
-  updateEducation: (id, field, value) => set((state) => ({
-    educations: state.educations.map((edu) => edu.id === id ? { ...edu, [field]: value } : edu)
-  })),
-  removeEducation: (id) => set((state) => ({
-    educations: state.educations.filter((edu) => edu.id !== id)
-  })),
-}));
+export const useEducationStore =
+  create<EducationState>()(
+    persist(
+      (set) => ({
+        educations: [],
+
+        setEducations: (
+          educations
+        ) =>
+          set({
+            educations,
+          }),
+
+        addEducation: () =>
+          set((state) => ({
+            educations: [
+              ...state.educations,
+              {
+                id: crypto.randomUUID(),
+                level: "",
+                schoolName: "",
+                studyPlan: "",
+                gpa: "",
+                logoUrl: "",
+                startYear: "",
+                endYear: "",
+              },
+            ],
+          })),
+
+        updateEducation: (
+          id,
+          field,
+          value
+        ) =>
+          set((state) => ({
+            educations:
+              state.educations.map(
+                (education) =>
+                  education.id === id
+                    ? {
+                        ...education,
+                        [field]: value,
+                      }
+                    : education
+              ),
+          })),
+
+        removeEducation: (
+          id
+        ) =>
+          set((state) => ({
+            educations:
+              state.educations.filter(
+                (education) =>
+                  education.id !== id
+              ),
+          })),
+
+        clearEducations: () =>
+          set({
+            educations: [],
+          }),
+      }),
+      {
+        name:
+          "portfolio-education-storage",
+      }
+    )
+  );
