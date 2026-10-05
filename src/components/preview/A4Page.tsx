@@ -11,7 +11,15 @@ export default function A4Page({
 }: A4PageProps) {
   return (
     <section
-      className={`relative box-border h-[297mm] w-[210mm] shrink-0 overflow-hidden rounded-sm border border-slate-300 bg-white shadow-2xl ${className}`}
+      data-a4-page
+      className={`relative box-border shrink-0 overflow-hidden rounded-sm border border-slate-300 bg-white shadow-2xl ${className}`}
+      style={{
+        width: "794px",
+        height: "1123px",
+        minWidth: "794px",
+        minHeight: "1123px",
+        aspectRatio: "210 / 297",
+      }}
     >
       {children}
     </section>
