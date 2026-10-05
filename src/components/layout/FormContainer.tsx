@@ -17,8 +17,8 @@ export default function FormContainer({
   onNext,
 }: FormContainerProps) {
   return (
-    <div className="box-border min-h-full w-full min-w-0 bg-white p-4">
-      <h1 className="sticky top-0 z-10 mb-4 w-full border-b border-slate-200 bg-white pb-3 pt-1 text-base font-bold text-slate-800">
+    <div className="box-border w-full min-w-0 bg-white p-4 pb-10">
+      <h1 className="sticky top-0 z-20 mb-4 w-full border-b border-slate-200 bg-white py-3 text-base font-bold text-slate-800">
         {currentStep === 1 && "กรอกข้อมูลหน้าปก"}
         {currentStep === 2 && "กรอกข้อมูลคำนำ"}
         {currentStep === 3 && "กรอกประวัติส่วนตัว"}
