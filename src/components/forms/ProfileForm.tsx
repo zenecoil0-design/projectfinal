@@ -2,41 +2,16 @@
 "use client";
 
 import { useProfileStore } from "@/store/useProfileStore";
+import { revokeObjectUrl, validateImageFile } from "@/lib/imageUtils";
 import { FaFacebook, FaLine, FaInstagram, FaPhone, FaEnvelope, FaMapMarkerAlt, FaPlus, FaTrash, FaCamera, FaUserCircle, FaFolderPlus } from "react-icons/fa";
 
 export default function ProfileForm({ onNext }: { onNext: () => void }) {
   const store = useProfileStore();
 
-  // 🎯 ฟังก์ชันจัดการตอนกดปุ่ม "บันทึกข้อมูล"
   const handleSave = (e: React.FormEvent) => {
-    e.preventDefault(); // ป้องกันเว็บรีเฟรช
-
-    // 1. รวมร่างชื่อ + นามสกุล (สำหรับคอลัมน์ full_name)
-    const fullNameForDB = `${store.firstName} ${store.lastName}`.trim();
-
-    // 2. แพ็คข้อมูลการติดต่อ (สำหรับคอลัมน์ contact แบบ jsonb)
-    const contactForDB = {
-      phone: store.phone,
-      email: store.email,
-      socials: store.socials // ยัด Array โซเชียลมีเดียเข้าไปเลย
-    };
-
-    // 3. 🎯 แพ็คข้อมูลเพิ่มเติมทั้งหมด (สำหรับคอลัมน์ additional_info แบบ jsonb)
-    const additionalInfoForDB = {
-      skills: store.skills,
-      motto: store.motto,
-      custom_fields: store.customFields // ยัด Array หัวข้อที่สร้างเองเข้าไปเลย
-    };
-
-    // โชว์ให้ดูว่าหน้าตาข้อมูลก่อนส่งเข้าฐานข้อมูลเป็นยังไง
-    console.log("--- ข้อมูลพร้อมส่งเข้า Supabase ---");
-    console.log("full_name:", fullNameForDB);
-    console.log("contact (JSON):", contactForDB);
-    console.log("additional_info (JSON):", additionalInfoForDB);
-
-    alert(`แพ็คข้อมูลเสร็จแล้ว!`);
+    e.preventDefault();
     onNext();
-      };
+  };
 
   const renderSocialIcon = (platform: string) => {
     switch (platform) {
@@ -49,10 +24,18 @@ export default function ProfileForm({ onNext }: { onNext: () => void }) {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      store.setProfile("profileImage", imageUrl);
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      e.target.value = "";
+      return;
     }
+
+    revokeObjectUrl(store.profileImage);
+    const imageUrl = URL.createObjectURL(file);
+    store.setProfile("profileImage", imageUrl);
   };
 
   // 🎯 จุด 2: ฟังก์ชันคำนวณอายุอัตโนมัติจากวันเกิด
@@ -85,10 +68,13 @@ export default function ProfileForm({ onNext }: { onNext: () => void }) {
            <div className="flex flex-col gap-2">
               <label className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md text-xs font-bold cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200 w-max shadow-sm">
                 <FaCamera className="text-sm" /> อัปโหลดรูปภาพใหม่
-                <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleImageUpload} />
+                <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageUpload} />
               </label>
               {store.profileImage && (
-                <button type="button" onClick={() => store.setProfile("profileImage", "")} className="text-xs text-red-500 hover:text-red-700 font-semibold text-left w-max flex items-center gap-1">
+                <button type="button" onClick={() => {
+                  revokeObjectUrl(store.profileImage);
+                  store.setProfile("profileImage", "");
+                }} className="text-xs text-red-500 hover:text-red-700 font-semibold text-left w-max flex items-center gap-1">
                   <FaTrash className="text-[10px]" /> ลบรูปภาพ
                 </button>
               )}
@@ -116,7 +102,7 @@ export default function ProfileForm({ onNext }: { onNext: () => void }) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">วันเกิด</label>
-              <input type="date" value={store.birthday} onChange={(e) => store.setProfile("birthday", e.target.value)} className="w-full text-sm border border-slate-300 rounded-md px-2 py-2 outline-none focus:border-blue-500" />
+              <input type="date" max={new Date().toISOString().split("T")[0]} value={store.birthday} onChange={(e) => store.setProfile("birthday", e.target.value)} className="w-full text-sm border border-slate-300 rounded-md px-2 py-2 outline-none focus:border-blue-500" />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">อายุ (ปี)</label>
@@ -160,7 +146,7 @@ export default function ProfileForm({ onNext }: { onNext: () => void }) {
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-slate-500 mb-1">เกรดเฉลี่ยสะสม (GPAX)</label>
-              <input type="number" step="0.01" value={store.gpax} onChange={(e) => store.setProfile("gpax", e.target.value)} className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:border-blue-500" />
+              <input type="number" min="0" max="4" step="0.01" value={store.gpax} onChange={(e) => store.setProfile("gpax", e.target.value)} className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:border-blue-500" />
             </div>
           </div>
         </div>
@@ -244,7 +230,7 @@ export default function ProfileForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2">
-        💾 บันทึกข้อมูลประวัติส่วนตัว
+        ถัดไป →
       </button>
 
     </form>
