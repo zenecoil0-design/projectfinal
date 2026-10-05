@@ -1,23 +1,32 @@
 // src/components/EducationForm.tsx
 "use client";
 
-import { useEducationStore, EducationItem } from "@/store/useEducationStore";
-import { FaPlus, FaTrash, FaCheck, FaSchool, FaImage } from "react-icons/fa";
+import { useEducationStore } from "@/store/useEducationStore";
+import { revokeObjectUrl, validateImageFile } from "@/lib/imageUtils";
+import { FaPlus, FaTrash, FaSchool, FaImage } from "react-icons/fa";
 
 export default function EducationForm({ onNext }: { onNext: () => void }) {
   const store = useEducationStore();
 
   const handleLogoUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      store.updateEducation(id, 'logoUrl', imageUrl);
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      e.target.value = "";
+      return;
     }
+
+    const currentLogo = store.educations.find((education) => education.id === id)?.logoUrl ?? "";
+    revokeObjectUrl(currentLogo);
+    const imageUrl = URL.createObjectURL(file);
+    store.updateEducation(id, "logoUrl", imageUrl);
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("บันทึกประวัติการศึกษาเรียบร้อย!");
     onNext();
   };
 
@@ -97,6 +106,8 @@ export default function EducationForm({ onNext }: { onNext: () => void }) {
                   <label className="block text-[11px] font-semibold text-slate-500 mb-1">เกรดเฉลี่ย (GPAX)</label>
                   <input 
                     type="number" 
+                    min="0"
+                    max="4"
                     step="0.01"
                     value={edu.gpa} 
                     onChange={(e) => store.updateEducation(edu.id, 'gpa', e.target.value)} 
@@ -118,7 +129,7 @@ export default function EducationForm({ onNext }: { onNext: () => void }) {
                 <div className="flex flex-col gap-1">
                   <label className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1 rounded text-xs font-semibold cursor-pointer hover:bg-slate-200 transition-colors w-max">
                     <FaImage /> อัปโหลดตราโรงเรียน
-                    <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => handleLogoUpload(edu.id, e)} />
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleLogoUpload(edu.id, e)} />
                   </label>
                   <span className="text-[10px] text-slate-400">รูปตราสัญลักษณ์โรงเรียนขนาดเล็ก</span>
                 </div>
@@ -140,7 +151,7 @@ export default function EducationForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-        💾 บันทึกประวัติการศึกษา
+        ถัดไป →
       </button>
 
     </form>
