@@ -17,53 +17,23 @@ export default function FormContainer({
   onNext,
 }: FormContainerProps) {
   return (
-    <div
-      className="
-        box-border
-        h-full
-        w-full
-        max-w-full
-        overflow-x-hidden
-        overflow-y-auto
-        bg-white
-        p-4
-      "
-    >
-      <div className="w-full max-w-full">
-        <h1 className="mb-4 w-full border-b border-slate-200 pb-2 text-base font-bold text-slate-800">
-          {currentStep === 1 && "กรอกข้อมูลหน้าปก"}
-          {currentStep === 2 && "กรอกข้อมูลคำนำ"}
-          {currentStep === 3 && "กรอกประวัติส่วนตัว"}
-          {currentStep === 4 && "กรอกประวัติการศึกษา"}
-          {currentStep === 5 && "กรอกผลงานและกิจกรรม"}
-          {currentStep === 6 && "กรอกข้อมูลเกียรติบัตร"}
-        </h1>
+    <div className="box-border min-h-full w-full min-w-0 bg-white p-4">
+      <h1 className="sticky top-0 z-10 mb-4 w-full border-b border-slate-200 bg-white pb-3 pt-1 text-base font-bold text-slate-800">
+        {currentStep === 1 && "กรอกข้อมูลหน้าปก"}
+        {currentStep === 2 && "กรอกข้อมูลคำนำ"}
+        {currentStep === 3 && "กรอกประวัติส่วนตัว"}
+        {currentStep === 4 && "กรอกประวัติการศึกษา"}
+        {currentStep === 5 && "กรอกผลงานและกิจกรรม"}
+        {currentStep === 6 && "กรอกข้อมูลเกียรติบัตร"}
+      </h1>
 
-        <div className="box-border w-full max-w-full overflow-hidden">
-          {currentStep === 1 && (
-            <CoverForm onNext={onNext} />
-          )}
-
-          {currentStep === 2 && (
-            <PrefaceForm onNext={onNext} />
-          )}
-
-          {currentStep === 3 && (
-            <ProfileForm onNext={onNext} />
-          )}
-
-          {currentStep === 4 && (
-            <EducationForm onNext={onNext} />
-          )}
-
-          {currentStep === 5 && (
-            <ActivityForm onNext={onNext} />
-          )}
-
-          {currentStep === 6 && (
-            <CertificateForm onNext={onNext} />
-          )}
-        </div>
+      <div className="box-border w-full min-w-0">
+        {currentStep === 1 && <CoverForm onNext={onNext} />}
+        {currentStep === 2 && <PrefaceForm onNext={onNext} />}
+        {currentStep === 3 && <ProfileForm onNext={onNext} />}
+        {currentStep === 4 && <EducationForm onNext={onNext} />}
+        {currentStep === 5 && <ActivityForm onNext={onNext} />}
+        {currentStep === 6 && <CertificateForm onNext={onNext} />}
       </div>
     </div>
   );
