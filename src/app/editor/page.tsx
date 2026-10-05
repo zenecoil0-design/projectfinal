@@ -14,8 +14,33 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 
 export default function EditorPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const previewRefs = useRef<Array<HTMLDivElement | null>>([]);
+
   const formScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewScrollRef = useRef<HTMLElement | null>(null);
+  const previewRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const scrollPreviewToStep = (step: number) => {
+    const container = previewScrollRef.current;
+    const target = previewRefs.current[step - 1];
+
+    if (!container || !target) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+
+    const nextTop =
+      container.scrollTop +
+      targetRect.top -
+      containerRect.top -
+      32;
+
+    container.scrollTo({
+      top: Math.max(0, nextTop),
+      behavior: "smooth",
+    });
+  };
 
   const moveToStep = (step: number) => {
     setCurrentStep(step);
@@ -26,10 +51,7 @@ export default function EditorPage() {
         behavior: "auto",
       });
 
-      previewRefs.current[step - 1]?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      scrollPreviewToStep(step);
     });
   };
 
@@ -40,7 +62,7 @@ export default function EditorPage() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-100">
+    <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-slate-100">
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
         <Link
           href="/"
@@ -63,15 +85,9 @@ export default function EditorPage() {
         </div>
       </header>
 
-      <div
-        className="grid min-h-0 w-full overflow-hidden"
-        style={{
-          height: "calc(100vh - 56px)",
-          gridTemplateColumns: "430px minmax(0, 1fr)",
-        }}
-      >
-        <aside className="flex h-full min-h-0 w-[430px] flex-col overflow-hidden border-r border-slate-300 bg-white">
-          <div className="w-full shrink-0">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="flex min-h-0 w-[430px] min-w-[430px] max-w-[430px] shrink-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
+          <div className="shrink-0">
             <SidebarMenu
               currentStep={currentStep}
               setCurrentStep={moveToStep}
@@ -80,7 +96,8 @@ export default function EditorPage() {
 
           <div
             ref={formScrollRef}
-            className="h-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-scroll overscroll-contain bg-white"
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white"
+            style={{ scrollbarGutter: "stable" }}
           >
             <FormContainer
               currentStep={currentStep}
@@ -89,14 +106,17 @@ export default function EditorPage() {
           </div>
         </aside>
 
-        <main className="h-full min-w-0 overflow-auto overscroll-contain bg-slate-300">
+        <main
+          ref={previewScrollRef}
+          className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-slate-300"
+          style={{ scrollbarGutter: "stable" }}
+        >
           <div className="min-h-full min-w-[900px] px-12 py-10">
             <div className="mx-auto flex w-max flex-col items-center gap-10">
               <div
                 ref={(element) => {
                   previewRefs.current[0] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <CoverPreview />
               </div>
@@ -105,7 +125,6 @@ export default function EditorPage() {
                 ref={(element) => {
                   previewRefs.current[1] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <PrefacePreview />
               </div>
@@ -114,7 +133,6 @@ export default function EditorPage() {
                 ref={(element) => {
                   previewRefs.current[2] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <ProfilePreview />
               </div>
@@ -123,7 +141,6 @@ export default function EditorPage() {
                 ref={(element) => {
                   previewRefs.current[3] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <EducationPreview />
               </div>
@@ -132,7 +149,6 @@ export default function EditorPage() {
                 ref={(element) => {
                   previewRefs.current[4] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <ActivityPreview />
               </div>
@@ -141,7 +157,6 @@ export default function EditorPage() {
                 ref={(element) => {
                   previewRefs.current[5] = element;
                 }}
-                className="scroll-mt-10"
               >
                 <CertificatePreview />
               </div>
