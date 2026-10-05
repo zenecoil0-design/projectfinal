@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [username, setUsername] =
     useState("");
@@ -128,9 +128,13 @@ export default function RegisterPage() {
 
       router.push("/dashboard");
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "เกิดข้อผิดพลาดในการสมัครสมาชิก";
       if (
-        error?.message?.includes(
+        message.includes(
           "already registered"
         )
       ) {
@@ -139,8 +143,7 @@ export default function RegisterPage() {
         );
       } else {
         setErrorMessage(
-          error?.message ||
-            "เกิดข้อผิดพลาดในการสมัครสมาชิก"
+          message
         );
       }
     } finally {
@@ -159,7 +162,7 @@ export default function RegisterPage() {
       >
         {/* Error */}
         {errorMessage && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
             {errorMessage}
           </div>
         )}
@@ -312,6 +315,7 @@ export default function RegisterPage() {
                   !showPassword
                 )
               }
+              aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
             >
               {showPassword ? (
