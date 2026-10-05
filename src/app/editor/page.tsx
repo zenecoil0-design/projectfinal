@@ -16,7 +16,7 @@ export default function EditorPage() {
   const [currentStep, setCurrentStep] = useState(1);
 
   const formScrollRef = useRef<HTMLDivElement | null>(null);
-  const previewScrollRef = useRef<HTMLElement | null>(null);
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const previewRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const scrollPreviewToStep = (step: number) => {
@@ -27,17 +27,13 @@ export default function EditorPage() {
       return;
     }
 
-    const containerRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-
-    const nextTop =
-      container.scrollTop +
-      targetRect.top -
-      containerRect.top -
-      32;
+    const nextTop = Math.max(
+      0,
+      target.offsetTop - container.offsetTop - 24
+    );
 
     container.scrollTo({
-      top: Math.max(0, nextTop),
+      top: nextTop,
       behavior: "smooth",
     });
   };
@@ -46,10 +42,9 @@ export default function EditorPage() {
     setCurrentStep(step);
 
     requestAnimationFrame(() => {
-      formScrollRef.current?.scrollTo({
-        top: 0,
-        behavior: "auto",
-      });
+      if (formScrollRef.current) {
+        formScrollRef.current.scrollTop = 0;
+      }
 
       scrollPreviewToStep(step);
     });
@@ -62,11 +57,8 @@ export default function EditorPage() {
   };
 
   return (
-    <div
-      className="w-full overflow-hidden bg-slate-100"
-      style={{ height: "100dvh" }}
-    >
-      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
+    <div className="relative h-dvh w-full overflow-hidden bg-slate-100">
+      <header className="absolute inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
         <Link
           href="/"
           className="text-lg font-black tracking-tight text-slate-900 transition-colors hover:text-blue-600"
@@ -88,13 +80,7 @@ export default function EditorPage() {
         </div>
       </header>
 
-      <div
-        className="grid w-full overflow-hidden"
-        style={{
-          height: "calc(100dvh - 56px)",
-          gridTemplateColumns: "30% 70%",
-        }}
-      >
+      <div className="absolute inset-x-0 bottom-0 top-14 grid grid-cols-[30%_70%] overflow-hidden">
         <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
           <div className="shrink-0">
             <SidebarMenu
@@ -105,11 +91,7 @@ export default function EditorPage() {
 
           <div
             ref={formScrollRef}
-            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-scroll bg-white"
-            style={{
-              height: "100%",
-              scrollbarGutter: "stable",
-            }}
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-white"
           >
             <FormContainer
               currentStep={currentStep}
@@ -118,15 +100,11 @@ export default function EditorPage() {
           </div>
         </aside>
 
-        <main
+        <div
           ref={previewScrollRef}
-          className="h-full min-h-0 min-w-0 overflow-x-auto overflow-y-scroll bg-slate-300"
-          style={{
-            height: "calc(100dvh - 56px)",
-            scrollbarGutter: "stable",
-          }}
+          className="h-full min-h-0 min-w-0 overflow-x-auto overflow-y-auto bg-slate-300"
         >
-          <div className="min-h-max min-w-[900px] px-12 py-10 pb-20">
+          <div className="min-w-[900px] px-12 py-10 pb-24">
             <div className="mx-auto flex w-max flex-col items-center gap-10">
               <div
                 ref={(element) => {
@@ -177,7 +155,7 @@ export default function EditorPage() {
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
