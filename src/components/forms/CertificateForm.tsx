@@ -2,21 +2,30 @@
 "use client";
 
 import { useCertificateStore } from "@/store/useCertificateStore";
-import { FaPlus, FaTrash, FaCheck, FaAward, FaImage } from "react-icons/fa";
+import { revokeObjectUrl, validateImageFile } from "@/lib/imageUtils";
+import { FaPlus, FaTrash, FaAward, FaImage } from "react-icons/fa";
 
 export default function CertificateForm({ onNext }: { onNext: () => void }) {
   const store = useCertificateStore();
 
   const handleImageUpload = (id: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      store.setCertificateImage(id, imageUrl);
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      e.target.value = "";
+      return;
     }
+
+    const currentImage = store.certificates.find((certificate) => certificate.id === id)?.imageUrl ?? "";
+    revokeObjectUrl(currentImage);
+    const imageUrl = URL.createObjectURL(file);
+    store.setCertificateImage(id, imageUrl);
   };
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("บันทึกข้อมูลเกีตรติบัตรเรียบร้อย!");
     onNext();
   };
 
@@ -41,12 +50,14 @@ export default function CertificateForm({ onNext }: { onNext: () => void }) {
 
               <input 
                 placeholder="ชื่อเกียรติบัตร" 
+                required 
                 value={cert.title}
                 onChange={(e) => store.updateCertificate(cert.id, 'title', e.target.value)}
                 className="w-full text-sm border p-2 rounded-md outline-none"
               />
               <textarea 
                 placeholder="รายละเอียดเพิ่มเติม (เช่น หน่วยงานที่ออกให้)" 
+                maxLength={500} 
                 value={cert.description}
                 onChange={(e) => store.updateCertificate(cert.id, 'description', e.target.value)}
                 className="w-full text-sm border p-2 rounded-md outline-none"
@@ -54,11 +65,11 @@ export default function CertificateForm({ onNext }: { onNext: () => void }) {
 
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-slate-100 rounded border flex items-center justify-center overflow-hidden">
-                  {cert.imageUrl ? <img src={cert.imageUrl} className="w-full h-full object-cover"/> : <FaImage className="text-slate-400"/>}
+                  {cert.imageUrl ? <img src={cert.imageUrl} alt="Certificate preview" className="w-full h-full object-cover"/> : <FaImage className="text-slate-400"/>}
                 </div>
                 <label className="text-xs bg-slate-100 p-2 rounded cursor-pointer hover:bg-slate-200">
                   อัปโหลดรูป
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(cert.id, e)} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handleImageUpload(cert.id, e)} />
                 </label>
               </div>
             </div>
@@ -71,7 +82,7 @@ export default function CertificateForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-       💾 บันทึกข้อมูลเกียรติบัตรทั้งหมด
+       เสร็จสิ้น
       </button>
     </form>
   );
