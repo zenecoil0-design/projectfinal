@@ -1,78 +1,80 @@
 "use client";
 
 import { useActivityStore } from "@/store/useActivityStore";
+import A4Page from "@/components/preview/A4Page";
 
 export default function ActivityPreview() {
-  const store = useActivityStore();
-  const activities = store.activities || [];
-
-  // 🎯 กำหนดให้ 1 หน้า A4 แสดงผลได้สูงสุด 2 กิจกรรม เพื่อไม่ให้ล้นหน้ากระดาษ
-  const ITEMS_PER_PAGE = 2;
-  const activityPages = [];
-  
-  for (let i = 0; i < activities.length; i += ITEMS_PER_PAGE) {
-    activityPages.push(activities.slice(i, i + ITEMS_PER_PAGE));
-  }
-
-  // ถ้ายังไม่มีกิจกรรมเลย ให้แสดงหน้าเปล่าๆ ไว้ 1 หน้าอย่างน้อย
-  if (activityPages.length === 0) {
-    activityPages.push([]);
-  }
+  const { activities } = useActivityStore();
+  const pages = activities.length > 0 ? activities : [null];
 
   return (
-    <>
-      {activityPages.map((pageActs, pageIndex) => (
-        <div 
-          key={pageIndex} 
-          className="bg-white w-[210mm] min-h-[297mm] shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800 mb-10"
+    <div className="flex flex-col gap-10">
+      {pages.map((activity, pageIndex) => (
+        <A4Page
+          key={activity?.id ?? "empty"}
+          className="flex flex-col justify-between p-16 text-slate-800"
         >
-          {/* ส่วนหัว */}
-          <div className="flex items-center justify-between border-b pb-4 mb-6">
-            <h2 className="text-3xl font-bold tracking-wider">ผลงานและกิจกรรม (Activities)</h2>
-            <span className="text-sm font-semibold text-slate-400">
-              หน้าที่ {pageIndex + 1} / {activityPages.length}
-            </span>
+          <div className="mb-6 flex items-center justify-between border-b pb-4">
+            <h2 className="text-3xl font-bold tracking-wider">
+              ผลงานและกิจกรรม
+            </h2>
+            {activities.length > 1 && (
+              <span className="text-sm font-semibold text-slate-400">
+                หน้า {pageIndex + 1} / {activities.length}
+              </span>
+            )}
           </div>
 
-          {/* ส่วนเนื้อหา: แสดงกิจกรรมเฉพาะของหน้านั้นๆ */}
-          <div className="flex-1 flex flex-col gap-6">
-            {pageActs.map((act, index) => {
-              const actualIndex = (pageIndex * ITEMS_PER_PAGE) + index;
-              return (
-                <div key={act.id} className="flex flex-col gap-3 p-5 rounded-xl border border-slate-200 bg-slate-50">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
-                      กิจกรรมที่ {actualIndex + 1}
-                    </span>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {activity ? (
+              <div className="flex h-full flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                <span className="w-max rounded-md border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-600">
+                  กิจกรรมที่ {pageIndex + 1}
+                </span>
+
+                <h3 className="break-words text-lg font-bold text-slate-800">
+                  {activity.title || "ชื่อกิจกรรม"}
+                </h3>
+
+                <p className="max-h-28 overflow-hidden whitespace-pre-line break-words text-sm leading-relaxed text-slate-600">
+                  {activity.description || "รายละเอียดกิจกรรม..."}
+                </p>
+
+                {activity.images.length > 0 && (
+                  <div
+                    className={`mt-2 grid min-h-0 flex-1 gap-3 ${
+                      activity.images.length === 1
+                        ? "grid-cols-1"
+                        : "grid-cols-2"
+                    }`}
+                  >
+                    {activity.images.map((imageUrl, imageIndex) => (
+                      <div
+                        key={imageIndex}
+                        className="flex min-h-0 items-center justify-center overflow-hidden rounded-lg border border-slate-700 bg-slate-900 p-1"
+                      >
+                        <img
+                          src={imageUrl}
+                          alt={`Activity ${pageIndex + 1} image ${imageIndex + 1}`}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    ))}
                   </div>
-
-                  <h3 className="font-bold text-lg text-slate-800">{act.title || "ชื่อกิจกรรม"}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{act.description || "รายละเอียดกิจกรรม..."}</p>
-
-                  {act.images && act.images.length > 0 && (
-                    <div className={`grid gap-3 mt-3 ${act.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                      {act.images.map((imgUrl, imgIndex) => (
-                        <div key={imgIndex} className="w-full bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shadow-sm flex items-center justify-center p-1">
-                          {imgUrl ? (
-                            <img src={imgUrl} alt={`Activity ${imgIndex + 1}`} className="w-full h-auto max-h-[200px] object-contain rounded" />
-                          ) : (
-                            <span className="text-xs text-slate-400">รูปภาพ</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                )}
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                ยังไม่มีข้อมูลผลงานหรือกิจกรรม
+              </div>
+            )}
           </div>
 
-          {/* ส่วนท้ายกระดาษ */}
-          <div className="border-t pt-4 mt-6 text-center text-xs text-slate-400">
-            Portfolio - หน้าผลงานและกิจกรรม (หน้า {pageIndex + 1})
+          <div className="mt-6 border-t pt-4 text-center text-xs text-slate-400">
+            Portfolio - หน้าผลงานและกิจกรรม
           </div>
-        </div>
+        </A4Page>
       ))}
-    </>
+    </div>
   );
 }
