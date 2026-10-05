@@ -1,8 +1,9 @@
 // src/components/CoverForm.tsx
 "use client";
 
-import { useCoverStore} from "@/store/useCoverStore";
-import { FaImage, FaTrash, FaCheck } from "react-icons/fa";
+import { useCoverStore } from "@/store/useCoverStore";
+import { revokeObjectUrl, validateImageFile } from "@/lib/imageUtils";
+import { FaImage, FaTrash } from "react-icons/fa";
 
 export default function CoverForm({ onNext }: { onNext: () => void }) {
   const store = useCoverStore();
@@ -10,15 +11,22 @@ export default function CoverForm({ onNext }: { onNext: () => void }) {
   // ฟังก์ชันอัปโหลดรูปหน้าปก
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      store.setCover("coverImage", imageUrl);
+    if (!file) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      e.target.value = "";
+      return;
     }
+
+    revokeObjectUrl(store.coverImage);
+    const imageUrl = URL.createObjectURL(file);
+    store.setCover("coverImage", imageUrl);
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("บันทึกข้อมูลหน้าปกเรียบร้อย!");
     onNext();
   };
 
@@ -78,12 +86,15 @@ export default function CoverForm({ onNext }: { onNext: () => void }) {
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md text-xs font-bold cursor-pointer hover:bg-blue-100 transition-colors border border-blue-200 w-max">
                   <FaImage /> เลือกรูปหน้าปก
-                  <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleCoverUpload} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleCoverUpload} />
                 </label>
                 {store.coverImage && (
                   <button 
                     type="button" 
-                    onClick={() => store.setCover("coverImage", "")} 
+                    onClick={() => {
+                      revokeObjectUrl(store.coverImage);
+                      store.setCover("coverImage", "");
+                    }} 
                     className="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 text-left"
                   >
                     <FaTrash className="text-[10px]" /> ลบรูปภาพ
@@ -98,7 +109,7 @@ export default function CoverForm({ onNext }: { onNext: () => void }) {
       </div>
 
       <button type="submit" className="bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition-colors shadow-md text-sm mt-2 flex items-center justify-center gap-2">
-       💾 บันทึกข้อมูลหน้าปก
+       ถัดไป →
       </button>
 
     </form>
