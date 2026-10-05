@@ -62,8 +62,11 @@ export default function EditorPage() {
   };
 
   return (
-    <div className="fixed inset-0 flex min-h-0 flex-col overflow-hidden bg-slate-100">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
+    <div
+      className="w-full overflow-hidden bg-slate-100"
+      style={{ height: "100dvh" }}
+    >
+      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
         <Link
           href="/"
           className="text-lg font-black tracking-tight text-slate-900 transition-colors hover:text-blue-600"
@@ -85,8 +88,14 @@ export default function EditorPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="flex min-h-0 w-[430px] min-w-[430px] max-w-[430px] shrink-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
+      <div
+        className="grid w-full overflow-hidden"
+        style={{
+          height: "calc(100dvh - 56px)",
+          gridTemplateColumns: "30% 70%",
+        }}
+      >
+        <aside className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
           <div className="shrink-0">
             <SidebarMenu
               currentStep={currentStep}
@@ -96,8 +105,11 @@ export default function EditorPage() {
 
           <div
             ref={formScrollRef}
-            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-white"
-            style={{ scrollbarGutter: "stable" }}
+            className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-scroll bg-white"
+            style={{
+              height: "100%",
+              scrollbarGutter: "stable",
+            }}
           >
             <FormContainer
               currentStep={currentStep}
@@ -108,10 +120,13 @@ export default function EditorPage() {
 
         <main
           ref={previewScrollRef}
-          className="min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-slate-300"
-          style={{ scrollbarGutter: "stable" }}
+          className="h-full min-h-0 min-w-0 overflow-x-auto overflow-y-scroll bg-slate-300"
+          style={{
+            height: "calc(100dvh - 56px)",
+            scrollbarGutter: "stable",
+          }}
         >
-          <div className="min-h-full min-w-[900px] px-12 py-10">
+          <div className="min-h-max min-w-[900px] px-12 py-10 pb-20">
             <div className="mx-auto flex w-max flex-col items-center gap-10">
               <div
                 ref={(element) => {
