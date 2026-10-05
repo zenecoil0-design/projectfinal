@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import {
-  FaFileAlt,
   FaCheckCircle,
+  FaFileAlt,
 } from "react-icons/fa";
 
 type AuthLayoutProps = {
@@ -19,7 +19,6 @@ export default function AuthLayout({
 }: AuthLayoutProps) {
   return (
     <div className="min-h-screen w-full bg-slate-50">
-      {/* Header */}
       <header className="h-16 w-full border-b border-slate-200 bg-white">
         <div className="flex h-full items-center justify-between px-6 md:px-8">
           <Link
@@ -38,12 +37,9 @@ export default function AuthLayout({
         </div>
       </header>
 
-      {/* Content */}
       <main className="grid min-h-[calc(100vh-64px)] grid-cols-1 lg:grid-cols-[1fr_1fr]">
-        {/* Left */}
         <section className="relative hidden overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-blue-800 lg:flex">
           <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-blue-500/20 blur-3xl" />
-
           <div className="absolute -bottom-52 right-[-80px] h-[500px] w-[500px] rounded-full bg-cyan-400/10 blur-3xl" />
 
           <div className="relative flex w-full flex-col justify-center px-14 xl:px-20">
@@ -63,14 +59,13 @@ export default function AuthLayout({
             </p>
 
             <div className="mt-9 space-y-4">
-              <Feature text="สร้างและแก้ไข Portfolio ได้ง่าย" />
-              <Feature text="เลือก Template ให้เหมาะกับงาน" />
-              <Feature text="จัดหน้าแบบ A4 พร้อมนำไปใช้งาน" />
+              <Feature text="กรอกข้อมูลเป็นขั้นตอน ใช้งานง่าย" />
+              <Feature text="ดู Live Preview แบบ A4 ขณะกรอกข้อมูล" />
+              <Feature text="จัดข้อมูลและรูปภาพไว้ในที่เดียว" />
             </div>
           </div>
         </section>
 
-        {/* Right */}
         <section className="flex items-center justify-center px-5 py-10 md:px-8">
           <div className="w-full max-w-[460px]">
             <div className="mb-8">
@@ -97,7 +92,6 @@ function Feature({ text }: { text: string }) {
       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
         <FaCheckCircle className="text-xs" />
       </div>
-
       {text}
     </div>
   );
