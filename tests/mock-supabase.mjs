@@ -37,7 +37,7 @@ createServer(async (req,res) => {
   const table=url.pathname.split('/').at(-1);
   const matches = row => [...url.searchParams].every(([key,value])=> !value.startsWith('eq.') || String(row[key])===value.slice(3));
   const rows=(database[table]??[]).filter(matches);
-  if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body)); return res.end('null'); }
+  if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body)); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
   if(req.method==='POST') { (database[table]??=[]).push(...(Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}])); return res.end('null'); }
   if(req.headers.accept?.includes('vnd.pgrst.object+json')) return res.end(JSON.stringify(rows[0]??null));
   res.end(JSON.stringify(rows));

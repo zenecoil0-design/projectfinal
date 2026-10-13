@@ -116,3 +116,58 @@ test('a late response from the previous portfolio cannot overwrite the current o
   await expect(page.locator('main')).not.toContainText('STALE RESPONSE');
   await expect(page.locator('main')).not.toContainText('Saved Activity');
 });
+
+test('A4 scales uniformly on desktop and phone; persisted editorial template exports six pages', async ({page}) => {
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
+  await expect(page.getByText('บันทึกเทมเพลตแล้ว')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await expect(page.getByLabel('เทมเพลต',{exact:true})).toHaveValue('modern');
+  await expect(page.locator('[data-portfolio-page][data-template="modern"]')).toHaveCount(6);
+  for (const width of [1440, 1024, 390]) {
+    await page.setViewportSize({width,height:900});
+    if (width === 390) await page.getByRole('button',{name:'ดูตัวอย่าง',exact:true}).click();
+    await expect.poll(async () => page.locator('[data-portfolio-page]').first().evaluate(el => {
+      const box = el.getBoundingClientRect();
+      return box.width <= document.querySelector('main')!.clientWidth;
+    })).toBe(true);
+    const geometry = await page.locator('[data-portfolio-page]').evaluateAll(pages => pages.map(el => {
+      const box=el.getBoundingClientRect();
+      return {width:(el as HTMLElement).offsetWidth,height:(el as HTMLElement).offsetHeight,ratio:box.width/box.height,font:getComputedStyle(el).fontSize};
+    }));
+    for (const page of geometry) { expect(page.width).toBe(794);expect(page.height).toBe(1123);expect(page.ratio).toBeCloseTo(210/297,3);expect(page.font).toBe('16px'); }
+  }
+  await page.screenshot({path:'/tmp/emerald-mobile.png'});
+  await page.setViewportSize({width:1440,height:1000});
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
+  await (await download).saveAs('/tmp/emerald-editorial.pdf');
+  await page.locator('[data-section="หน้าปก"]').screenshot({path:'/tmp/emerald-cover.png'});
+  await page.screenshot({path:'/tmp/emerald-editor.png'});
+});
+
+test('failed template save preserves prior design and keeps PDF usable', async ({page}) => {
+  await page.goto('/editor?portfolio=b');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.route('**/rest/v1/portfolios?**',route => route.request().method()==='PATCH' ? route.fulfill({status:403,json:{message:'Template save denied'}}) : route.continue());
+  await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
+  await expect(page.getByText('Template save denied')).toBeVisible();
+  await expect(page.getByLabel('เทมเพลต',{exact:true})).toHaveValue('classic');
+  await expect(page.locator('[data-portfolio-page][data-template="classic"]')).toHaveCount(6);
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
+  await (await download).saveAs('/tmp/empty-classic.pdf');
+});
+
+
+test('mobile export detects overflowing content while preview tab is hidden', async ({page}) => {
+  await page.setViewportSize({width:390,height:844});
+  await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:'a',content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await expect(page.locator('main')).toBeHidden();
+  await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
+  await expect(page.getByText('เนื้อหาล้นหน้า 2',{exact:false})).toBeVisible();
+});

@@ -60,11 +60,15 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
         image.removeAttribute("srcset");
         image.src = imageData.get(original.currentSrc || original.src)!;
       });
+      clone.style.transform = "none";
+      clone.style.margin = "0";
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
       try {
+        // The mobile form tab hides the preview; validate the visible-size clone too.
+        if (inspectPages(wrapper).overflow.length) throw new Error(`เนื้อหาล้นหน้า ${index + 1} กรุณาลดข้อความหรือจำนวนรูปในรายการนั้น`);
         const canvas = await toCanvas(clone, {
-          pixelRatio, backgroundColor: "#ffffff",
+          pixelRatio, backgroundColor: getComputedStyle(clone).backgroundColor,
           width: 794, height: 1123, canvasWidth: 794, canvasHeight: 1123,
           style: { margin: "0", boxShadow: "none", borderRadius: "0", transform: "none", width: "794px", height: "1123px" },
         });
