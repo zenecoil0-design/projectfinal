@@ -20,3 +20,45 @@ body { font-family: "Noto Sans Thai", Arial, sans-serif; }
 
 .paper-frame { position: relative; flex-shrink: 0; margin-bottom: 24px; }
 .paper-frame > .portfolio-page { margin: 0; }
+
+/* Emerald Editorial. Keep selectors on the page itself so detached PDF clones
+   and the offscreen pagination measurement receive exactly the same styles. */
+.portfolio-page[data-template="modern"] {
+  background: #f7f5ef;
+  color: #233b33;
+  border: 0;
+  border-top: 8px solid #174c40;
+  box-shadow: 0 12px 32px #152d3324;
+}
+.portfolio-page[data-template="modern"] h2 { color: #174c40; font-weight: 700; letter-spacing: 0; }
+.portfolio-page[data-template="modern"]:not(.editorial-cover)::after {
+  content: "EMERALD / PORTFOLIO";
+  position: absolute; bottom: 20px; left: 64px;
+  color: #62776b; font-size: 9px; letter-spacing: 2px;
+}
+[data-template="modern"] .text-blue-600 { color: #245f4d; }
+[data-template="modern"] .bg-blue-50 { background: #e7eddf; }
+[data-template="modern"] .border-blue-100 { border-color: #c7d6bd; }
+[data-template="modern"] .bg-slate-50 { background: #fdfcf9; }
+[data-template="modern"] .border-slate-200 { border-color: #d6ded1; }
+.portfolio-page[data-template="modern"] > div > h2 { font-size: 32px; line-height: 1.4; }
+.portfolio-page[data-template="modern"][data-section="คำนำ"] > div:first-child { align-items: flex-start; border-bottom: 1px solid #a6b59e; margin-bottom: 32px; }
+.portfolio-page[data-template="modern"][data-section="คำนำ"] > div:first-child h2 { margin-bottom: 24px; }
+.portfolio-page[data-template="modern"][data-section="คำนำ"] > div:nth-child(2) { padding: 0; }
+.portfolio-page[data-template="modern"][data-section="คำนำ"] p { line-height: 1.9; }
+.portfolio-page.editorial-cover { padding: 40px 56px 32px; display: flex; flex-direction: column; border-top: 0; }
+.editorial-cover-top, .editorial-cover-bottom { display: flex; justify-content: space-between; gap: 20px; font-size: 11px; color: #456253; }
+.editorial-cover-top { border-bottom: 1px solid #a6b59e; padding-bottom: 18px; letter-spacing: 1px; }
+.editorial-cover-title { padding: 34px 0 28px; }
+.editorial-cover-title p, .editorial-cover-name > p { font-size: 10px; letter-spacing: 2px; color: #62776b; margin-bottom: 12px; }
+.editorial-cover-title h1 { font-size: 54px; line-height: 1.2; letter-spacing: -1px; font-weight: 700; color: #174c40; }
+.editorial-cover-art { position: relative; height: 478px; background: #174c40; overflow: hidden; }
+.editorial-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; }
+.editorial-portrait { position: absolute; top: 32px; left: 48px; width: 320px; height: 390px; overflow: hidden; border-radius: 160px 160px 4px 4px; background: #d9dfc8; }
+.editorial-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.editorial-portrait > span { display: block; padding: 125px 36px 0; color: #174c40; font-size: 43px; font-weight: 700; line-height: 1.25; }
+.editorial-art-caption { position: absolute; bottom: 22px; left: 48px; font-size: 10px; letter-spacing: 2px; color: #e1e8d4; }
+.editorial-cover-name { padding-top: 36px; }
+.editorial-cover-name h2 { font-size: 30px; line-height: 1.5; }
+.editorial-cover-name h3 { margin-top: 8px; font-size: 16px; color: #62776b; }
+.editorial-cover-bottom { margin-top: auto; padding-top: 18px; border-top: 1px solid #a6b59e; }

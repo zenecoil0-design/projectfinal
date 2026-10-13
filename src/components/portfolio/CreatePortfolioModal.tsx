@@ -39,9 +39,9 @@ const templates: {
   },
   {
     key: "modern",
-    name: "Modern",
+    name: "Emerald Editorial",
     description:
-      "ทันสมัย เน้นภาพและองค์ประกอบที่โดดเด่น",
+      "โทนเขียวเข้ม–ครีม จัดหน้าสไตล์นิตยสาร ใช้ได้ครบทุกหมวด",
   },
   {
     key: "minimal",
@@ -66,7 +66,7 @@ export default function CreatePortfolioModal({
     selectedTemplate,
     setSelectedTemplate,
   ] =
-    useState<TemplateKey>("classic");
+    useState<TemplateKey>("modern");
 
   const [
     isCreating,
@@ -302,9 +302,7 @@ export default function CreatePortfolioModal({
                   </h3>
 
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    สามารถพัฒนาให้เปลี่ยน
-                    Template
-                    ภายหลังได้
+                    เปลี่ยนเทมเพลตภายหลังได้ใน Editor
                   </p>
                 </div>
 
@@ -370,16 +368,16 @@ export default function CreatePortfolioModal({
 
                             {template.key ===
                               "modern" && (
-                              <div className="flex h-full flex-col bg-slate-950 p-3">
-                                <div className="h-[45%] rounded-xl bg-gradient-to-br from-blue-500 to-cyan-300" />
+                              <div className="flex h-full flex-col bg-[#f7f5ef] p-3">
+                                <div className="h-[45%] rounded-xl bg-[#174c40]" />
 
-                                <div className="mt-3 h-3 w-2/3 rounded-full bg-white" />
+                                <div className="mt-3 h-3 w-2/3 rounded-full bg-[#174c40]" />
 
                                 <div className="mt-2 h-2 w-full rounded-full bg-slate-600" />
 
                                 <div className="mt-2 h-2 w-4/5 rounded-full bg-slate-700" />
 
-                                <div className="mt-auto h-12 rounded-xl bg-white/10" />
+                                <div className="mt-auto h-12 rounded-xl bg-[#e6e9dc]" />
                               </div>
                             )}
 

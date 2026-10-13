@@ -1,5 +1,5 @@
 "use client";
-import Paper from "./Paper";
+import Paper, { useTemplate } from "./Paper";
 
 import { useCoverStore } from "@/store/useCoverStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -7,6 +7,19 @@ import { useProfileStore } from "@/store/useProfileStore";
 export default function CoverPreview() {
   const coverStore = useCoverStore();
   const profileStore = useProfileStore();
+
+  const template = useTemplate();
+  if (template === "modern") return <Paper data-section="หน้าปก" className="portfolio-page editorial-cover">
+    <div className="editorial-cover-top"><span>แฟ้มสะสมผลงาน</span><span>SELECTED WORKS</span></div>
+    <div className="editorial-cover-title"><p>INTRODUCING</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
+    <div className="editorial-cover-art">
+      {coverStore.coverImage && <img className="editorial-backdrop" src={coverStore.coverImage} alt="ภาพพื้นหลังหน้าปก" />}
+      <div className="editorial-portrait">{profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปโปรไฟล์" /> : <span>YOUR<br />NEXT<br />CHAPTER.</span>}</div>
+      <span className="editorial-art-caption">LEARNING · CREATIVITY · GROWTH</span>
+    </div>
+    <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{`${profileStore.firstName} ${profileStore.lastName}`.trim() || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
+    <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>01 / PORTFOLIO</span></div>
+  </Paper>;
 
   return (
     <Paper data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">

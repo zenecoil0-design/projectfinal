@@ -17,7 +17,7 @@ import {
 import SidebarMenu from "@/components/layout/SidebarMenu";
 import FormContainer from "@/components/layout/FormContainer";
 
-import { PreviewViewport } from "@/components/preview/Paper";
+import { PreviewViewport, TemplateContext } from "@/components/preview/Paper";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
 import ProfilePreview from "@/components/preview/ProfilePreview";
@@ -28,6 +28,7 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 import { createClient } from "@/lib/supabase/client";
 
 import { EditorSession, EditorStatus, ReadyPreview } from "@/components/editor/EditorSession";
+import TemplatePicker from "@/components/editor/TemplatePicker";
 import ExportButton from "@/components/editor/ExportButton";
 import { resetEditorStores } from "@/lib/editor/section-state";
 
@@ -53,6 +54,7 @@ function EditorContent() {
   const portfolioId =
     searchParams.get("portfolio");
 
+  const [templateBusy, setTemplateBusy] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
     useState(1);
@@ -368,7 +370,10 @@ function EditorContent() {
         </div>
       </header>
 
-      <div className="border-b bg-white px-4 py-2"><ExportButton container={previewContainerRef} title={portfolio.title} /></div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-2">
+        <TemplatePicker portfolioId={portfolio.id} value={portfolio.template_key} onBusy={setTemplateBusy} onSaved={key => setPortfolio(current => current ? { ...current, template_key: key } : null)} />
+        <ExportButton container={previewContainerRef} title={portfolio.title} busy={templateBusy} />
+      </div>
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">
         <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
@@ -415,7 +420,7 @@ function EditorContent() {
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
           <ReadyPreview>
-          <PreviewViewport>
+          <TemplateContext.Provider value={portfolio.template_key}><PreviewViewport>
             {/* PAGE 1 */}
 
             <div
@@ -489,7 +494,7 @@ function EditorContent() {
             </div>
 
             <div className="h-8 shrink-0" />
-          </PreviewViewport>
+          </PreviewViewport></TemplateContext.Provider>
           </ReadyPreview>
         </main>
       </div>

@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
+export const TemplateContext = createContext("classic");
+export const useTemplate = () => useContext(TemplateContext);
+
 const ScaleContext = createContext(1);
 
 /** Scale the whole physical page, never its type or individual elements. */
@@ -25,7 +28,8 @@ export function PreviewViewport({ children }: { children: ReactNode }) {
 
 export default function Paper({ children, style, ...props }: HTMLAttributes<HTMLDivElement>) {
   const scale = useContext(ScaleContext);
+  const template = useTemplate();
   return <div className="paper-frame" style={{ width: 794 * scale, height: 1123 * scale }}>
-    <div {...props} data-portfolio-page style={{ ...style, transform: `scale(${scale})`, transformOrigin: "top left" }}>{children}</div>
+    <div {...props} data-template={template} data-portfolio-page style={{ ...style, transform: `scale(${scale})`, transformOrigin: "top left" }}>{children}</div>
   </div>;
 }
