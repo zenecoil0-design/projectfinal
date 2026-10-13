@@ -1,4 +1,5 @@
 "use client";
+import Paper from "./Paper";
 
 import { useCoverStore } from "@/store/useCoverStore";
 
@@ -8,7 +9,7 @@ export default function PrefacePreview() {
 
   return (
     // โครงสร้างกระดาษ A4 สีขาวจำลอง
-    <div data-portfolio-page data-section="คำนำ" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
+    <Paper data-section="คำนำ" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
       
       {/*ด้านบน: หัวข้อหน้าคำนำ*/}
       <div className="flex flex-col items-center">
@@ -31,6 +32,6 @@ export default function PrefacePreview() {
         <p className="text-sm text-slate-500 mt-1">ผู้จัดทำ</p>
       </div>
 
-    </div>
+    </Paper>
   );
 }

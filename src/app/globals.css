@@ -3,13 +3,20 @@
 body { font-family: "Noto Sans Thai", Arial, sans-serif; }
 
 .portfolio-page {
-  width: 210mm;
-  height: 297mm;
-  min-height: 297mm;
-  max-height: 297mm;
+  width: 794px;
+  min-width: 794px;
+  max-width: 794px;
+  font-size: 16px;
+  line-height: 1.6;
+  height: 1123px;
+  min-height: 1123px;
+  max-height: 1123px;
   box-sizing: border-box;
   overflow: hidden;
   overflow-wrap: anywhere;
   flex-shrink: 0;
 }
 .portfolio-page > * { flex-shrink: 0; }
+
+.paper-frame { position: relative; flex-shrink: 0; margin-bottom: 24px; }
+.paper-frame > .portfolio-page { margin: 0; }

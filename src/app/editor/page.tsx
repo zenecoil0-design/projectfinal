@@ -17,6 +17,7 @@ import {
 import SidebarMenu from "@/components/layout/SidebarMenu";
 import FormContainer from "@/components/layout/FormContainer";
 
+import { PreviewViewport } from "@/components/preview/Paper";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
 import ProfilePreview from "@/components/preview/ProfilePreview";
@@ -414,7 +415,7 @@ function EditorContent() {
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
           <ReadyPreview>
-          <div className="flex min-h-full min-w-max w-full flex-col items-center gap-10 px-8 py-8">
+          <PreviewViewport>
             {/* PAGE 1 */}
 
             <div
@@ -488,7 +489,7 @@ function EditorContent() {
             </div>
 
             <div className="h-8 shrink-0" />
-          </div>
+          </PreviewViewport>
           </ReadyPreview>
         </main>
       </div>

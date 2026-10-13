@@ -1,4 +1,5 @@
 "use client";
+import Paper from "./Paper";
 
 import { useProfileStore } from "@/store/useProfileStore";
 import { FaFacebook, FaLine, FaInstagram } from "react-icons/fa";
@@ -29,7 +30,7 @@ export default function ProfilePreview() {
   };
 
   return (
-    <div data-portfolio-page data-section="ประวัติส่วนตัว" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
+    <Paper data-section="ประวัติส่วนตัว" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
       
       {/* ส่วนหัว */}
       <div className="flex justify-between items-center border-b pb-4 mb-6">
@@ -106,6 +107,6 @@ export default function ProfilePreview() {
         Portfolio - หน้าข้อมูลส่วนตัว
       </div>
 
-    </div>
+    </Paper>
   );
 }

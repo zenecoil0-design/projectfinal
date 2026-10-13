@@ -1,4 +1,5 @@
 "use client";
+import Paper from "./Paper";
 
 import { useCoverStore } from "@/store/useCoverStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -8,7 +9,7 @@ export default function CoverPreview() {
   const profileStore = useProfileStore();
 
   return (
-    <div data-portfolio-page data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
+    <Paper data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
       
       {/* 1. รูปภาพพื้นหลังหน้าปก */}
       {coverStore.coverImage && (
@@ -58,6 +59,6 @@ export default function CoverPreview() {
         </div>
 
       </div>
-    </div>
+    </Paper>
   );
 }

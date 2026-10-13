@@ -65,10 +65,15 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
       try {
         const canvas = await toCanvas(clone, {
           pixelRatio, backgroundColor: "#ffffff",
-          style: { margin: "0", boxShadow: "none", borderRadius: "0" },
+          width: 794, height: 1123, canvasWidth: 794, canvasHeight: 1123,
+          style: { margin: "0", boxShadow: "none", borderRadius: "0", transform: "none", width: "794px", height: "1123px" },
         });
         if (index) pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/jpeg", quality), "JPEG", 0, 0, 210, 297, undefined, "FAST");
+        // One uniform scale protects text and photos from non-uniform stretching.
+        const ratio = Math.min(210 / canvas.width, 297 / canvas.height);
+        const width = canvas.width * ratio;
+        const height = canvas.height * ratio;
+        pdf.addImage(canvas.toDataURL("image/jpeg", quality), "JPEG", (210 - width) / 2, (297 - height) / 2, width, height, undefined, "FAST");
         canvas.width = 0;
         canvas.height = 0;
       } finally { wrapper.remove(); }
