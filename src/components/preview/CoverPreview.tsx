@@ -8,7 +8,7 @@ export default function CoverPreview() {
   const profileStore = useProfileStore();
 
   return (
-    <div className="bg-white w-[210mm] min-h-[297mm] shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
+    <div data-portfolio-page data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
       
       {/* 1. รูปภาพพื้นหลังหน้าปก */}
       {coverStore.coverImage && (

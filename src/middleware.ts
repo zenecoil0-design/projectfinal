@@ -53,6 +53,7 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = [
     "/dashboard",
     "/editor",
+    "/my-data",
   ];
 
   const authRoutes = [
@@ -87,7 +88,7 @@ export async function middleware(request: NextRequest) {
     */
     loginUrl.searchParams.set(
       "next",
-      pathname
+      pathname + request.nextUrl.search
     );
 
     const redirectResponse =

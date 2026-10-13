@@ -1,7 +1,11 @@
 "use client";
 
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
+
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -29,6 +33,9 @@ export default function PrefaceForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -63,6 +70,9 @@ export default function PrefaceForm({
   // =====================================================
 
   useEffect(() => {
+    const store = useCoverStore.getState();
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadPreface =
       async () => {
         setIsLoading(true);
@@ -109,6 +119,7 @@ export default function PrefaceForm({
             .limit(1)
             .maybeSingle();
 
+          if (cancelled) return;
           if (error) {
             throw error;
           }
@@ -138,24 +149,30 @@ export default function PrefaceForm({
             );
           }
         } catch (
-          error: any
+          error: unknown
         ) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load preface error:",
             error
           );
 
           setErrorMessage(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดข้อมูลคำนำได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("preface", loadSucceeded);
           setIsLoading(false);
         }
+          }
       };
 
     loadPreface();
-  }, [portfolioId]);
+    return () => { cancelled = true; };
+  }, [portfolioId, reportLoaded]);
 
   // =====================================================
   // SAVE PREFACE
@@ -267,13 +284,15 @@ export default function PrefaceForm({
         }
       }
 
+      if (!mounted.current) return;
+      markSaved("preface");
       setSuccessMessage(
         "บันทึกข้อมูลคำนำเรียบร้อยแล้ว"
       );
 
       onNext();
     } catch (
-      error: any
+      error: unknown
     ) {
       console.error(
         "Save preface error:",
@@ -281,7 +300,7 @@ export default function PrefaceForm({
       );
 
       setErrorMessage(
-        error?.message ||
+        getErrorMessage(error) ||
           "ไม่สามารถบันทึกข้อมูลคำนำได้"
       );
     } finally {
@@ -312,6 +331,7 @@ export default function PrefaceForm({
       onSubmit={handleSave}
       className="flex flex-col gap-6 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.preface === "error"} className="contents">
       <div className="flex flex-col gap-3">
         <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">
           หน้าที่ 2: คำนำ
@@ -420,6 +440,7 @@ export default function PrefaceForm({
           ? "กำลังบันทึก..."
           : "บันทึกข้อมูลคำนำ"}
       </button>
+      </fieldset>
     </form>
   );
 }

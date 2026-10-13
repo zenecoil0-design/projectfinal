@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useRef } from "react";
 
 import CoverForm from "@/components/forms/CoverForm";
 import PrefaceForm from "@/components/forms/PrefaceForm";
@@ -16,6 +17,8 @@ export default function FormContainer({
   currentStep,
   onNext,
 }: FormContainerProps) {
+  const activeStep = useRef(currentStep);
+  useEffect(() => { activeStep.current = currentStep; }, [currentStep]);
   return (
     <div
       className="
@@ -40,29 +43,29 @@ export default function FormContainer({
         </h1>
 
         <div className="box-border w-full max-w-full overflow-hidden">
-          {currentStep === 1 && (
-            <CoverForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 1}>
+            <CoverForm onNext={() => { if (activeStep.current === 1) onNext(); }} />
+          </div>
 
-          {currentStep === 2 && (
-            <PrefaceForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 2}>
+            <PrefaceForm onNext={() => { if (activeStep.current === 2) onNext(); }} />
+          </div>
 
-          {currentStep === 3 && (
-            <ProfileForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 3}>
+            <ProfileForm onNext={() => { if (activeStep.current === 3) onNext(); }} />
+          </div>
 
-          {currentStep === 4 && (
-            <EducationForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 4}>
+            <EducationForm onNext={() => { if (activeStep.current === 4) onNext(); }} />
+          </div>
 
-          {currentStep === 5 && (
-            <ActivityForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 5}>
+            <ActivityForm onNext={() => { if (activeStep.current === 5) onNext(); }} />
+          </div>
 
-          {currentStep === 6 && (
-            <CertificateForm onNext={onNext} />
-          )}
+          <div hidden={currentStep !== 6}>
+            <CertificateForm onNext={() => { if (activeStep.current === 6) onNext(); }} />
+          </div>
         </div>
       </div>
     </div>

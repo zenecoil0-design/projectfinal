@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Suspense,
   useEffect,
   useRef,
   useState,
@@ -25,6 +26,10 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 
 import { createClient } from "@/lib/supabase/client";
 
+import { EditorSession, EditorStatus, ReadyPreview } from "@/components/editor/EditorSession";
+import ExportButton from "@/components/editor/ExportButton";
+import { resetEditorStores } from "@/lib/editor/section-state";
+
 interface PortfolioInfo {
   id: string;
   title: string;
@@ -32,12 +37,22 @@ interface PortfolioInfo {
 }
 
 export default function EditorPage() {
+  return <Suspense fallback={<p className="p-8">กำลังเปิด Editor…</p>}><EditorRoute /></Suspense>;
+}
+
+function EditorRoute() {
+  const params = useSearchParams();
+  return <EditorSession key={params.get("portfolio") ?? "missing"}><EditorContent /></EditorSession>;
+}
+
+function EditorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const portfolioId =
     searchParams.get("portfolio");
 
+  const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
     useState(1);
 
@@ -67,6 +82,19 @@ export default function EditorPage() {
   // =====================================================
 
   useEffect(() => {
+    let cancelled = false;
+    resetEditorStores();
+    const supabase = createClient();
+    let loadedUserId: string | null = null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || (loadedUserId && session?.user.id && session.user.id !== loadedUserId)) {
+        cancelled = true;
+        resetEditorStores();
+        setPortfolio(null);
+        setIsLoading(false);
+        setErrorMessage("บัญชีผู้ใช้เปลี่ยนแล้ว กรุณากลับหน้าแรกและเปิดพอร์ตอีกครั้ง");
+      }
+    });
     const loadPortfolio = async () => {
       setIsLoading(true);
       setErrorMessage("");
@@ -91,6 +119,7 @@ export default function EditorPage() {
         } =
           await supabase.auth.getUser();
 
+        if (cancelled) return;
         if (userError || !user) {
           router.replace(
             `/login?next=${encodeURIComponent(
@@ -100,6 +129,8 @@ export default function EditorPage() {
 
           return;
         }
+
+        loadedUserId = user.id;
 
         const {
           data,
@@ -113,7 +144,10 @@ export default function EditorPage() {
             "id",
             portfolioId
           )
+          .eq("user_id", user.id)
           .single();
+
+        if (cancelled) return;
 
         if (error) {
           throw error;
@@ -135,6 +169,7 @@ export default function EditorPage() {
             "classic",
         });
       } catch (error) {
+        if (cancelled) return;
         console.error(
           "Load portfolio error:",
           error
@@ -144,11 +179,12 @@ export default function EditorPage() {
           "ไม่พบ Portfolio หรือคุณไม่มีสิทธิ์เข้าถึง Portfolio นี้"
         );
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadPortfolio();
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, [
     portfolioId,
     router,
@@ -331,18 +367,21 @@ export default function EditorPage() {
         </div>
       </header>
 
+      <div className="border-b bg-white px-4 py-2"><ExportButton container={previewContainerRef} title={portfolio.title} /></div>
+      <EditorStatus />
+      <div className="flex gap-2 border-b bg-white p-2 md:hidden">
+        <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
+        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => { setMobilePanel("preview"); requestAnimationFrame(() => scrollPreviewToStep(currentStep)); }} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
+      </div>
+
       {/* BODY */}
 
       <div
-        className="grid min-h-0 flex-1 overflow-hidden"
-        style={{
-          gridTemplateColumns:
-            "30% 70%",
-        }}
+        className="grid min-h-0 flex-1 overflow-auto grid-cols-1 md:grid-cols-[minmax(320px,30%)_1fr]"
       >
         {/* LEFT */}
 
-        <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white">
+        <aside className={`${mobilePanel === "form" ? "flex" : "hidden"} md:flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white`}>
           <div className="shrink-0">
             <SidebarMenu
               currentStep={
@@ -372,9 +411,10 @@ export default function EditorPage() {
           ref={
             previewContainerRef
           }
-          className="min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300"
+          className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
-          <div className="flex min-h-full w-full flex-col items-center gap-10 px-8 py-8">
+          <ReadyPreview>
+          <div className="flex min-h-full min-w-max w-full flex-col items-center gap-10 px-8 py-8">
             {/* PAGE 1 */}
 
             <div
@@ -449,6 +489,7 @@ export default function EditorPage() {
 
             <div className="h-8 shrink-0" />
           </div>
+          </ReadyPreview>
         </main>
       </div>
     </div>

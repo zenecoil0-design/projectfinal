@@ -1,7 +1,12 @@
 "use client";
+import { saveSelection } from "@/lib/editor/save-selection";
+
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useMemo,
   useState,
 } from "react";
@@ -87,6 +92,9 @@ export default function EducationForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -185,6 +193,8 @@ export default function EducationForm({
   // =====================================================
 
   useEffect(() => {
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadData =
       async () => {
         setIsLoading(true);
@@ -218,6 +228,8 @@ export default function EducationForm({
             error: userError,
           } =
             await supabase.auth.getUser();
+
+          if (cancelled) return;
 
           if (
             userError ||
@@ -347,6 +359,8 @@ export default function EducationForm({
                 ),
             ]);
 
+          if (cancelled) return;
+
           if (
             educationError
           ) {
@@ -461,27 +475,34 @@ export default function EducationForm({
             selectedItems
           );
         } catch (
-          error: any
+          error: unknown
         ) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load education form error:",
             error
           );
 
           setLoadError(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดประวัติการศึกษาได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("education", loadSucceeded);
           setIsLoading(false);
         }
+          }
       };
 
     loadData();
+    return () => { cancelled = true; };
   }, [
     portfolioId,
     supabase,
     setEducations,
+    reportLoaded,
   ]);
 
   // =====================================================
@@ -573,74 +594,17 @@ export default function EducationForm({
     setSuccessMessage("");
 
     try {
-      // =========================================
-      // 1. ลบ relation เดิมของ Portfolio นี้
-      // =========================================
+      await saveSelection(supabase, portfolioId, "education", educations.map(item => item.id));
 
-      const {
-        error:
-          deleteError,
-      } = await supabase
-        .from(
-          "portfolio_educations"
-        )
-        .delete()
-        .eq(
-          "portfolio_id",
-          portfolioId
-        );
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // =========================================
-      // 2. Insert รายการที่เลือกใหม่
-      // =========================================
-
-      if (
-        educations.length > 0
-      ) {
-        const rowsToInsert =
-          educations.map(
-            (
-              education,
-              index
-            ) => ({
-              portfolio_id:
-                portfolioId,
-
-              education_id:
-                education.id,
-
-              sort_order:
-                index,
-            })
-          );
-
-        const {
-          error:
-            insertError,
-        } = await supabase
-          .from(
-            "portfolio_educations"
-          )
-          .insert(
-            rowsToInsert
-          );
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
+      if (!mounted.current) return;
+      markSaved("education");
       setSuccessMessage(
         "บันทึกประวัติการศึกษาเรียบร้อยแล้ว"
       );
 
       onNext();
     } catch (
-      error: any
+      error: unknown
     ) {
       console.error(
         "Save portfolio educations error:",
@@ -648,7 +612,7 @@ export default function EducationForm({
       );
 
       setSaveError(
-        error?.message ||
+        getErrorMessage(error) ||
           "ไม่สามารถบันทึกประวัติการศึกษาได้"
       );
     } finally {
@@ -665,6 +629,7 @@ export default function EducationForm({
       onSubmit={handleNext}
       className="flex flex-col gap-5 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.education === "error"} className="contents">
       {/* HEADER */}
 
       <div>
@@ -1030,6 +995,7 @@ export default function EducationForm({
           ? "กำลังบันทึก..."
           : "ยืนยันประวัติการศึกษา"}
       </button>
+      </fieldset>
     </form>
   );
 }

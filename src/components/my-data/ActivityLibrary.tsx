@@ -1,6 +1,8 @@
 "use client";
+import CropInput from "@/components/images/CropInput";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -141,29 +143,7 @@ export default function ActivityLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase]);
-
-  const loadData = async (
+  const loadData = useCallback(async (
     currentUserId: string
   ) => {
     const [
@@ -303,7 +283,29 @@ export default function ActivityLibrary() {
         })
       )
     );
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      setUserId(user.id);
+
+      await loadData(user.id);
+
+      setIsLoading(false);
+    };
+
+    initialize();
+  }, [supabase, loadData]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -1243,7 +1245,7 @@ export default function ActivityLibrary() {
               label="รูปภาพผลงาน / กิจกรรม"
               right={`${totalImages} / 4 รูป`}
             >
-              <input
+              <CropInput
                 ref={fileInputRef}
                 type="file"
                 multiple

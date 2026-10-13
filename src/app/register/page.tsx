@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -128,9 +129,9 @@ export default function RegisterPage() {
 
       router.push("/dashboard");
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
-        error?.message?.includes(
+        getErrorMessage(error)?.includes(
           "already registered"
         )
       ) {
@@ -139,7 +140,7 @@ export default function RegisterPage() {
         );
       } else {
         setErrorMessage(
-          error?.message ||
+          getErrorMessage(error) ||
             "เกิดข้อผิดพลาดในการสมัครสมาชิก"
         );
       }

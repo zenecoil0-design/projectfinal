@@ -29,7 +29,7 @@ export default function ProfilePreview() {
   };
 
   return (
-    <div className="bg-white w-[210mm] min-h-[297mm] shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
+    <div data-portfolio-page data-section="ประวัติส่วนตัว" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
       
       {/* ส่วนหัว */}
       <div className="flex justify-between items-center border-b pb-4 mb-6">

@@ -1,7 +1,12 @@
 "use client";
+import { saveSelection } from "@/lib/editor/save-selection";
+
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useMemo,
   useState,
 } from "react";
@@ -79,6 +84,9 @@ export default function ActivityForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -161,6 +169,8 @@ export default function ActivityForm({
   });
 
   useEffect(() => {
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadData =
       async () => {
         setIsLoading(true);
@@ -187,6 +197,8 @@ export default function ActivityForm({
             error: userError,
           } =
             await supabase.auth.getUser();
+
+          if (cancelled) return;
 
           if (
             userError ||
@@ -319,6 +331,8 @@ export default function ActivityForm({
                 ),
             ]);
 
+          if (cancelled) return;
+
           if (
             activityError
           ) {
@@ -344,10 +358,7 @@ export default function ActivityForm({
           if (
             activityImageError
           ) {
-            console.error(
-              "Load activity images error:",
-              activityImageError
-            );
+            throw activityImageError;
           }
 
           if (
@@ -471,27 +482,34 @@ export default function ActivityForm({
             selectedItems
           );
         } catch (
-          error: any
+          error: unknown
         ) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load activity form error:",
             error
           );
 
           setLoadError(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดผลงานและกิจกรรมได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("activity", loadSucceeded);
           setIsLoading(false);
         }
+          }
       };
 
     loadData();
+    return () => { cancelled = true; };
   }, [
     portfolioId,
     supabase,
     setActivities,
+    reportLoaded,
   ]);
 
   const selectedIds =
@@ -566,66 +584,17 @@ export default function ActivityForm({
     setSuccessMessage("");
 
     try {
-      const {
-        error:
-          deleteError,
-      } = await supabase
-        .from(
-          "portfolio_activities"
-        )
-        .delete()
-        .eq(
-          "portfolio_id",
-          portfolioId
-        );
+      await saveSelection(supabase, portfolioId, "activity", activities.map(item => item.id));
 
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      if (
-        activities.length > 0
-      ) {
-        const rowsToInsert =
-          activities.map(
-            (
-              activity,
-              index
-            ) => ({
-              portfolio_id:
-                portfolioId,
-
-              activity_id:
-                activity.id,
-
-              sort_order:
-                index,
-            })
-          );
-
-        const {
-          error:
-            insertError,
-        } = await supabase
-          .from(
-            "portfolio_activities"
-          )
-          .insert(
-            rowsToInsert
-          );
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
+      if (!mounted.current) return;
+      markSaved("activity");
       setSuccessMessage(
         "บันทึกผลงานและกิจกรรมเรียบร้อยแล้ว"
       );
 
       onNext();
     } catch (
-      error: any
+      error: unknown
     ) {
       console.error(
         "Save portfolio activities error:",
@@ -633,7 +602,7 @@ export default function ActivityForm({
       );
 
       setSaveError(
-        error?.message ||
+        getErrorMessage(error) ||
           "ไม่สามารถบันทึกผลงานและกิจกรรมได้"
       );
     } finally {
@@ -646,6 +615,7 @@ export default function ActivityForm({
       onSubmit={handleNext}
       className="flex flex-col gap-5 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.activity === "error"} className="contents">
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -983,6 +953,7 @@ export default function ActivityForm({
           ? "กำลังบันทึก..."
           : "ยืนยันผลงานและกิจกรรม"}
       </button>
+      </fieldset>
     </form>
   );
 }

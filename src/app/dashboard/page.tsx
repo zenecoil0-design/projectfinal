@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
@@ -156,7 +157,7 @@ export default function DashboardPage() {
             data ?? []
           );
         } catch (
-          error: any
+          error: unknown
         ) {
           console.error(
             "Load dashboard error:",
@@ -164,7 +165,7 @@ export default function DashboardPage() {
           );
 
           setLoadError(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลด Portfolio ได้"
           );
         } finally {

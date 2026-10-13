@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+
 
 interface CoverState {
   portfolioTitle: string;
@@ -14,9 +14,7 @@ interface CoverState {
   ) => void;
 }
 
-export const useCoverStore = create<CoverState>()(
-  persist(
-    (set) => ({
+export const useCoverStore = create<CoverState>((set) => ({
       portfolioTitle: "PORTFOLIO",
 
       coverImage: "",
@@ -32,9 +30,4 @@ export const useCoverStore = create<CoverState>()(
         set({
           [field]: value,
         }),
-    }),
-    {
-      name: "portfolio-cover-storage",
-    }
-  )
-);
+    }));

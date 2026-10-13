@@ -1,6 +1,8 @@
 "use client";
+import CropInput from "@/components/images/CropInput";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -131,29 +133,7 @@ export default function CertificateLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase]);
-
-  const loadData = async (
+  const loadData = useCallback(async (
     uid: string
   ) => {
     const [
@@ -282,7 +262,29 @@ export default function CertificateLibrary() {
         })
       )
     );
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      setUserId(user.id);
+
+      await loadData(user.id);
+
+      setIsLoading(false);
+    };
+
+    initialize();
+  }, [supabase, loadData]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -1182,7 +1184,7 @@ export default function CertificateLibrary() {
                     </span>
                   </div>
 
-                  <input
+                  <CropInput
                     ref={
                       fileInputRef
                     }

@@ -1,7 +1,12 @@
 "use client";
+import CropInput from "@/components/images/CropInput";
+
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -22,6 +27,9 @@ export default function CoverForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -58,11 +66,19 @@ export default function CoverForm({
     setSuccessMessage,
   ] = useState("");
 
+  useEffect(() => {
+    const url = store.coverImage;
+    return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
+  }, [store.coverImage]);
+
   // =====================================================
   // LOAD COVER FROM SUPABASE
   // =====================================================
 
   useEffect(() => {
+    const store = useCoverStore.getState();
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadCover =
       async () => {
         if (!portfolioId) {
@@ -103,6 +119,7 @@ export default function CoverForm({
             .limit(1)
             .maybeSingle();
 
+          if (cancelled) return;
           if (error) {
             throw error;
           }
@@ -148,23 +165,29 @@ export default function CoverForm({
           setPendingCoverFile(
             null
           );
-        } catch (error: any) {
+        } catch (error: unknown) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load cover error:",
             error
           );
 
           setErrorMessage(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดข้อมูลหน้าปกได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("cover", loadSucceeded);
           setIsLoading(false);
         }
+          }
       };
 
     loadCover();
-  }, [portfolioId]);
+    return () => { cancelled = true; };
+  }, [portfolioId, reportLoaded]);
 
   // =====================================================
   // SELECT COVER IMAGE
@@ -432,6 +455,7 @@ export default function CoverForm({
       }
 
       // เปลี่ยน blob URL ให้เป็น Supabase public URL
+      if (!mounted.current) return;
       store.setCover(
         "coverImage",
         coverImageUrl || ""
@@ -441,20 +465,21 @@ export default function CoverForm({
         null
       );
 
+      markSaved("cover");
       setSuccessMessage(
         "บันทึกข้อมูลหน้าปกเรียบร้อยแล้ว"
       );
 
       // ไปหน้าถัดไป
       onNext();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "Save cover error:",
         error
       );
 
       setErrorMessage(
-        error?.message ||
+        getErrorMessage(error) ||
           "ไม่สามารถบันทึกข้อมูลหน้าปกได้"
       );
     } finally {
@@ -485,6 +510,7 @@ export default function CoverForm({
       onSubmit={handleSave}
       className="flex flex-col gap-6 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.cover === "error"} className="contents">
       <div className="flex flex-col gap-3">
         <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">
           หน้าที่ 1: ข้อมูลหน้าปก
@@ -587,7 +613,7 @@ export default function CoverForm({
 
                   เลือกรูปหน้าปก
 
-                  <input
+                  <CropInput
                     type="file"
                     accept="image/png,image/jpeg"
                     className="hidden"
@@ -648,6 +674,7 @@ export default function CoverForm({
           ? "กำลังบันทึก..."
           : "💾 บันทึกข้อมูลหน้าปก"}
       </button>
+      </fieldset>
     </form>
   );
 }

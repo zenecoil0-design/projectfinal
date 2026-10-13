@@ -1,6 +1,8 @@
 "use client";
+import CropInput from "@/components/images/CropInput";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -124,29 +126,7 @@ export default function EducationLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase]);
-
-  const loadData = async (
+  const loadData = useCallback(async (
     uid: string
   ) => {
     const [
@@ -242,7 +222,29 @@ export default function EducationLibrary() {
         })
       )
     );
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    const initialize = async () => {
+      const {
+        data: { user },
+      } =
+        await supabase.auth.getUser();
+
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      setUserId(user.id);
+
+      await loadData(user.id);
+
+      setIsLoading(false);
+    };
+
+    initialize();
+  }, [supabase, loadData]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -1060,7 +1062,7 @@ export default function EducationLibrary() {
   </div>
 
   <div className="flex-1">
-    <input
+    <CropInput
       ref={fileInputRef}
       type="file"
       accept="image/jpeg,image/png,image/webp"

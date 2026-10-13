@@ -1,6 +1,7 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -17,6 +18,10 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  return <Suspense fallback={<p className="p-8">กำลังเปิดหน้าเข้าสู่ระบบ…</p>}><LoginForm /></Suspense>;
+}
+
+function LoginForm() {
   const router = useRouter();
   const supabase = createClient();
   const searchParams = useSearchParams();
@@ -27,7 +32,8 @@ export default function LoginPage() {
 const nextPath =
   rawNext &&
   rawNext.startsWith("/") &&
-  !rawNext.startsWith("//")
+  !rawNext.startsWith("//") &&
+  !rawNext.includes("\\")
     ? rawNext
     : "/dashboard";
 
@@ -73,9 +79,9 @@ const nextPath =
 
       router.push(nextPath);
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
-        error?.message?.includes(
+        getErrorMessage(error)?.includes(
           "Invalid login credentials"
         )
       ) {
@@ -83,7 +89,7 @@ const nextPath =
           "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
         );
       } else if (
-        error?.message?.includes(
+        getErrorMessage(error)?.includes(
           "Email not confirmed"
         )
       ) {
@@ -92,7 +98,7 @@ const nextPath =
         );
       } else {
         setErrorMessage(
-          error?.message ||
+          getErrorMessage(error) ||
             "เกิดข้อผิดพลาดในการเข้าสู่ระบบ"
         );
       }

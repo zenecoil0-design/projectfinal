@@ -1,4 +1,5 @@
 "use client";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   ReactNode,
@@ -151,14 +152,14 @@ export default function CreatePortfolioModal({
         router.push(
           `/editor?portfolio=${portfolio.id}`
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(
           "Create portfolio error:",
           error
         );
 
         setErrorMessage(
-          error?.message ||
+          getErrorMessage(error) ||
             "ไม่สามารถสร้าง Portfolio ได้"
         );
       } finally {

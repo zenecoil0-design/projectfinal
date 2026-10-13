@@ -1,7 +1,12 @@
 "use client";
+import { saveSelection } from "@/lib/editor/save-selection";
+
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useMemo,
   useState,
 } from "react";
@@ -79,6 +84,9 @@ export default function CertificateForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -161,6 +169,8 @@ export default function CertificateForm({
   });
 
   useEffect(() => {
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadData =
       async () => {
         setIsLoading(true);
@@ -187,6 +197,8 @@ export default function CertificateForm({
             error: userError,
           } =
             await supabase.auth.getUser();
+
+          if (cancelled) return;
 
           if (
             userError ||
@@ -319,6 +331,8 @@ export default function CertificateForm({
                 ),
             ]);
 
+          if (cancelled) return;
+
           if (
             certificateError
           ) {
@@ -344,10 +358,7 @@ export default function CertificateForm({
           if (
             certificateImageError
           ) {
-            console.error(
-              "Load certificate images error:",
-              certificateImageError
-            );
+            throw certificateImageError;
           }
 
           if (
@@ -471,27 +482,34 @@ export default function CertificateForm({
             selectedItems
           );
         } catch (
-          error: any
+          error: unknown
         ) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load certificate form error:",
             error
           );
 
           setLoadError(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดเกียรติบัตรได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("certificate", loadSucceeded);
           setIsLoading(false);
         }
+          }
       };
 
     loadData();
+    return () => { cancelled = true; };
   }, [
     portfolioId,
     supabase,
     setCertificates,
+    reportLoaded,
   ]);
 
   const selectedIds =
@@ -568,67 +586,17 @@ export default function CertificateForm({
     setSuccessMessage("");
 
     try {
-      const {
-        error:
-          deleteError,
-      } = await supabase
-        .from(
-          "portfolio_certificates"
-        )
-        .delete()
-        .eq(
-          "portfolio_id",
-          portfolioId
-        );
+      await saveSelection(supabase, portfolioId, "certificate", certificates.map(item => item.id));
 
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      if (
-        certificates.length >
-        0
-      ) {
-        const rowsToInsert =
-          certificates.map(
-            (
-              certificate,
-              index
-            ) => ({
-              portfolio_id:
-                portfolioId,
-
-              certificate_id:
-                certificate.id,
-
-              sort_order:
-                index,
-            })
-          );
-
-        const {
-          error:
-            insertError,
-        } = await supabase
-          .from(
-            "portfolio_certificates"
-          )
-          .insert(
-            rowsToInsert
-          );
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-
+      if (!mounted.current) return;
+      markSaved("certificate");
       setSuccessMessage(
         "บันทึกเกียรติบัตรเรียบร้อยแล้ว"
       );
 
       onNext();
     } catch (
-      error: any
+      error: unknown
     ) {
       console.error(
         "Save portfolio certificates error:",
@@ -636,7 +604,7 @@ export default function CertificateForm({
       );
 
       setSaveError(
-        error?.message ||
+        getErrorMessage(error) ||
           "ไม่สามารถบันทึกเกียรติบัตรได้"
       );
     } finally {
@@ -649,6 +617,7 @@ export default function CertificateForm({
       onSubmit={handleNext}
       className="flex flex-col gap-5 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.certificate === "error"} className="contents">
       <div>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -987,6 +956,7 @@ export default function CertificateForm({
           ? "กำลังบันทึก..."
           : "ยืนยันเกียรติบัตร"}
       </button>
+      </fieldset>
     </form>
   );
 }

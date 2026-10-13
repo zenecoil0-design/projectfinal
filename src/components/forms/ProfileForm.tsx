@@ -1,7 +1,12 @@
 "use client";
+import CropInput from "@/components/images/CropInput";
+
+import { useEditorSession } from "@/components/editor/EditorSession";
+import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -114,6 +119,9 @@ export default function ProfileForm({
 }: {
   onNext: () => void;
 }) {
+  const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
     useSearchParams();
 
@@ -162,6 +170,11 @@ export default function ProfileForm({
     setSuccessMessage,
   ] =
     useState("");
+
+  useEffect(() => {
+    const url = store.profileImage;
+    return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
+  }, [store.profileImage]);
 
   // =====================================================
   // HELPERS
@@ -283,6 +296,9 @@ export default function ProfileForm({
   // =====================================================
 
   useEffect(() => {
+    const store = useProfileStore.getState();
+    let cancelled = false;
+    let loadSucceeded = true;
     const loadProfile =
       async () => {
         setIsLoading(
@@ -372,6 +388,7 @@ export default function ProfileForm({
               .limit(1)
               .maybeSingle();
 
+          if (cancelled) return;
           if (error) {
             throw error;
           }
@@ -495,28 +512,34 @@ export default function ProfileForm({
             )
           );
         } catch (
-          error: any
+          error: unknown
         ) {
+          if (cancelled) return;
+          loadSucceeded = false;
           console.error(
             "Load profile error:",
             error
           );
 
           setErrorMessage(
-            error?.message ||
+            getErrorMessage(error) ||
               "ไม่สามารถโหลดข้อมูลประวัติส่วนตัวได้"
           );
         } finally {
+          if (!cancelled) {
+            reportLoaded("profile", loadSucceeded);
           setIsLoading(
             false
           );
         }
+          }
       };
 
     loadProfile();
+    return () => { cancelled = true; };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [portfolioId]);
+  }, [portfolioId, reportLoaded]);
 
   // =====================================================
   // SOCIAL ICON
@@ -959,6 +982,7 @@ export default function ProfileForm({
           }
         }
 
+      if (!mounted.current) return;
         store.setProfile(
           "profileImage",
           profileImageUrl ||
@@ -973,13 +997,14 @@ export default function ProfileForm({
           false
         );
 
-        setSuccessMessage(
+        markSaved("profile");
+      setSuccessMessage(
           "บันทึกข้อมูลประวัติส่วนตัวเรียบร้อยแล้ว"
         );
 
         onNext();
       } catch (
-        error: any
+        error: unknown
       ) {
         console.error(
           "Save profile error:",
@@ -987,7 +1012,7 @@ export default function ProfileForm({
         );
 
         setErrorMessage(
-          error?.message ||
+          getErrorMessage(error) ||
             "ไม่สามารถบันทึกข้อมูลประวัติส่วนตัวได้"
         );
       } finally {
@@ -1067,6 +1092,7 @@ export default function ProfileForm({
       }
       className="flex flex-col gap-6 pb-10"
     >
+      <fieldset disabled={exporting || isSaving || isLoading || status.profile === "error"} className="contents">
       {/* PROFILE IMAGE */}
 
       <div className="flex flex-col gap-3">
@@ -1095,7 +1121,7 @@ export default function ProfileForm({
 
               อัปโหลดรูปภาพใหม่
 
-              <input
+              <CropInput
                 type="file"
                 accept="image/png,image/jpeg"
                 className="hidden"
@@ -1781,6 +1807,7 @@ export default function ProfileForm({
           ? "กำลังบันทึก..."
           : "💾 บันทึกข้อมูลประวัติส่วนตัว"}
       </button>
+      </fieldset>
     </form>
   );
 }
