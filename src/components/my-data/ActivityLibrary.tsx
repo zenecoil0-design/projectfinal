@@ -1041,7 +1041,7 @@ export default function ActivityLibrary() {
 
   return (
     <>
-      <section className="mt-8">
+      <section className="mt-6 min-w-0">
         <SectionHeader
           title="ผลงานและกิจกรรม"
           count={activities.length}
@@ -1058,7 +1058,7 @@ export default function ActivityLibrary() {
             title="ยังไม่มีผลงานหรือกิจกรรม"
           />
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 @min-[48rem]:grid-cols-2">
             {activities.map(
               (activity) => {
                 const itemTags =
@@ -1074,12 +1074,12 @@ export default function ActivityLibrary() {
                     key={
                       activity.id
                     }
-                    className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm"
+                    className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm wrap-anywhere"
                   >
                     {activity.images.length >
                       0 && (
                       <div
-                        className={`grid gap-1 bg-slate-100 ${
+                        className={`grid min-w-0 gap-1 bg-slate-100 ${
                           activity
                             .images
                             .length ===
@@ -1096,7 +1096,7 @@ export default function ActivityLibrary() {
                               key={
                                 image.id
                               }
-                              className="h-40 overflow-hidden"
+                              className="h-40 min-w-0 overflow-hidden"
                             >
                               <img
                                 src={
@@ -1113,10 +1113,10 @@ export default function ActivityLibrary() {
                       </div>
                     )}
 
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 p-4">
+                      <div className="flex min-w-0 flex-col gap-3">
                         <div>
-                          <h3 className="text-lg font-black text-slate-900">
+                          <h3 className="text-base font-bold leading-7 text-slate-900">
                             {
                               activity.title
                             }
@@ -1131,7 +1131,7 @@ export default function ActivityLibrary() {
                           )}
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <IconButton
                             label="แก้ไข"
                             onClick={() =>
@@ -1201,7 +1201,7 @@ export default function ActivityLibrary() {
           submitText={
             editingId
               ? "บันทึกการแก้ไข"
-              : "เพิ่มลงคลัง"
+              : "บันทึก"
           }
           formId="activity-library-form"
           onClose={
@@ -1211,10 +1211,11 @@ export default function ActivityLibrary() {
           <form
             id="activity-library-form"
             onSubmit={handleSave}
-            className="space-y-4"
+            aria-busy={isSaving}
+            className="@container min-w-0 space-y-5"
           >
-            <Field label="ชื่อผลงาน / กิจกรรม *">
-              <input
+            <Field htmlFor="activity-library-title" label="ชื่อผลงาน / กิจกรรม *">
+              <input id="activity-library-title" autoFocus
                 value={title}
                 onChange={(e) =>
                   setTitle(
@@ -1226,8 +1227,8 @@ export default function ActivityLibrary() {
               />
             </Field>
 
-            <Field label="รายละเอียด">
-              <textarea
+            <Field htmlFor="activity-library-description" label="รายละเอียด">
+              <textarea id="activity-library-description"
                 rows={3}
                 value={
                   description
@@ -1237,15 +1238,16 @@ export default function ActivityLibrary() {
                     e.target.value
                   )
                 }
-                className={`${inputClass} resize-none`}
+                className={`${inputClass} min-h-32 resize-y leading-7`}
               />
             </Field>
 
             <Field
+              htmlFor="activity-library-images"
               label="รูปภาพผลงาน / กิจกรรม"
               right={`${totalImages} / 4 รูป`}
             >
-              <CropInput
+              <CropInput id="activity-library-images"
                 ref={fileInputRef}
                 type="file"
                 multiple
@@ -1265,7 +1267,7 @@ export default function ActivityLibrary() {
                 onClick={() =>
                   fileInputRef.current?.click()
                 }
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FaImage />
 
@@ -1283,7 +1285,7 @@ export default function ActivityLibrary() {
                 0 ||
                 newPreviews.length >
                   0) && (
-                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="mt-3 grid min-w-0 grid-cols-2 gap-3 @min-[32rem]:grid-cols-4">
                   {existingImages.map(
                     (image) => (
                       <ImageTile
@@ -1324,9 +1326,9 @@ export default function ActivityLibrary() {
               )}
             </Field>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="วันที่">
-                <input
+            <div className="grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
+              <Field htmlFor="activity-library-date" label="วันที่">
+                <input id="activity-library-date"
                   type="date"
                   value={
                     activityDate
@@ -1342,8 +1344,8 @@ export default function ActivityLibrary() {
                 />
               </Field>
 
-              <Field label="หน่วยงาน / สถานที่">
-                <input
+              <Field htmlFor="activity-library-organization" label="หน่วยงาน / สถานที่">
+                <input id="activity-library-organization"
                   value={
                     organization
                   }
@@ -1393,7 +1395,7 @@ export default function ActivityLibrary() {
 /* ---------- UI ---------- */
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+  "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:text-sm";
 
 function ImageTile({
   src,
@@ -1403,7 +1405,7 @@ function ImageTile({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-2">
       <div className="h-24 w-full overflow-hidden rounded-lg bg-slate-100">
         <img
           src={src}
@@ -1419,7 +1421,7 @@ function ImageTile({
           backgroundColor: "#dc2626",
           color: "#ffffff",
         }}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition hover:opacity-90"
+        className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
       >
         <FaTrash />
         ลบรูป
@@ -1444,11 +1446,11 @@ function LibraryModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/60 p-4 backdrop-blur-sm">
-      <div className="flex h-[calc(100dvh-32px)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-40px))]">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
+    <div role="dialog" aria-modal="true" aria-labelledby="activity-library-dialog-title" className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4">
+      <div className="flex h-[calc(100dvh-16px)] min-w-0 w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-32px))]">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
           <div>
-            <h2 className="text-lg font-black text-slate-900">
+            <h2 id="activity-library-dialog-title" className="text-base font-bold leading-6 text-slate-900">
               {title}
             </h2>
 
@@ -1460,24 +1462,24 @@ function LibraryModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"
+            aria-label="ปิดฟอร์มผลงานหรือกิจกรรม" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             <FaTimes />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
           {children}
         </div>
 
-        <div className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-5 py-3 sm:px-6">
+        <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
           <button
             type="button"
             onClick={onClose}
             disabled={
               isSaving
             }
-            className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-600"
+            className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-60"
           >
             ยกเลิก
           </button>
@@ -1488,7 +1490,7 @@ function LibraryModal({
             disabled={
               isSaving
             }
-            className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+            aria-busy={isSaving} className="min-h-11 rounded-lg bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving
               ? "กำลังบันทึก..."
@@ -1501,23 +1503,25 @@ function LibraryModal({
 }
 
 function Field({
+  htmlFor,
   label,
   right,
   children,
 }: {
   label: string;
+  htmlFor: string;
   right?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between gap-3">
-        <label className="text-sm font-bold text-slate-700">
+      <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <label htmlFor={htmlFor} className="text-sm font-semibold leading-5 text-slate-700">
           {label}
         </label>
 
         {right && (
-          <span className="text-xs font-bold text-slate-400">
+          <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
             {right}
           </span>
         )}
@@ -1555,17 +1559,15 @@ function TagSelector({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
-        <label className="text-sm font-bold text-slate-700">
-          Tags
-        </label>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-700">Tags</p>
 
         <button
           type="button"
           onClick={() =>
             setIsAddingTag(true)
           }
-          className="text-xs font-bold text-blue-600"
+          className="min-h-11 rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
         >
           + สร้าง Tag ใหม่
         </button>
@@ -1588,7 +1590,8 @@ function TagSelector({
                     tag.id
                   )
                 }
-                className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+                aria-pressed={selected}
+                className={`min-h-11 min-w-0 max-w-full rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                   selected
                     ? "border-blue-600 bg-blue-600 text-white"
                     : "border-slate-200 bg-white text-slate-600"
@@ -1605,8 +1608,8 @@ function TagSelector({
       </div>
 
       {isAddingTag && (
-        <div className="mt-3 flex gap-2 rounded-xl bg-slate-50 p-3">
-          <input
+        <div className="mt-3 flex min-w-0 flex-wrap gap-2 rounded-lg bg-slate-50 p-3">
+          <input aria-label="ชื่อ Tag ใหม่"
             value={
               newTagName
             }
@@ -1615,7 +1618,7 @@ function TagSelector({
                 e.target.value
               )
             }
-            className={`${inputClass} min-w-0 flex-1`}
+            className={`${inputClass} flex-1 basis-36`}
           />
 
           <button
@@ -1623,7 +1626,7 @@ function TagSelector({
             onClick={
               handleAddTag
             }
-            className="rounded-lg bg-blue-600 px-4 text-xs font-bold text-white"
+            className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             เพิ่ม
           </button>
@@ -1635,7 +1638,7 @@ function TagSelector({
                 false
               )
             }
-            className="px-2 text-xs font-bold text-slate-500"
+            className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             ยกเลิก
           </button>
@@ -1657,9 +1660,9 @@ function SectionHeader({
   onAdd: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-col items-start gap-4 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between">
       <div>
-        <h2 className="text-2xl font-black text-slate-900">
+        <h2 className="text-xl font-bold text-slate-900">
           {title}
         </h2>
 
@@ -1671,7 +1674,7 @@ function SectionHeader({
       <button
         type="button"
         onClick={onAdd}
-        className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"
+        className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
       >
         <FaPlus />
         {buttonText}
@@ -1688,7 +1691,7 @@ function EmptyState({
   title: string;
 }) {
   return (
-    <div className="mt-6 flex min-h-[300px] flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-slate-300 bg-white">
+    <div className="mt-5 flex min-h-52 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 text-center">
       <div className="text-3xl text-blue-600">
         {icon}
       </div>
@@ -1706,7 +1709,7 @@ function Loading({
   text: string;
 }) {
   return (
-    <div className="mt-8 flex min-h-[300px] items-center justify-center rounded-[24px] border border-slate-200 bg-white">
+    <div role="status" className="mt-6 flex min-h-52 items-center justify-center rounded-xl bg-white p-4">
       <p className="text-sm text-slate-500">
         {text}
       </p>
@@ -1730,7 +1733,7 @@ function IconButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg border ${
+      className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
         danger
           ? "border-red-200 text-red-500 hover:bg-red-50"
           : "border-slate-200 text-slate-500 hover:bg-slate-50"
@@ -1751,12 +1754,12 @@ function TagList({
   }
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-4 flex min-w-0 flex-wrap gap-2">
       {tags.map(
         (tag) => (
           <span
             key={tag.id}
-            className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700"
+            className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold leading-5 text-blue-700"
           >
             <FaTag />
             {tag.name}
