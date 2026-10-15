@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 const sections = [
   { section: 'education', plural: 'educations', step: 'การศึกษา', titleKey: 'school_name', heading: 'กรอกประวัติการศึกษา', nextHeading: 'กรอกผลงานและกิจกรรม', label: 'ประวัติการศึกษา' },
   { section: 'activity', plural: 'activities', step: 'กิจกรรม', titleKey: 'title', heading: 'กรอกผลงานและกิจกรรม', nextHeading: 'กรอกข้อมูลเกียรติบัตร', label: 'ผลงานและกิจกรรม' },
+  { section: 'certificate', plural: 'certificates', step: 'เกียรติบัตร', titleKey: 'title', heading: 'กรอกข้อมูลเกียรติบัตร', nextHeading: 'กรอกข้อมูลเกียรติบัตร', label: 'เกียรติบัตร' },
 ] as const;
 type Section = typeof sections[number];
 type Mode = 'ready' | 'loading' | 'error' | 'empty';
@@ -57,13 +58,14 @@ for (const config of sections) {
       await expect(form.locator('label').filter({ has: page.getByRole('checkbox', { name: names[index], exact: true }) })).toContainText(`ลำดับ ${order}`);
     }
     await expect(form.getByText('เลือกแล้ว 3 รายการ', { exact: true })).toBeVisible();
+    await expect(form.getByRole('status').filter({ hasText: 'เรียบร้อยแล้ว' })).toHaveCount(0);
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 1000 });
       expect(await form.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
       await checkbox(0).scrollIntoViewIfNeeded();
       await page.screenshot({ path: testInfo.outputPath(`${config.section}-${width}.png`) });
       const images = await form.locator('label img').evaluateAll(nodes => nodes.map(node => ({ fit: getComputedStyle(node).objectFit, width: node.clientWidth, frame: node.parentElement!.clientWidth })));
-      for (const image of images) { expect(image.width).toBeLessThanOrEqual(image.frame); expect(['cover', 'contain']).toContain(image.fit); }
+      for (const image of images) { expect(image.width).toBeLessThanOrEqual(image.frame); expect(image.fit).toBe(config.section === 'activity' ? 'cover' : 'contain'); }
     }
     await form.getByRole('button', { name: 'ไม่มีรายการตรงTag', exact: true }).click();
     await expect(form.getByText('Tag นี้', { exact: false })).toBeVisible();
