@@ -2,11 +2,9 @@
 import Paper, { useTemplate } from "./Paper";
 
 import { useCoverStore } from "@/store/useCoverStore";
-import { useProfileStore } from "@/store/useProfileStore";
 
 export default function CoverPreview() {
   const coverStore = useCoverStore();
-  const profileStore = useProfileStore();
 
   const fullName = [coverStore.firstName.trim(), coverStore.lastName.trim()].filter(Boolean).join(" ");
   const template = useTemplate();
@@ -15,7 +13,7 @@ export default function CoverPreview() {
     <div className="editorial-cover-title"><p>INTRODUCING</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
     <div className="editorial-cover-art">
       {coverStore.coverImage && <img className="editorial-backdrop" src={coverStore.coverImage} alt="ภาพพื้นหลังหน้าปก" />}
-      <div className="editorial-portrait">{profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปโปรไฟล์" /> : <span>YOUR<br />NEXT<br />CHAPTER.</span>}</div>
+      <div className="editorial-portrait">{coverStore.coverImage ? <img src={coverStore.coverImage} alt="รูปหน้าปก" /> : <span>YOUR<br />NEXT<br />CHAPTER.</span>}</div>
       <span className="editorial-art-caption">LEARNING · CREATIVITY · GROWTH</span>
     </div>
     <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{fullName || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
@@ -44,16 +42,16 @@ export default function CoverPreview() {
           {coverStore.portfolioTitle || "PORTFOLIO"}
         </h1>
 
-        {/* ส่วนกลาง: รูปโปรไฟล์ในกรอบวงกลม */}
+        {/* ส่วนกลาง: รูปจากฟอร์มหน้าปกในกรอบวงกลม */}
         <div className="w-56 h-56 rounded-full border-4 border-slate-200 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center my-auto relative">
-          {profileStore.profileImage ? (
+          {coverStore.coverImage ? (
             <img 
-              src={profileStore.profileImage} 
-              alt="Profile" 
+              src={coverStore.coverImage}
+              alt="รูปหน้าปก"
               className="w-full h-full object-cover" 
             />
           ) : (
-            <span className="text-slate-400 text-sm font-semibold">รูปโปรไฟล์</span>
+            <span className="text-slate-400 text-sm font-semibold">รูปหน้าปก</span>
           )}
         </div>
 

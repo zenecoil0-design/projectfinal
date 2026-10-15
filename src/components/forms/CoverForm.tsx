@@ -555,7 +555,7 @@ export default function CoverForm({
 
           <div>
             <p className={labelClassName}>
-              รูปภาพพื้นหลังหน้าปก
+              รูปภาพบนหน้าปก
               (ถ้ามี)
             </p>
 
@@ -566,7 +566,7 @@ export default function CoverForm({
                     src={
                       store.coverImage
                     }
-                    alt="Cover Preview"
+                    alt="ตัวอย่างรูปหน้าปก"
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -607,8 +607,7 @@ export default function CoverForm({
                 <span className="text-xs leading-5 text-slate-500">
                   JPG หรือ PNG
                   ขนาดไม่เกิน 5MB
-                  แนะนำรูปแนวตั้ง
-                  (A4 Ratio)
+                  แสดงในกรอบวงกลมหรือกรอบโค้งตามเทมเพลต
                 </span>
               </div>
             </div>

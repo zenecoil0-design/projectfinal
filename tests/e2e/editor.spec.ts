@@ -201,3 +201,62 @@ test('cover names preview, persist independently, survive reload and clear on po
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('');
   await expect(page.getByLabel('นามสกุลบนหน้าปก',{exact:true})).toHaveValue('');
 });
+
+test('cover frames use the cover image independently of the profile in both templates', async ({ page }, testInfo) => {
+  const coverUrl = 'http://127.0.0.1:54321/sample.png?cover';
+  const profileUrl = 'http://127.0.0.1:54321/sample.png?profile';
+  await page.route('**/rest/v1/covers?**', async route => {
+    const response = await route.fetch();
+    const rows = await response.json();
+    await route.fulfill({ json: rows.map((row: object) => ({ ...row, cover_image_url: coverUrl })) });
+  });
+  await page.route('**/rest/v1/profiles?**', async route => {
+    const response = await route.fetch();
+    const rows = await response.json();
+    await route.fulfill({ json: rows.map((row: object) => ({ ...row, profile_image_url: profileUrl })) });
+  });
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  const cover = page.locator('[data-section="หน้าปก"]');
+  const framedImage = cover.getByRole('img', { name: 'รูปหน้าปก', exact: true, includeHidden: true });
+  for (const template of ['classic', 'modern']) {
+    await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
+    await expect(cover).toHaveAttribute('data-template', template);
+    await expect(framedImage).toHaveAttribute('src', coverUrl);
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      if (width === 390) await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
+      await expect(framedImage).toBeVisible();
+      const bounds = await framedImage.evaluate(image => ({
+        image: [image.clientWidth, image.clientHeight],
+        frame: [image.parentElement!.clientWidth, image.parentElement!.clientHeight],
+      }));
+      expect(bounds.image).toEqual(bounds.frame);
+      await page.screenshot({ path: testInfo.outputPath(`cover-frame-${template}-${width}.png`) });
+      if (width === 390) await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
+    }
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
+    await (await download).saveAs(testInfo.outputPath(`cover-frame-${template}.pdf`));
+  }
+  const sample = await page.request.get(coverUrl);
+  await page.locator('form:visible input[type="file"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: await sample.body() });
+  await page.getByLabel('สัดส่วนรูป').selectOption('1');
+  await page.getByRole('button', { name: 'ตัดรูปและใช้รูปนี้', exact: true }).click();
+  const croppedUrl = await page.locator('form:visible img').getAttribute('src');
+  expect(croppedUrl).toMatch(/^blob:/);
+  await expect(framedImage).toHaveAttribute('src', croppedUrl!);
+  await page.locator('aside button').filter({ hasText: 'ข้อมูลส่วนตัว' }).first().click();
+  await expect(page.locator('form:visible img')).toHaveAttribute('src', profileUrl);
+  await page.locator('aside button').filter({ hasText: 'ปก' }).first().click();
+  await expect(framedImage).toHaveAttribute('src', croppedUrl!);
+  await page.getByRole('button', { name: 'ลบรูปภาพ', exact: true }).click();
+  for (const template of ['classic', 'modern']) {
+    await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
+    await expect(cover).toHaveAttribute('data-template', template);
+    await expect(framedImage).toHaveCount(0);
+    await expect(cover.locator('img')).toHaveCount(0);
+  }
+  await page.locator('aside button').filter({ hasText: 'ข้อมูลส่วนตัว' }).first().click();
+  await expect(page.locator('form:visible img')).toHaveAttribute('src', profileUrl);
+});
