@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 const sections = [
   { section: 'education', plural: 'educations', step: 'การศึกษา', titleKey: 'school_name', heading: 'กรอกประวัติการศึกษา', nextHeading: 'กรอกผลงานและกิจกรรม', label: 'ประวัติการศึกษา' },
+  { section: 'activity', plural: 'activities', step: 'กิจกรรม', titleKey: 'title', heading: 'กรอกผลงานและกิจกรรม', nextHeading: 'กรอกข้อมูลเกียรติบัตร', label: 'ผลงานและกิจกรรม' },
 ] as const;
 type Section = typeof sections[number];
 type Mode = 'ready' | 'loading' | 'error' | 'empty';

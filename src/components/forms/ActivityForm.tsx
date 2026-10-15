@@ -611,348 +611,112 @@ export default function ActivityForm({
   };
 
   return (
-    <form
-      onSubmit={handleNext}
-      className="flex flex-col gap-5 pb-10"
-    >
+    <form onSubmit={handleNext} className="@container flex min-w-0 flex-col gap-5 pb-6">
       <fieldset disabled={exporting || isSaving || isLoading || status.activity === "error"} className="contents">
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">
-              หน้าที่ 5:
-              ผลงานและกิจกรรม
-            </h3>
-
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              เลือกผลงานหรือกิจกรรมจากคลังข้อมูล
-              รายการที่เลือกจะถูกบันทึกเฉพาะ
-              Portfolio เล่มนี้
+        <div className="min-w-0 space-y-3">
+          <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">หน้าที่ 5: ผลงานและกิจกรรม</h3>
+          <p className="text-sm leading-6 text-slate-600">
+            เลือกผลงานและกิจกรรมจากคลังข้อมูลของคุณ รายการที่เลือกจะถูกบันทึกเฉพาะ Portfolio เล่มนี้
+          </p>
+          {!isLoading && !loadError && (
+            <p role="status" className="w-fit rounded-full bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">
+              เลือกแล้ว {activities.length} รายการ
             </p>
-          </div>
-
-          <span className="shrink-0 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700">
-            เลือกแล้ว{" "}
-            {
-              activities.length
-            }{" "}
-            รายการ
-          </span>
+          )}
         </div>
-      </div>
 
-      {tags.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-            <FaFilter />
-            กรองด้วย Tag
-          </div>
+        {!isLoading && !loadError && libraryActivities.length > 0 && activities.length === 0 && (
+          <p className="text-sm leading-6 text-slate-600">ยังไม่ได้เลือกรายการ เลือกผลงานและกิจกรรมที่ต้องการใส่ในพอร์ต แล้วกดบันทึก</p>
+        )}
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedFilterTag(
-                  null
-                )
-              }
-              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                selectedFilterTag ===
-                null
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
-              }`}
-            >
-              ทั้งหมด
-            </button>
-
-            {tags.map(
-              (tag) => (
-                <button
-                  key={
-                    tag.id
-                  }
-                  type="button"
-                  onClick={() =>
-                    setSelectedFilterTag(
-                      tag.id
-                    )
-                  }
-                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                    selectedFilterTag ===
-                    tag.id
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
-                  }`}
-                >
-                  <FaTag className="text-[9px]" />
-
-                  {tag.name}
+        {tags.length > 0 && (
+          <div role="group" aria-label="กรองผลงานและกิจกรรมด้วย Tag" className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
+            <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FaFilter aria-hidden="true" />กรองด้วย Tag</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" aria-pressed={selectedFilterTag === null} onClick={() => setSelectedFilterTag(null)}
+                className={`min-h-11 max-w-full rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === null ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>ทั้งหมด</button>
+              {tags.map(tag => (
+                <button key={tag.id} type="button" aria-pressed={selectedFilterTag === tag.id} onClick={() => setSelectedFilterTag(tag.id)}
+                  className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === tag.id ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>
+                  <FaTag aria-hidden="true" className="shrink-0 text-xs" /><span className="min-w-0">{tag.name}</span>
                 </button>
-              )
-            )}
-          </div>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
-          <div className="text-center">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-
-            <p className="mt-3 text-xs font-medium text-slate-500">
-              กำลังโหลดผลงานและกิจกรรม...
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!isLoading &&
-        loadError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-bold text-red-700">
-              {loadError}
-            </p>
+              ))}
+            </div>
           </div>
         )}
 
-      {!isLoading &&
-        !loadError &&
-        libraryActivities.length ===
-          0 && (
-          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <FaTrophy />
+        {isLoading && (
+          <div role="status" className="flex min-h-44 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-center">
+              <div aria-hidden="true" className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+              <p className="mt-3 text-sm text-slate-600">กำลังโหลดผลงานและกิจกรรม...</p>
             </div>
-
-            <h4 className="mt-3 text-sm font-bold text-slate-800">
-              ยังไม่มีผลงานหรือกิจกรรมในคลัง
-            </h4>
-
-            <p className="mt-2 text-xs leading-5 text-slate-500">
-              เพิ่มข้อมูลในคลังของคุณก่อน
-              แล้วกลับมาเลือกใช้ใน
-              Portfolio
-            </p>
-
-            <Link
-              href="/my-data"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
-            >
-              <FaPlus />
-
-              ไปเพิ่มข้อมูล
+          </div>
+        )}
+        {!isLoading && loadError && (
+          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium leading-6 text-red-700 wrap-anywhere">{loadError}</div>
+        )}
+        {!isLoading && !loadError && libraryActivities.length === 0 && (
+          <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+            <FaTrophy aria-hidden="true" className="mx-auto text-2xl text-blue-600" />
+            <h4 className="mt-3 text-sm font-bold text-slate-800">ยังไม่มีผลงานและกิจกรรมในคลัง</h4>
+            <p className="mt-2 text-sm leading-6 text-slate-600">เพิ่มผลงานและกิจกรรมที่คลังข้อมูลก่อน แล้วกลับมาเลือกใช้งานใน Portfolio</p>
+            <Link href="/my-data" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+              <FaPlus aria-hidden="true" />ไปเพิ่มข้อมูล
             </Link>
           </div>
         )}
+        {!isLoading && !loadError && libraryActivities.length > 0 && filteredActivities.length === 0 && (
+          <p role="status" className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">ไม่มีผลงานและกิจกรรมที่ตรงกับ Tag นี้ ลองเลือก Tag อื่นหรือทั้งหมด</p>
+        )}
 
-      {!isLoading &&
-        !loadError &&
-        libraryActivities.length >
-          0 &&
-        filteredActivities.length ===
-          0 && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-center">
-            <p className="text-xs font-semibold text-slate-500">
-              ไม่มีผลงานหรือกิจกรรมที่ตรงกับ
-              Tag นี้
-            </p>
+        {!isLoading && !loadError && filteredActivities.length > 0 && (
+          <div role="group" aria-label="รายการผลงานและกิจกรรมจากคลัง" className="flex min-w-0 flex-col gap-3">
+            {filteredActivities.map(activity => {
+              const selected = isSelected(activity.id);
+              const itemTags = tags.filter(tag => activity.tagIds.includes(tag.id));
+              return (
+                <label key={activity.id} className={`block min-w-0 cursor-pointer rounded-xl border p-3 text-left wrap-anywhere transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue-500 ${selected ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}>
+                  <span className="flex min-w-0 items-start gap-3">
+                    <input type="checkbox" checked={selected} onChange={() => toggleActivity(activity)}
+                      aria-labelledby={`activity-title-${activity.id}`}
+                      className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-blue-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 disabled:cursor-not-allowed" />
+                    <span className="block min-w-0 flex-1">
+                      <span id={`activity-title-${activity.id}`} className="block text-sm font-bold leading-6 text-slate-800">{activity.title}</span>
+                      {activity.organization && <span className="mt-1 block text-sm leading-6 text-slate-600">{activity.organization}</span>}
+                      {selected && <span className="mt-2 inline-block max-w-full rounded-md bg-blue-100 px-2 py-1 text-xs font-semibold leading-5 text-blue-800">เลือกแล้ว · ลำดับ {selectedIds.indexOf(activity.id) + 1}</span>}
+                      {activity.description && <span className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{activity.description}</span>}
+                      {activity.activity_date && <span className="mt-2 block text-xs leading-5 text-slate-500">วันที่ทำกิจกรรม {activity.activity_date}</span>}
+                      {activity.images.length > 0 && <span className="mt-3 flex min-w-0 flex-wrap gap-2">
+                        {activity.images.slice(0, 4).map(image => <span key={image.id} className="block h-20 w-20 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                          <img src={image.image_url} alt="" className="h-full w-full object-cover" />
+                        </span>)}
+                      </span>}
+                      {itemTags.length > 0 && <span className="mt-3 flex min-w-0 flex-wrap gap-2">
+                        {itemTags.map(tag => <span key={tag.id} className="min-w-0 max-w-full rounded-full bg-slate-100 px-2 py-1 text-xs font-medium leading-5 text-slate-600">{tag.name}</span>)}
+                      </span>}
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         )}
 
-      {!isLoading &&
-        !loadError &&
-        filteredActivities.length >
-          0 && (
-          <div className="flex flex-col gap-3">
-            {filteredActivities.map(
-              (
-                activity
-              ) => {
-                const selected =
-                  isSelected(
-                    activity.id
-                  );
-
-                const itemTags =
-                  tags.filter(
-                    (
-                      tag
-                    ) =>
-                      activity.tagIds.includes(
-                        tag.id
-                      )
-                  );
-
-                return (
-                  <button
-                    key={
-                      activity.id
-                    }
-                    type="button"
-                    onClick={() =>
-                      toggleActivity(
-                        activity
-                      )
-                    }
-                    className={`w-full rounded-xl border p-4 text-left transition ${
-                      selected
-                        ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200"
-                        : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      <div
-                        className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
-                          selected
-                            ? "border-blue-600 bg-blue-600 text-white"
-                            : "border-slate-300 bg-white text-transparent"
-                        }`}
-                      >
-                        <FaCheck className="text-[10px]" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h4 className="break-words text-sm font-black text-slate-800">
-                              {
-                                activity.title
-                              }
-                            </h4>
-
-                            {activity.organization && (
-                              <p className="mt-1 text-xs font-semibold text-slate-500">
-                                {
-                                  activity.organization
-                                }
-                              </p>
-                            )}
-                          </div>
-
-                          {selected && (
-                            <span className="shrink-0 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-bold text-white">
-                              เลือกแล้ว
-                            </span>
-                          )}
-                        </div>
-
-                        {activity.description && (
-                          <p className="mt-2 line-clamp-3 text-xs leading-5 text-slate-500">
-                            {
-                              activity.description
-                            }
-                          </p>
-                        )}
-
-                        {activity.activity_date && (
-                          <p className="mt-2 text-[11px] font-medium text-slate-400">
-                            วันที่{" "}
-                            {
-                              activity.activity_date
-                            }
-                          </p>
-                        )}
-
-                        {activity.images.length >
-                          0 && (
-                          <div className="mt-3 flex gap-2 overflow-hidden">
-                            {activity.images
-                              .slice(
-                                0,
-                                4
-                              )
-                              .map(
-                                (
-                                  image
-                                ) => (
-                                  <div
-                                    key={
-                                      image.id
-                                    }
-                                    className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100"
-                                  >
-                                    <img
-                                      src={
-                                        image.image_url
-                                      }
-                                      alt=""
-                                      className="h-full w-full object-cover"
-                                    />
-                                  </div>
-                                )
-                              )}
-                          </div>
-                        )}
-
-                        {itemTags.length >
-                          0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {itemTags.map(
-                              (
-                                tag
-                              ) => (
-                                <span
-                                  key={
-                                    tag.id
-                                  }
-                                  className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold text-slate-500"
-                                >
-                                  {
-                                    tag.name
-                                  }
-                                </span>
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              }
-            )}
-          </div>
+        {libraryActivities.length > 0 && (
+          <Link href="/my-data" className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-center text-sm font-semibold leading-6 text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">
+            <FaImage aria-hidden="true" className="shrink-0" />จัดการผลงานและกิจกรรมในคลัง
+          </Link>
         )}
-
-      {libraryActivities.length >
-        0 && (
-        <Link
-          href="/my-data"
-          className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
-        >
-          <FaImage />
-
-          จัดการผลงานและกิจกรรมในคลัง
-        </Link>
-      )}
-
-      {saveError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
-          {saveError}
+        <div className="space-y-3 border-t border-slate-200 pt-4">
+          <p className="text-sm leading-6 text-slate-600">กดบันทึกเพื่อเก็บรายการที่เลือกและไปเลือกเกียรติบัตร</p>
+          {saveError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700 wrap-anywhere">{saveError}</div>}
+          {successMessage && <div role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium leading-6 text-emerald-700">{successMessage}</div>}
+          <button type="submit" disabled={isLoading || isSaving} aria-busy={isSaving}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60">
+            <FaCheck aria-hidden="true" />{isSaving ? "กำลังบันทึก..." : "บันทึกและไปหน้าถัดไป"}
+          </button>
         </div>
-      )}
-
-      {successMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
-          {successMessage}
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={
-          isLoading ||
-          isSaving
-        }
-        className="mt-1 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <FaCheck />
-
-        {isSaving
-          ? "กำลังบันทึก..."
-          : "ยืนยันผลงานและกิจกรรม"}
-      </button>
       </fieldset>
     </form>
   );
