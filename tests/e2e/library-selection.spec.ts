@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { openEditorSection } from './helpers/editor';
 
 const sections = [
   { section: 'education', plural: 'educations', step: 'การศึกษา', titleKey: 'school_name', heading: 'กรอกประวัติการศึกษา', nextHeading: 'กรอกผลงานและกิจกรรม', label: 'ประวัติการศึกษา' },
@@ -43,7 +44,7 @@ for (const config of sections) {
     const { ids, names } = await fixtures(page, config);
     await page.goto('/editor?portfolio=a');
     await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
-    const open = () => page.locator('aside button').filter({ hasText: config.step }).first().click();
+    const open = () => openEditorSection(page, config.section);
     await open();
     const form = page.locator('form:visible');
     const checkbox = (index: number) => form.getByRole('checkbox', { name: names[index], exact: true });
@@ -71,7 +72,7 @@ for (const config of sections) {
     await expect(form.getByText('Tag นี้', { exact: false })).toBeVisible();
     await expect(form.getByText('เลือกแล้ว 3 รายการ', { exact: true })).toBeVisible();
     await form.getByRole('button', { name: 'ทั้งหมด', exact: true }).click();
-    await page.locator('aside button').filter({ hasText: 'ปก' }).first().click(); await open();
+    await openEditorSection(page, 'cover'); await open();
     for (const index of [0, 1, 2]) await expect(checkbox(index)).toBeChecked();
     await page.route('**/rest/v1/rpc/replace_portfolio_selection', async route => {
       await new Promise(resolve => setTimeout(resolve, 250));
@@ -101,7 +102,7 @@ for (const config of sections) {
     const { state } = await fixtures(page, config);
     state.mode = 'loading';
     await page.goto('/editor?portfolio=a');
-    const open = () => page.locator('aside button').filter({ hasText: config.step }).first().click();
+    const open = () => openEditorSection(page, config.section);
     await open(); const form = page.locator('form:visible');
     await expect(form.getByText(`กำลังโหลด${config.label}...`, { exact: true })).toBeVisible();
     await expect(form.locator('button[type=submit]')).toBeDisabled();

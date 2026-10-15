@@ -14,7 +14,6 @@ import {
   useSearchParams,
 } from "next/navigation";
 
-import SidebarMenu from "@/components/layout/SidebarMenu";
 import FormContainer from "@/components/layout/FormContainer";
 
 import { PreviewViewport, TemplateContext } from "@/components/preview/Paper";
@@ -57,7 +56,7 @@ function EditorContent() {
   const [templateBusy, setTemplateBusy] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
-    useState(1);
+    useState<number | null>(1);
 
   const [portfolio, setPortfolio] =
     useState<PortfolioInfo | null>(
@@ -236,41 +235,14 @@ function EditorContent() {
     });
   };
 
-  const handleStepChange = (
-    step: number
-  ) => {
+  const handleStepChange = (step: number | null) => {
     setCurrentStep(step);
-
-    requestAnimationFrame(
-      () => {
-        scrollPreviewToStep(
-          step
-        );
-      }
-    );
+    if (step !== null) requestAnimationFrame(() => scrollPreviewToStep(step));
   };
 
-  const handleNext = () => {
-    setCurrentStep(
-      (prev) => {
-        if (prev >= 6) {
-          return prev;
-        }
-
-        const nextStep =
-          prev + 1;
-
-        requestAnimationFrame(
-          () => {
-            scrollPreviewToStep(
-              nextStep
-            );
-          }
-        );
-
-        return nextStep;
-      }
-    );
+  const handleNext = (fromStep: number) => {
+    if (fromStep >= 6) return;
+    handleStepChange(fromStep + 1);
   };
 
   // =====================================================
@@ -377,7 +349,7 @@ function EditorContent() {
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">
         <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
-        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => { setMobilePanel("preview"); requestAnimationFrame(() => scrollPreviewToStep(currentStep)); }} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
+        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => { setMobilePanel("preview"); if (currentStep !== null) requestAnimationFrame(() => scrollPreviewToStep(currentStep)); }} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
       </div>
 
       {/* BODY */}
@@ -388,19 +360,9 @@ function EditorContent() {
         {/* LEFT */}
 
         <aside className={`${mobilePanel === "form" ? "flex" : "hidden"} md:flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white`}>
-          <div className="shrink-0">
-            <SidebarMenu
-              currentStep={
-                currentStep
-              }
-              setCurrentStep={
-                handleStepChange
-              }
-            />
-          </div>
-
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
             <FormContainer
+              onStepChange={handleStepChange}
               currentStep={
                 currentStep
               }

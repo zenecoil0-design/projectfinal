@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openEditorSection } from './helpers/editor';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -18,8 +19,8 @@ test('all sections load without opening their forms; drafts survive step switche
   const title = page.locator('input').filter({visible:true}).first();
   await title.fill('DRAFT TITLE');
   // Click the second step, then return to cover.
-  await page.locator('aside button').filter({hasText:'คำนำ'}).first().click();
-  await page.locator('aside button').filter({hasText:'ปก'}).first().click();
+  await openEditorSection(page, 'preface');
+  await openEditorSection(page, 'cover');
   await expect(title).toHaveValue('DRAFT TITLE');
   await expect(page.getByText('ยังไม่บันทึก:',{exact:false})).toBeVisible();
   await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeDisabled();
@@ -44,14 +45,14 @@ test('switching portfolio clears every section and failed loads cannot be saved'
   await page.reload();
   await expect(page.getByText('โหลดไม่สำเร็จ:',{exact:false})).toBeVisible();
   await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeDisabled();
-  await page.locator('aside button').filter({hasText:'ข้อมูลส่วนตัว'}).first().click();
+  await openEditorSection(page, 'profile');
   await expect(page.locator('form:visible button[type="submit"]')).toBeDisabled();
 });
 
 test('failed atomic save retains selection and warns before leaving', async ({page}) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
-  await page.locator('aside button').filter({hasText:'กิจกรรม'}).first().click();
+  await openEditorSection(page, 'activity');
   await page.getByText('Saved Activity',{exact:true}).first().click();
   await page.route('**/rest/v1/rpc/replace_portfolio_selection',route=>route.fulfill({status:500,json:{message:'simulated save failure'}}));
   await page.locator('form:visible button[type="submit"]').click();
@@ -72,8 +73,8 @@ test('cropped image remains selected after changing steps on a phone viewport', 
   await page.getByRole('button',{name:'ตัดรูปและใช้รูปนี้'}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('form:visible img')).toHaveAttribute('src',/^blob:/);
-  await page.locator('aside button').filter({hasText:'คำนำ'}).first().click();
-  await page.locator('aside button').filter({hasText:'ปก'}).first().click();
+  await openEditorSection(page, 'preface');
+  await openEditorSection(page, 'cover');
   await expect(page.locator('form:visible img')).toHaveAttribute('src',/^blob:/);
   await page.screenshot({path:'/tmp/portfolio-mobile.png',fullPage:true});
   await page.getByRole('button',{name:'ดูตัวอย่าง',exact:true}).click();
@@ -246,9 +247,9 @@ test('cover frames use the cover image independently of the profile in both temp
   const croppedUrl = await page.locator('form:visible img').getAttribute('src');
   expect(croppedUrl).toMatch(/^blob:/);
   await expect(framedImage).toHaveAttribute('src', croppedUrl!);
-  await page.locator('aside button').filter({ hasText: 'ข้อมูลส่วนตัว' }).first().click();
+  await openEditorSection(page, 'profile');
   await expect(page.locator('form:visible img')).toHaveAttribute('src', profileUrl);
-  await page.locator('aside button').filter({ hasText: 'ปก' }).first().click();
+  await openEditorSection(page, 'cover');
   await expect(framedImage).toHaveAttribute('src', croppedUrl!);
   await page.getByRole('button', { name: 'ลบรูปภาพ', exact: true }).click();
   for (const template of ['classic', 'modern']) {
@@ -257,6 +258,6 @@ test('cover frames use the cover image independently of the profile in both temp
     await expect(framedImage).toHaveCount(0);
     await expect(cover.locator('img')).toHaveCount(0);
   }
-  await page.locator('aside button').filter({ hasText: 'ข้อมูลส่วนตัว' }).first().click();
+  await openEditorSection(page, 'profile');
   await expect(page.locator('form:visible img')).toHaveAttribute('src', profileUrl);
 });
