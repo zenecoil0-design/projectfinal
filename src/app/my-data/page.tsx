@@ -74,21 +74,22 @@ export default function MyDataPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex h-16 max-w-[1500px] items-center px-5 md:px-8">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex min-h-16 max-w-[1500px] items-center px-4 py-3 md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/dashboard"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+              aria-label="กลับ Dashboard"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             >
               <FaArrowLeft />
             </Link>
 
-            <div>
+            <div className="min-w-0">
               <h1 className="text-lg font-black text-slate-900">
                 คลังข้อมูลของฉัน
               </h1>
 
-              <p className="text-xs text-slate-400">
+              <p className="mt-1 text-xs leading-5 text-slate-500">
                 บันทึกข้อมูลครั้งเดียว แล้วนำไปใช้กับ Portfolio หลายเล่ม
               </p>
             </div>
@@ -96,13 +97,13 @@ export default function MyDataPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1500px] px-5 py-8 md:px-8">
-        <section className="rounded-[28px] bg-gradient-to-br from-slate-950 via-slate-900 to-blue-800 px-7 py-8 text-white">
+      <main className="@container mx-auto w-full min-w-0 max-w-[1500px] px-4 py-6 wrap-anywhere md:px-8">
+        <section className="rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-800 p-5 text-white sm:p-7">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">
             My Data Library
           </p>
 
-          <h2 className="mt-3 text-3xl font-black">
+          <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
             เก็บข้อมูลของคุณไว้ใช้ซ้ำ
           </h2>
 
@@ -112,8 +113,8 @@ export default function MyDataPage() {
           </p>
         </section>
 
-        <section className="mt-8">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <section className="mt-6">
+          <div role="group" aria-label="หมวดคลังข้อมูล" className="grid min-w-0 grid-cols-1 gap-2 @min-[40rem]:grid-cols-3">
             <TabButton
               active={
                 activeTab === "education"
@@ -181,14 +182,16 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition ${
+      aria-pressed={active}
+      className={`flex min-h-11 min-w-0 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
         active
           ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100"
           : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"
       }`}
     >
       <div
-        className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+        aria-hidden="true"
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
           active
             ? "bg-white/15"
             : "bg-slate-100"
@@ -197,7 +200,7 @@ function TabButton({
         {icon}
       </div>
 
-      <span className="font-bold">
+      <span className="min-w-0 text-sm font-semibold leading-6">
         {title}
       </span>
     </button>
