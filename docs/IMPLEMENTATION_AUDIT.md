@@ -87,3 +87,5 @@ Branch: `codex/portfolio-system-fixes`
 ## อัปเดตหลังเริ่มงาน M00 (15 ตุลาคม 2026)
 
 ผล audit ด้านบนเป็น static audit ณ baseline เดิม การรันจริงภายหลังอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) ตรวจ discovery พบ E2E 9 เคส จึงแก้ตัวเลขเดิมที่นับเป็น 10; การผ่านชุดเดิมไม่เปลี่ยนสถานะฟีเจอร์ใหม่เป็นเสร็จ
+
+อัปเดตหลักฐาน Supabase: เจ้าของส่ง metadata เวลา 2026-10-15T05:52:30Z และภาพ Auth แล้ว ผลอยู่ใน [M00_SCHEMA_REVIEW.md](M00_SCHEMA_REVIEW.md) พบ RPC selection ไม่อยู่ในผลรายงาน, relation policies ตรวจเจ้าของไม่ครบ, bucket เป็น public และ Confirm email ปิดอยู่ การยืนยันค่าตั้งค่าและ cascade จาก schema ยังไม่เปลี่ยนสถานะ F02/F16/F39 เป็นผ่าน end-to-end

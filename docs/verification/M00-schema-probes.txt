@@ -1,0 +1,11 @@
+✔ metadata baseline: direct relation insert checks portfolio owner but permits another owner library ID (1714.321836ms)
+✔ metadata baseline: TRUNCATE privilege bypasses row filters when SQL execution is available (1200.011318ms)
+✔ inventory distinguishes image rows, legacy URL deduplication, ownership mismatches and duplicate sections (1260.707947ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4573.434875

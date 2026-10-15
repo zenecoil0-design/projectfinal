@@ -1,28 +1,44 @@
 # ตรวจ Supabase ก่อน M01
 
-ไฟล์ `supabase-metadata.sql` เป็น SELECT แบบอ่านอย่างเดียว ไม่ใช่ migration ไม่แก้ตาราง/ข้อมูล และไม่อ่านแถวประวัตินักเรียนหรือ auth.users
+ได้รับ `metadata_report` และภาพ Auth จากเจ้าของแล้ววันที่ 15 ตุลาคม 2026 ดู [ผลตรวจ](../../docs/M00_SCHEMA_REVIEW.md) **ไม่ต้องส่งสองส่วนนี้ซ้ำ**
 
-## ส่งข้อมูลโครงสร้างให้ตรวจ
+## ขั้นตอนถัดไป: นับข้อมูลเดิม
 
-1. เปิดโปรเจกต์ Supabase ที่เว็บนี้ใช้ → SQL Editor → New query
-2. คัดลอกไฟล์ [supabase-metadata.sql](supabase-metadata.sql) ทั้งไฟล์แล้ว Run ด้วยบัญชีเจ้าของโปรเจกต์
-3. ผลเป็นแถวเดียวชื่อ `metadata_report` ให้คัดลอก JSON หรือ export CSV แล้วแนบกลับในแชต
-4. แนบภาพการตั้งค่า Auth เรื่อง **Confirm email** และ URL Configuration (Site URL/Redirect URLs) โดยปิดข้อมูลลับ
+1. เปิดโปรเจกต์ Supabase → **SQL Editor → New query**
+2. คัดลอก [supabase-data-inventory.sql](supabase-data-inventory.sql) ทั้งไฟล์แล้ว Run ด้วยบัญชีเจ้าของโปรเจกต์
+3. ส่งผลแถวเดียวชื่อ `inventory_report` กลับในแชต จะคัดลอก JSON หรือ export CSV ก็ได้
+4. แจ้งว่ามี backup ฐานข้อมูล/ไฟล์ Storage และโปรเจกต์ staging แยกไว้หรือยัง หากไม่มีก็บอกว่า “ยังไม่มี” เพื่อจัดขั้นตอนต่อให้ตรงสภาพจริง
 
-ไม่ต้องส่งรหัสผ่าน, database connection string, API key หรือ service_role key ผล SQL เป็น metadata ของ public/storage และตัว RPC selection เท่านั้น ยังควรตรวจว่าค่า default หรือ policy ที่โครงการเขียนเองไม่มีข้อมูลลับก่อนส่ง ไม่ต้อง commit ผลจากฐานจริงขึ้น repository
+SQL นี้อ่านอย่างเดียว ไม่แก้ตาราง ไม่ลบข้อมูล คืนเฉพาะยอดรวมและ metadata ของ triggers ไม่ส่งชื่อ/อีเมล/เนื้อหานักเรียนหรือ URL รูป แต่ควรตรวจ trigger definitions ก่อนส่งเพราะ trigger ที่เขียนเองอาจมี arguments ที่ไม่ควรเผยแพร่ ถ้า error ให้ส่งข้อความ error ไม่ต้องแก้ฐานเพื่อให้ query ผ่าน
 
-ถ้า query error ให้ส่งข้อความ error แทนการแก้ฐานข้อมูลเพื่อให้ query ผ่าน ชุดนี้ตรวจ syntax ด้วย PGlite บน catalog จำลองแล้ว แต่ยังไม่ได้รันกับ Supabase ของโครงการจริง
+ผ่านการทดสอบบน PGlite ด้วยข้อมูลจำลองแล้ว ยังไม่ได้รันบนฐานจริง การรันใน SQL Editor สิทธิ์เจ้าของใช้ดูยอดรวม ไม่พิสูจน์ว่า RLS ของ session ผู้ใช้ทำงานถูกต้อง
 
-## สิ่งที่ยังต้องตรวจหลังได้รับ metadata
+## สิ่งที่ query ตรวจ
 
-- จำนวนรายการ/รูปและเกียรติบัตรที่เกิน 2 รูป; ตรวจ schema ก่อนเขียน query นับจริง ไม่ส่งเนื้อหาส่วนตัวเมื่อใช้เพียงจำนวนได้
-- คอลัมน์วันที่/หน่วยงานที่ยังมีข้อมูลและ relation ที่อ้างอิงอยู่
-- การสำรองฐานข้อมูลและ Storage ที่มีอยู่ พร้อมหลักฐาน restore ในสภาพแวดล้อมแยก การมี migration ใน Git ไม่ใช่ backup ของข้อมูล/ไฟล์
-- นโยบาย read/write รูปและ reference ที่ยังใช้ ก่อนกำหนด cleanup
-- สร้างบัญชีทดสอบ A/B ใน staging และตรวจ RLS ด้วย session จริง SQL Editor ในสิทธิ์เจ้าของไม่พิสูจน์ว่า RLS ป้องกันผู้ใช้ทั่วไปแล้ว
+- จำนวนรายการ พอร์ต relations รูป และ Storage object records ใน bucket ที่แอปใช้
+- เกียรติบัตรเกิน 2 แถวภาพ และเกิน 2 URL ที่ไม่ซ้ำเมื่อรวม image_url เดิม; กิจกรรมเกิน 4 แถวภาพ
+- วันที่/หน่วยงานที่ยังมีข้อมูล ชื่อว่าง และ relation/tag ที่เจ้าของไม่ตรงกัน
+- covers/prefaces/profiles ที่ซ้ำในพอร์ตเดียวหรือไม่มี portfolio_id
+- ชื่อ/definition ของ triggers ใน public และ auth.users (ไม่ดึง function bodies)
 
-## Fixtures
+URL ที่ต่างกันแต่ชี้ภาพเดียวกันยังนับต่าง; จำนวน objects เป็น metadata ไม่ใช่การตรวจว่าไฟล์จริงยังอยู่ ไม่ใช้ query นี้ตัดสินลบไฟล์อัตโนมัติ
 
-`tests/fixtures/acceptance-data.json` เป็น manifest ข้อมูลสังเคราะห์สำหรับเตรียม acceptance test ไม่ใช่ schema ฐานข้อมูลหรือ seed ที่พร้อมรัน อีเมล example.invalid รับอีเมลไม่ได้ จึงต้องแทนด้วยกล่องทดสอบที่ได้รับอนุญาตสำหรับเคสกู้รหัสผ่าน
+## สำรองและ staging
 
-ชื่อ IMG1–IMG6 ยังเป็นรายการภาพที่ต้องสร้าง ไม่อ้างว่ามีไฟล์อัปโหลดแล้ว ให้สร้าง fixture ใหม่ต่อเคสลบ/แก้ และทำ mapping ไป schema จริงหลัง M00.03 ห้าม seed ลง production โดยตรง
+ต้องตรวจ backup/restore ก่อนเปลี่ยนข้อมูลจริงตามแผน M00.04 การมี migration ใน Git หรือยอด inventory ไม่ใช่ backup ของฐาน/ไฟล์ และ backup ฐานไม่ใช้แทนสำเนาไฟล์ Storage ต้องทดสอบกู้ในสภาพแวดล้อมแยกก่อนนับว่างานนี้เสร็จ
+
+ไม่ต้องส่งรหัสผ่าน, database connection string, API key หรือ service_role key ในแชต และไม่ต้อง commit ผลฐานจริงขึ้น repository
+
+## Fixtures และการตรวจซ้ำ
+
+`tests/fixtures/acceptance-data.json` เป็น manifest สังเคราะห์ ยังไม่ใช่ seed ที่รันจริง อีเมล example.invalid รับเมลไม่ได้ ต้องใช้กล่องทดสอบที่ได้รับอนุญาตสำหรับ recovery ชื่อ IMG1–IMG6 ยังไม่มีไฟล์อัปโหลด ให้ seed/reset แยกเคสใน staging เท่านั้น
+
+รัน probes ของเครื่องมือตรวจได้ด้วย:
+
+```bash
+node --import tsx --test tests/inspection/supabase-baseline.test.ts
+```
+
+probes จำลองจุดอ่อนของ baseline โดยเจตนา ไม่ใช่ acceptance ของระบบที่แก้แล้ว
+
+ไฟล์ [supabase-metadata.sql](supabase-metadata.sql) ยังเก็บไว้ใช้สำรวจซ้ำเมื่อ schema เปลี่ยน ยังไม่จำเป็นต้องรันใหม่ในขั้นนี้

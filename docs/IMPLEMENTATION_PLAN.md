@@ -1,6 +1,6 @@
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
-ฉบับ 1.1 • 15 ตุลาคม 2569 (Asia/Bangkok)
+ฉบับ 1.2 • 15 ตุลาคม 2569 (Asia/Bangkok)
 
 ## 1. เป้าหมายของเอกสาร
 
@@ -44,7 +44,7 @@
 
 **สถานะผลทดสอบแยกต่างหาก:** NOT_RUN, PASS, FAIL, BLOCKED ตาม SYSTEM_TEST_PLAN ห้ามนำ READY หรือมีโค้ดแล้วไปแทน PASS
 
-สถานะปัจจุบันหลัง checkpoint นี้ถูก push: M00.01/M00.02 เป็น DONE, M00.03–M00.05 เป็น BLOCKED โดย M00.05 มี fixture manifest แล้วแต่ยังไม่มี staging fixtures จริง ส่วน M01–M12 ยังคง TODO รวม 2 DONE / 3 BLOCKED / 60 TODO ไม่ใช้จำนวนนี้เป็นเปอร์เซ็นต์ความสมบูรณ์ของระบบ
+สถานะปัจจุบันหลัง checkpoint นี้ถูก push: M00.01–M00.03 เป็น DONE, M00.04–M00.05 เป็น BLOCKED โดย M00.05 มี fixture manifest แล้วแต่ยังไม่มี staging fixtures จริง ส่วน M01–M12 ยังคง TODO รวม 3 DONE / 2 BLOCKED / 60 TODO ไม่ใช้จำนวนนี้เป็นเปอร์เซ็นต์ความสมบูรณ์ของระบบ
 
 สถานะส่วนใหญ่: READY เมื่อเริ่มงานย่อยแรกได้; IN_PROGRESS เมื่อมีงานย่อยเริ่มจริง; DONE เฉพาะเมื่องานย่อยทั้งหมด DONE และเกณฑ์จบส่วนผ่าน งานที่รอ prerequisite ตามแผนให้คง TODO ไม่ใช้ BLOCKED จนมีอุปสรรคจริง
 
@@ -87,7 +87,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M00 — ตั้งต้นงานและยืนยันสภาพแวดล้อม
 
 **เป้าหมาย:** ได้ฐานโค้ดและข้อมูลจริงที่เชื่อถือได้ก่อนออกแบบ migration  
-**สถานะส่วน:** BLOCKED • **Dependency:** รอ metadata/Auth จริง; ดู M00_BASELINE_REPORT.md
+**สถานะส่วน:** BLOCKED • **Dependency:** ได้รับ metadata/Auth แล้ว; รอยอดข้อมูลจริง backup/restore และ staging; ดู M00_SCHEMA_REVIEW.md
 **จุดเริ่มตรวจ:** `AGENTS.md, package.json, package-lock.json, playwright.config.ts, supabase/migrations`  
 **ผูกกับ audit:** F02,F12,F16,F39,F40  
 **เคสตรวจรับ:** REG-02, SEC-01, SEC-02
@@ -96,7 +96,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M00.01 ตรวจ baseline และกติกา | DONE | มีเอกสาร/รายงานแล้ว | ตรวจ remote/branch/working tree และ HEAD; อ่านเอกสารหลักกับคู่มือ Next.js ที่ติดตั้ง รักษางานค้างของผู้ใช้ | บันทึก HEAD และรายการเปลี่ยนหลัง audit; ไม่ reset ย้อนหลัง |
 | M00.02 ตั้งสภาพแวดล้อมทดสอบ | DONE | มี config/test เดิม | ติดตั้งตาม lockfile แยก mock และ staging ตรวจ build config ไม่ใส่ secret ในรายงาน | รัน baseline lint/build/tests และเก็บผลจริง; ปัญหาเดิมแยกจากปัญหาใหม่ |
-| M00.03 สำรวจ Supabase จริง | BLOCKED | ยังไม่ยืนยันระบบจริง | อ่าน schema เต็ม constraints RPC RLS Storage policies และ Auth settings; ตรวจว่า migration เดิมติดตั้งแล้วหรือไม่ | มีรายการสิ่งที่ยืนยันได้/ยังเข้าถึงไม่ได้; ภาพ schema เก่าไม่ใช้แทนข้อมูลจริง |
+| M00.03 สำรวจ Supabase จริง | DONE | ได้ metadata และภาพ Auth จากเจ้าของแล้ว | อ่าน schema เต็ม constraints RPC RLS Storage policies และ Auth settings; ตรวจว่า migration เดิมติดตั้งแล้วหรือไม่ | มีรายการสิ่งที่ยืนยันได้/ยังเข้าถึงไม่ได้; ภาพ schema เก่าไม่ใช้แทนข้อมูลจริง |
 | M00.04 สำรวจข้อมูลทดลองและสำรอง | BLOCKED | ยังไม่ตรวจข้อมูลจริง | นับเกียรติบัตร 3–4 รูป ข้อมูลวันที่/หน่วยงาน พอร์ตและไฟล์อ้างอิง; เตรียม backup/restore ที่ตรวจได้ | ระบุผลกระทบและแนวทางเก็บ/ย้ายข้อมูลก่อนลบ ไม่มีการล้างข้อมูลเหมารวม |
 | M00.05 เตรียม fixtures และข้อสรุปทางเทคนิค | BLOCKED | มีแผนทดสอบแล้ว | สร้างบัญชี A/B และข้อมูลทดสอบตาม SYSTEM_TEST_PLAN; ลงทะเบียนคำถามที่ยังเปิด | มี fixtures ที่ reset แยกเคสได้ และรายการคำถามพร้อมผู้รับผิดชอบ |
 
@@ -345,7 +345,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 
 | ID | ประเด็น | ผู้รับผิดชอบ/จังหวะ | สถานะ | วิธีปิดประเด็น |
 | --- | --- | --- | --- | --- |
-| D01 | schema/RLS/Storage/Auth จริง และสิทธิ์เข้าถึง | ผู้ทำ M00.03 | OPEN | เก็บหลักฐานค่าที่ไม่ลับ; หากไม่มี access ระบุสิ่งที่ต้องขออย่างเฉพาะเจาะจง |
+| D01 | schema/RLS/Storage/Auth จริง และสิทธิ์เข้าถึง | ผู้ทำ M00.03 | RECORDED | ดู M00_SCHEMA_REVIEW.md; การสำรวจเสร็จ ข้อจำกัด live access บันทึกแล้ว การตรวจ runtime รอ staging |
 | D02 | เกียรติบัตรเดิมเกิน 2 รูปและช่องวันที่/หน่วยงาน | ผู้ทำ M00.04/M01.03 | OPEN | นับข้อมูล สำรอง เสนอการเก็บ/ย้ายก่อนการลบจริง ห้ามตัดทิ้งเอง |
 | D03 | รูปที่ถูกแทน/ลบตอนรับ update | ผู้ทำ M04.02 | OPEN | ออกแบบหน้าสรุปผลและวิธีเลือกรูปใหม่ รักษาหลักผู้ใช้รู้และยืนยัน |
 | D04 | UX เมื่อสองแท็บบันทึกชนกัน | ผู้ทำ M01.02/M05.04 | OPEN | ใช้ revision ปฏิเสธการทับเงียบและให้เลือก/กู้ค่าค้าง บันทึกแนวทางที่ใช้ |
@@ -377,8 +377,8 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | M00.01 | ไค | DONE | 957e35d | repository/กติกา | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | ตรวจ remote อีกครั้งเมื่อกลับมาทำงาน | 2026-10-15 |
 | M00.02 | ไค | DONE | 957e35d | lint/unit/build/E2E mock | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | PASS baseline; ไม่แทน integration จริง | 2026-10-15 |
-| M00.03 | ไค | BLOCKED | 957e35d | schema/RLS/Storage/Auth | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | รอ metadata SQL และภาพค่า Auth | 2026-10-15 |
-| M00.04 | ไค | BLOCKED | 957e35d | ข้อมูลทดลอง/backup | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | รอ schema จริงก่อน query นับและตรวจ backup | 2026-10-15 |
+| M00.03 | ไค | DONE | 885706c | metadata/Auth และ probes | [ผลตรวจ](M00_SCHEMA_REVIEW.md) | commit ที่เพิ่ม M00_SCHEMA_REVIEW.md | สำรวจเสร็จ; ยังไม่ใช่ live integration PASS | 2026-10-15 |
+| M00.04 | ไค | BLOCKED | 885706c | aggregate inventory/backup | [SQL](../scripts/inspection/supabase-data-inventory.sql) | commit ที่เพิ่ม M00_SCHEMA_REVIEW.md | SQL ผ่านฐานจำลอง รอผลฐานจริงและ backup/restore | 2026-10-15 |
 | M00.05 | ไค | BLOCKED | 957e35d | fixture manifest | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | รอ staging accounts/assets/seed ตาม schema | 2026-10-15 |
 
 แบบส่งต่อที่ต้องกรอกก่อนหยุดงาน:
@@ -414,7 +414,8 @@ Branch / HEAD ล่าสุด / Commit ที่ push:
 
 | วันที่ | ฉบับ | การเปลี่ยนแปลง |
 | --- | --- | --- |
+| 2026-10-15 | 1.2 | รับ metadata/Auth แล้ว ปิดงานสำรวจ M00.03; เพิ่ม probes และ SQL inventory; M00.04/.05 ยังรอฐานจริง |
 | 2026-10-15 | 1.1 | บันทึก baseline จริงและ checkpoint M00; รอข้อมูล Supabase; แก้จำนวน E2E เป็น 9 |
 | 2026-10-15 | 1.0 | สร้างแผน 13 ส่วน 65 งานย่อยจากเอกสารและ audit ที่เผยแพร่แล้ว แยกสถานะของเดิม/งานใหม่ พร้อม dependency เกณฑ์จบและทะเบียนส่งต่อ |
 
-**จุดทำต่อ:** M00.03 รับผล metadata SQL/ค่า Auth ตาม scripts/inspection/README.md แล้วตรวจข้อมูลจริงใน M00.04/M00.05 ก่อนปิด M00 และเริ่ม M01 ไม่ต้องรัน baseline ซ้ำโดยไม่มีโค้ดเปลี่ยนหรือความเสี่ยงใหม่
+**จุดทำต่อ:** รับผล supabase-data-inventory.sql ตาม scripts/inspection/README.md แล้วตรวจ backup/restore และ staging fixtures ใน M00.04/M00.05 ก่อนปิด M00 และเริ่ม M01 ไม่ต้องรัน baseline ซ้ำโดยไม่มีโค้ดเปลี่ยนหรือความเสี่ยงใหม่

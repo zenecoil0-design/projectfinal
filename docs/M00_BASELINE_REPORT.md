@@ -2,7 +2,9 @@
 
 อัปเดต 15 ตุลาคม 2026 (Asia/Bangkok) • ผู้ดำเนินการ: ไค
 
-**สถานะส่วนใหญ่: BLOCKED — สำเร็จเฉพาะ baseline ฝั่ง repository/mock ยังไม่ได้ตรวจ Supabase จริง**
+**สถานะส่วนใหญ่: BLOCKED — baseline ผ่าน และได้รับ metadata/Auth จริงจากเจ้าของแล้ว; รอยอดข้อมูล backup/restore และ staging**
+
+อัปเดตรอบตรวจ schema: ดู [M00_SCHEMA_REVIEW.md](M00_SCHEMA_REVIEW.md) ข้อมูลด้านล่างเป็นประวัติ baseline ก่อนรับ metadata ยกเว้นตารางสถานะและจุดส่งต่อที่ปรับให้เป็นปัจจุบัน
 
 ## จุดอ้างอิง
 
@@ -52,7 +54,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-## สิ่งที่พบเกี่ยวกับ Supabase
+## สิ่งที่พบเกี่ยวกับ Supabase ในรอบ baseline ก่อนรับ metadata
 
 - ไม่พบ `.env` ของโปรเจกต์ใน checkout หรือ database/Supabase environment variables ที่ใช้เชื่อมต่อจริง
 - ไม่มี Supabase connector ที่เรียกใช้ได้ในรอบตรวจนี้ ไม่ได้ขอหรือค้นหารหัสผ่านจากตำแหน่งอื่น
@@ -74,16 +76,16 @@ npm run test:e2e
 | --- | --- | --- |
 | M00.01 | DONE | ตรวจ HEAD ใหม่ก่อนเริ่มรอบถัดไปตามปกติ |
 | M00.02 | DONE สำหรับ baseline repository/mock ตามผลด้านบน | staging integration ยังอยู่ใน M00.03/M00.05 ไม่อ้างผ่านจาก mock |
-| M00.03 | BLOCKED | ต้องได้ metadata และค่า Auth จริงตาม README |
-| M00.04 | BLOCKED | หลังทราบ schema จึงจัด query นับผลกระทบและหลักฐาน backup/restore |
+| M00.03 | DONE | ได้ metadata/Auth และบันทึกข้อจำกัดใน M00_SCHEMA_REVIEW.md; ยังไม่ใช่ runtime integration |
+| M00.04 | BLOCKED | SQL นับผลกระทบพร้อมและผ่านฐานจำลอง รอผลจากฐานจริงและหลักฐาน backup/restore |
 | M00.05 | BLOCKED (เตรียม manifest แล้ว) | ยังไม่สร้างบัญชี staging/ไฟล์ภาพจริง/seed-reset ตาม schema และตรวจ integration |
 
 **ยังไม่เริ่ม M01 implementation:** AGENTS ข้อ 6 ให้ตรวจ schema/RLS/Storage จริงก่อน migration และ dependency ในแผนให้ M00 ผ่านก่อน ไม่ข้ามเงื่อนไขเพื่อทำเครื่องหมายว่าเสร็จ
 
-สิ่งที่ต้องการจากเจ้าของตอนนี้คือผล metadata SQL กับภาพ Auth settings ตาม README ไม่ต้องส่ง password, connection string หรือ service_role key เมื่อได้ข้อมูลแล้วจะตรวจ M00.03 ต่อ จากนั้นเตรียมการนับผลกระทบ/สำรองและ fixtures เพื่อปิด M00 ก่อน M01
+สิ่งที่ต้องการจากเจ้าของตอนนี้คือผล [SQL inventory](../scripts/inspection/supabase-data-inventory.sql) และสถานะสำรองฐานข้อมูล/ไฟล์กับ staging ตาม [README](../scripts/inspection/README.md) ได้รับ metadata และภาพ Auth แล้ว ไม่ต้องส่งซ้ำ
 
 ## จุดส่งต่องานครั้งถัดไป
 
-รับไฟล์ผล SQL → ตรวจเทียบตาราง/constraint/RLS กับ caller จริง → ตรวจ Auth → จัด query นับข้อมูลเก่าที่ไม่เผยข้อมูลส่วนตัว → ตรวจ backup/restore และ staging fixtures → อัปเดต M00 เป็น DONE เฉพาะเมื่อครบ → push ก่อนเริ่ม M01
+รับยอด inventory และ trigger metadata → ประเมินผลกระทบ → ตรวจ backup/restore และ staging fixtures → ปิด M00 เฉพาะเมื่อครบ → push ก่อนเริ่ม M01
 
 เคส 100 ข้อใน SYSTEM_TEST_PLAN ยังคง NOT_RUN สำหรับระบบเป้าหมาย ชุดทดสอบเดิมผ่านไม่ได้แปลว่าฟีเจอร์ใหม่ผ่าน โดยเฉพาะเคสเดิมที่ยังคาดหวังเพดาน PDF 10 หน้า
