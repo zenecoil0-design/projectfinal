@@ -2,13 +2,11 @@
 
 ได้รับ `metadata_report` และภาพ Auth จากเจ้าของแล้ววันที่ 15 ตุลาคม 2026 ดู [ผลตรวจ](../../docs/M00_SCHEMA_REVIEW.md) **ไม่ต้องส่งสองส่วนนี้ซ้ำ**
 
-## ขั้นตอนปัจจุบัน: สำรองก่อน migration
+## ขั้นตอนปัจจุบัน
 
-ได้รับ inventory แล้วเวลา 13:23:57 วันที่ 15 ตุลาคม 2026 (ไทย) ดู [สรุปผล](../../docs/M00_INVENTORY_REVIEW.md) **ไม่ต้องรัน query เดิมซ้ำทันที**
+รับ metadata, inventory, ภาพ Auth/Backups และ body ของ trigger functions ทั้งสามครบแล้ว ไม่ต้องส่งซ้ำ เจ้าของอนุญาตลบข้อมูลทดลองโดยเก็บบัญชีล็อกอินวันที่ 2026-10-15
 
-เปิดโปรเจกต์ Supabase → **Database → Backups** แล้วส่งภาพรายการ/สถานะเพื่อเลือกวิธีสำรองให้ตรงแผนบริการ คู่มือทั้งฐานและไฟล์อยู่ที่ [M00_BACKUP_GUIDE.md](../../docs/M00_BACKUP_GUIDE.md) ยังไม่ต้องกด Restore
-
-ก่อน migration ต้องอ่าน body ของสามฟังก์ชันที่ trigger metadata อ้างถึงด้วย: รัน [supabase-trigger-functions.sql](supabase-trigger-functions.sql) ใน SQL Editor ได้ เป็น SELECT อ่านอย่างเดียว ตรวจผลว่าฟังก์ชันไม่มี secret ฝังไว้ก่อนส่ง ไม่ต้องส่ง dump ฐานจริงหรือ connection string
+ขั้นตอน reset และฐานข้อมูลอยู่ที่ [M01_DATABASE_SETUP.md](../../docs/M01_DATABASE_SETUP.md) ยังไม่มีการเชื่อมต่อเพื่อรันกับ Supabase จริงจาก checkout นี้
 
 ## เมื่อต้องนับใหม่ภายหลัง
 
@@ -26,7 +24,7 @@ URL ที่ต่างกันแต่ชี้ภาพเดียวก�
 
 ## สำรองและ staging
 
-ต้องตรวจ backup/restore ก่อนเปลี่ยนข้อมูลจริงตามแผน M00.04 การมี migration ใน Git หรือยอด inventory ไม่ใช่ backup ของฐาน/ไฟล์ และ backup ฐานไม่ใช้แทนสำเนาไฟล์ Storage ต้องทดสอบกู้ในสภาพแวดล้อมแยกก่อนนับว่างานนี้เสร็จ
+สำหรับข้อมูลในอนาคตที่ต้องเก็บ ให้ตรวจ backup/restore ก่อนเปลี่ยนข้อมูลจริงตามแผน M00.04 การมี migration ใน Git หรือยอด inventory ไม่ใช่ backup ของฐาน/ไฟล์ และ backup ฐานไม่ใช้แทนสำเนาไฟล์ Storage ต้องทดสอบกู้ในสภาพแวดล้อมแยกก่อนนับว่างานนี้เสร็จ
 
 ไม่ต้องส่งรหัสผ่าน, database connection string, API key หรือ service_role key ในแชต และไม่ต้อง commit ผลฐานจริงขึ้น repository
 
