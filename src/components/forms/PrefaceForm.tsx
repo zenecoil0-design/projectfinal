@@ -28,6 +28,9 @@ import {
 const DEFAULT_PREFACE =
   "แฟ้มสะสมผลงาน (Portfolio) เล่มนี้ จัดทำขึ้นเพื่อเป็นตัวแทนในการนำเสนอข้อมูลของข้าพเจ้า ซึ่งเกี่ยวกับประวัติส่วนตัว ประวัติการศึกษา ผลงาน และกิจกรรมต่างๆ ที่สะท้อนถึงความรู้ความสามารถและความตั้งใจ ข้าพเจ้าหวังว่าแฟ้มสะสมผลงานเล่มนี้จะทำให้ทุกท่านได้เห็นถึงศักยภาพและความพร้อมในการศึกษาต่อ";
 
+const inputClassName = "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 sm:text-sm";
+const labelClassName = "mb-2 block text-sm font-semibold leading-5 text-slate-700";
+
 export default function PrefaceForm({
   onNext,
 }: {
@@ -329,7 +332,7 @@ export default function PrefaceForm({
   return (
     <form
       onSubmit={handleSave}
-      className="flex flex-col gap-6 pb-10"
+      className="flex min-w-0 flex-col gap-5 pb-6"
     >
       <fieldset disabled={exporting || isSaving || isLoading || status.preface === "error"} className="contents">
       <div className="flex flex-col gap-3">
@@ -338,11 +341,11 @@ export default function PrefaceForm({
           (Preface)
         </h3>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="flex min-w-0 flex-col gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
           {/* PREFACE */}
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="preface-text" className={labelClassName}>
               ข้อความคำนำ
               (Preface Text)
 
@@ -353,6 +356,8 @@ export default function PrefaceForm({
             </label>
 
             <textarea
+              id="preface-text"
+              aria-describedby="preface-help"
               value={
                 store.prefaceText
               }
@@ -367,11 +372,11 @@ export default function PrefaceForm({
               }
               rows={6}
               placeholder="พิมพ์ข้อความคำนำของคุณที่นี่..."
-              className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm leading-relaxed outline-none focus:border-blue-500"
+              className={`${inputClassName} min-h-60 resize-y leading-7`}
               required
             />
 
-            <span className="mt-1 block text-[10px] text-slate-400">
+            <span id="preface-help" className="mt-2 block text-xs leading-5 text-slate-500">
               💡
               ระบบมีข้อความมาตรฐานให้เริ่มต้น
               และสามารถแก้ไขได้อิสระ
@@ -381,7 +386,7 @@ export default function PrefaceForm({
           {/* AUTHOR */}
 
           <div className="border-t border-slate-200 pt-4">
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="preface-author" className={labelClassName}>
               ชื่อผู้จัดทำ
               (ลงท้ายหน้าคำนำ)
 
@@ -393,6 +398,7 @@ export default function PrefaceForm({
 
             <input
               type="text"
+              id="preface-author"
               value={
                 store.authorName
               }
@@ -406,40 +412,47 @@ export default function PrefaceForm({
                 )
               }
               placeholder="เช่น นายศิวกร เห็มสุข"
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
               required
             />
           </div>
         </div>
       </div>
 
-      {/* ERROR */}
+      <div className="space-y-3 border-t border-slate-200 pt-4">
+        <p className="text-sm leading-6 text-slate-600">
+          กดบันทึกเพื่อเก็บคำนำและไปกรอกประวัติส่วนตัว
+        </p>
 
-      {errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
-          {errorMessage}
-        </div>
-      )}
+        {/* ERROR */}
 
-      {/* SUCCESS */}
+        {errorMessage && (
+          <div role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
+            {errorMessage}
+          </div>
+        )}
 
-      {successMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
-          {successMessage}
-        </div>
-      )}
+        {/* SUCCESS */}
 
-      <button
-        type="submit"
-        disabled={isSaving}
-        className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <FaCheck />
+        {successMessage && (
+          <div role="status" className="break-words rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium leading-6 text-emerald-700">
+            {successMessage}
+          </div>
+        )}
 
-        {isSaving
-          ? "กำลังบันทึก..."
-          : "บันทึกข้อมูลคำนำ"}
-      </button>
+        <button
+          type="submit"
+          disabled={isSaving}
+          aria-busy={isSaving}
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <FaCheck />
+
+          {isSaving
+            ? "กำลังบันทึก..."
+            : "บันทึกและไปหน้าถัดไป"}
+        </button>
+      </div>
       </fieldset>
     </form>
   );
