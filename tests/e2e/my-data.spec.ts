@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 const sections = [
   { key: 'education', plural: 'educations', tab: 'ประวัติการศึกษา', add: 'เพิ่มประวัติการศึกษา', edit: 'แก้ไขประวัติการศึกษา', title: 'ชื่อสถานศึกษา *', titleKey: 'school_name' },
   { key: 'activity', plural: 'activities', tab: 'ผลงานและกิจกรรม', add: 'เพิ่มผลงานหรือกิจกรรม', edit: 'แก้ไขผลงานหรือกิจกรรม', title: 'ชื่อผลงาน / กิจกรรม *', titleKey: 'title' },
+  { key: 'certificate', plural: 'certificates', tab: 'เกียรติบัตร', add: 'เพิ่มเกียรติบัตร', edit: 'แก้ไขเกียรติบัตร', title: 'ชื่อเกียรติบัตร / รางวัล *', titleKey: 'title' },
 ] as const;
 type Section = typeof sections[number];
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -119,7 +120,7 @@ for (const config of sections) {
     await page.getByRole('button', { name: config.add, exact: true }).click();
     const dialog = page.getByRole('dialog').first();
     const fileChooser = page.waitForEvent('filechooser');
-    await dialog.getByRole('button', { name: /เลือกโลโก้|เพิ่มรูปภาพ/ }).click();
+    await dialog.getByRole('button', { name: /เลือกโลโก้|เพิ่มรูปภาพ|เพิ่มรูปเกียรติบัตร/ }).click();
     const chooser = await fileChooser;
     const image = await page.request.get('http://127.0.0.1:54321/sample.png');
     await chooser.setFiles({ name: 'mock.png', mimeType: 'image/png', buffer: await image.body() });

@@ -20,11 +20,20 @@
 - ตรวจ AST ของ page/EducationLibrary/ActivityLibrary เทียบฐานก่อนเริ่ม: statements ก่อน render และ JSX handlers/value/disabled/validation/accept/multiple ไม่เปลี่ยน
 - ส่วน 1 remote commit: `efafb4ad3932d3930d6689b72710a5d2a89de15c`
 
+## ส่วน 3 — เกียรติบัตร
+
+- `CertificateLibrary.tsx`: รักษา object-contain ทั้ง thumbnail และรูปในฟอร์ม เพิ่มกรอบและพื้นที่ว่างให้เห็นภาพเต็มทั้งแนวตั้ง/แนวนอน; ชื่อ/Tags ตัดบรรทัด ปุ่มแยกจากข้อความ; form/input/textarea/ตัวนับรูป/ปุ่มลบ/Tag buttons/modal เข้าชุดกับอีกสองหมวด
+- ปรับเฉพาะ JSX/CSS/accessibility; จำนวนรูป ช่องกรอก required/date/หน่วยงาน validation และ handlers เดิมทั้งหมดคงเดิม
+- Mock Playwright เกียรติบัตร 3 tests ผ่านที่ 1440x1000 และ 390x568: การ์ดชื่อ/Tags ยาว ภาพสองแนว ไม่มีรูป/Tags คลังว่าง loading เพิ่ม/แก้ไข/โหลดกลับ/สลับหมวด บันทึกล้มเหลวคงข้อมูลแล้ว retry, cancel form/crop/delete; ตรวจภาพด้วยตา
+- eslint 0 errors, warning img เดิม 2; git diff --check และ AST handlers/validation เทียบฐานก่อนเริ่มผ่าน
+- ส่วน 2 remote commit: `959012354671a0bf4a92f9d0af57ef8d7bd900e0`
+
 ## ข้อจำกัด/logic เดิมที่พบ (ไม่แก้ในงาน UI)
 
 - ฟอร์มคลังปิดผ่าน resetForm โดยตรง และหน้าเปลี่ยนหมวดผ่าน setActiveTab: ไม่มี dirty-state warning เดิมให้รักษา การทดสอบยืนยันเพียงยกเลิก/เปิดใหม่ตามพฤติกรรมปัจจุบัน ไม่ถือว่าคำเตือนข้อมูลค้างผ่าน
 - การศึกษาไม่มี loadError state: loadData log error แล้วใช้ข้อมูล fallback; ไม่สามารถแยกโหลดล้มเหลวจากคลังว่างด้วย JSX อย่างเดียวโดยไม่เปลี่ยน logic จึงไม่สร้างสถานะใหม่มาปิดบัง
 - กิจกรรมมีรูปแบบ log error/fallback เดียวกัน ไม่มี loadError state เช่นกัน
+- เกียรติบัตรไม่มี loadError state เช่นเดียวกัน และโค้ดเดิมยังจำกัด/นับ 4 รูป (totalImages, handleFiles, validation, JSX) ต่างจากเอกสารที่ตั้งเป้า 2 รูป: รอบนี้คงจำนวนรูปและข้อมูลเก่าไว้ทั้งหมดตามขอบเขต ไม่ลบรูปหรือเปลี่ยน validation
 - บันทึกล้มเหลวใช้ alert เดิม สำเร็จโหลดรายการและปิดฟอร์ม ไม่มี success banner; ไม่เพิ่มข้อความสำเร็จปลอม
 - คงคำยืนยันลบเดิมและ handlers เดิม ไม่ทดสอบลบข้อมูลจริง/Storage และไม่รับรองผลกระทบการลบทุกพอร์ตจากงานนี้
 - ปัญหา Tags loadError ใน Editor ที่ส่งต่อมาอยู่นอกขอบเขต ไม่แก้ Editor

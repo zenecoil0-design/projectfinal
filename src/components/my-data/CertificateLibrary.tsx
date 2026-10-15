@@ -59,7 +59,7 @@ const MAX_SIZE =
   5 * 1024 * 1024;
 
 const inputClass =
-  "w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+  "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:text-sm";
 
 export default function CertificateLibrary() {
   const supabase = useMemo(
@@ -961,7 +961,7 @@ export default function CertificateLibrary() {
 
   if (isLoading) {
     return (
-      <div className="mt-8 flex min-h-[300px] items-center justify-center rounded-[24px] bg-white">
+      <div role="status" className="mt-6 flex min-h-52 items-center justify-center rounded-xl bg-white p-4">
         กำลังโหลดเกียรติบัตร...
       </div>
     );
@@ -969,10 +969,10 @@ export default function CertificateLibrary() {
 
   return (
     <>
-      <section className="mt-8">
-        <div className="flex items-center justify-between">
+      <section className="mt-6 min-w-0">
+        <div className="flex min-w-0 flex-col items-start gap-4 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between">
           <div>
-            <h2 className="text-2xl font-black">
+            <h2 className="text-xl font-bold text-slate-900">
               เกียรติบัตร
             </h2>
 
@@ -990,7 +990,7 @@ export default function CertificateLibrary() {
             onClick={
               openCreate
             }
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"
+            className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             <FaPlus />
             เพิ่มเกียรติบัตร
@@ -999,7 +999,7 @@ export default function CertificateLibrary() {
 
         {certificates.length ===
         0 ? (
-          <div className="mt-6 flex min-h-[300px] flex-col items-center justify-center rounded-[24px] border-2 border-dashed border-slate-300 bg-white">
+          <div className="mt-5 flex min-h-52 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 text-center">
             <FaCertificate className="text-3xl text-blue-600" />
 
             <h3 className="mt-4 text-lg font-black">
@@ -1007,7 +1007,7 @@ export default function CertificateLibrary() {
             </h3>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 @min-[48rem]:grid-cols-2">
             {certificates.map(
               (item) => {
                 const itemTags =
@@ -1023,11 +1023,11 @@ export default function CertificateLibrary() {
                     key={
                       item.id
                     }
-                    className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm"
+                    className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm wrap-anywhere"
                   >
                     {item.images.length >
                       0 && (
-                      <div className="grid grid-cols-2 gap-1 bg-slate-100">
+                      <div className="grid min-w-0 grid-cols-2 gap-2 bg-slate-100 p-2">
                         {item.images.map(
                           (
                             image
@@ -1036,7 +1036,7 @@ export default function CertificateLibrary() {
                               key={
                                 image.id
                               }
-                              className="h-40 overflow-hidden"
+                              className="h-40 min-w-0 overflow-hidden rounded-lg bg-white p-2"
                             >
                               <img
                                 src={
@@ -1051,10 +1051,10 @@ export default function CertificateLibrary() {
                       </div>
                     )}
 
-                    <div className="p-5">
-                      <div className="flex justify-between gap-4">
+                    <div className="min-w-0 p-4">
+                      <div className="flex min-w-0 flex-col gap-3">
                         <div>
-                          <h3 className="text-lg font-black">
+                          <h3 className="text-base font-bold leading-7 text-slate-900">
                             {
                               item.title
                             }
@@ -1069,7 +1069,7 @@ export default function CertificateLibrary() {
                           )}
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <button
                             type="button"
                             onClick={() =>
@@ -1077,7 +1077,7 @@ export default function CertificateLibrary() {
                                 item
                               )
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border"
+                            aria-label={`แก้ไขเกียรติบัตร ${item.title}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           >
                             <FaEdit />
                           </button>
@@ -1089,7 +1089,7 @@ export default function CertificateLibrary() {
                                 item
                               )
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-500"
+                            aria-label={`ลบเกียรติบัตร ${item.title}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
                           >
                             <FaTrash />
                           </button>
@@ -1097,7 +1097,7 @@ export default function CertificateLibrary() {
                       </div>
 
                       {item.description && (
-                        <p className="mt-4 text-sm leading-6 text-slate-600">
+                        <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-600">
                           {
                             item.description
                           }
@@ -1106,7 +1106,7 @@ export default function CertificateLibrary() {
 
                       {itemTags.length >
                         0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="mt-4 flex min-w-0 flex-wrap gap-2">
                           {itemTags.map(
                             (
                               tag
@@ -1115,7 +1115,7 @@ export default function CertificateLibrary() {
                                 key={
                                   tag.id
                                 }
-                                className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700"
+                                className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold leading-5 text-blue-700"
                               >
                                 <FaTag />
                                 {
@@ -1136,11 +1136,11 @@ export default function CertificateLibrary() {
       </section>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/60 p-4 backdrop-blur-sm">
-          <div className="flex h-[calc(100dvh-32px)] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-40px))]">
-            <div className="flex shrink-0 items-center justify-between border-b px-6 py-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="certificate-library-dialog-title" className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4">
+          <div className="flex h-[calc(100dvh-16px)] min-w-0 w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:h-[min(760px,calc(100dvh-32px))]">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
               <div>
-                <h2 className="text-lg font-black">
+                <h2 id="certificate-library-dialog-title" className="text-base font-bold leading-6 text-slate-900">
                   {editingId
                     ? "แก้ไขเกียรติบัตร"
                     : "เพิ่มเกียรติบัตร"}
@@ -1156,27 +1156,27 @@ export default function CertificateLibrary() {
                 onClick={
                   resetForm
                 }
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100"
+                aria-label="ปิดฟอร์มเกียรติบัตร" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               >
                 <FaTimes />
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
               <form
                 id="certificate-form"
                 onSubmit={
                   handleSave
                 }
-                className="space-y-4"
+                aria-busy={isSaving} className="@container min-w-0 space-y-5"
               >
                 <div>
-                  <div className="mb-2 flex justify-between">
-                    <label className="text-sm font-bold">
+                  <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
+                    <label htmlFor="certificate-library-images" className="text-sm font-semibold text-slate-700">
                       รูปเกียรติบัตร
                     </label>
 
-                    <span className="text-xs font-bold text-slate-400">
+                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
                       {
                         totalImages
                       }{" "}
@@ -1184,7 +1184,7 @@ export default function CertificateLibrary() {
                     </span>
                   </div>
 
-                  <CropInput
+                  <CropInput id="certificate-library-images"
                     ref={
                       fileInputRef
                     }
@@ -1206,7 +1206,7 @@ export default function CertificateLibrary() {
                     onClick={() =>
                       fileInputRef.current?.click()
                     }
-                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold disabled:bg-slate-100"
+                    className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <FaImage />
 
@@ -1220,7 +1220,7 @@ export default function CertificateLibrary() {
                     0 ||
                     newPreviews.length >
                       0) && (
-                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="mt-3 grid min-w-0 grid-cols-2 gap-3 @min-[32rem]:grid-cols-4">
                       {existingImages.map(
                         (
                           image
@@ -1265,8 +1265,8 @@ export default function CertificateLibrary() {
                   )}
                 </div>
 
-                <Field label="ชื่อเกียรติบัตร / รางวัล *">
-                  <input
+                <Field htmlFor="certificate-library-title" label="ชื่อเกียรติบัตร / รางวัล *">
+                  <input id="certificate-library-title" autoFocus
                     value={
                       title
                     }
@@ -1282,8 +1282,8 @@ export default function CertificateLibrary() {
                   />
                 </Field>
 
-                <Field label="รายละเอียด">
-                  <textarea
+                <Field htmlFor="certificate-library-description" label="รายละเอียด">
+                  <textarea id="certificate-library-description"
                     rows={3}
                     value={
                       description
@@ -1293,13 +1293,13 @@ export default function CertificateLibrary() {
                         e.target.value
                       )
                     }
-                    className={`${inputClass} resize-none`}
+                    className={`${inputClass} min-h-32 resize-y leading-7`}
                   />
                 </Field>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Field label="หน่วยงานที่ออกให้">
-                    <input
+                <div className="grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
+                  <Field htmlFor="certificate-library-issuedBy" label="หน่วยงานที่ออกให้">
+                    <input id="certificate-library-issuedBy"
                       value={
                         issuedBy
                       }
@@ -1314,8 +1314,8 @@ export default function CertificateLibrary() {
                     />
                   </Field>
 
-                  <Field label="วันที่ได้รับ">
-                    <input
+                  <Field htmlFor="certificate-library-issuedDate" label="วันที่ได้รับ">
+                    <input id="certificate-library-issuedDate"
                       type="date"
                       value={
                         issuedDate
@@ -1333,10 +1333,8 @@ export default function CertificateLibrary() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between">
-                    <label className="text-sm font-bold">
-                      Tags
-                    </label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-700">Tags</p>
 
                     <button
                       type="button"
@@ -1345,7 +1343,7 @@ export default function CertificateLibrary() {
                           true
                         )
                       }
-                      className="text-xs font-bold text-blue-600"
+                      className="min-h-11 rounded-lg px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                     >
                       + สร้าง Tag ใหม่
                     </button>
@@ -1366,7 +1364,7 @@ export default function CertificateLibrary() {
                               tag.id
                             )
                           }
-                          className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
+                          aria-pressed={selectedTagIds.includes(tag.id)} className={`min-h-11 min-w-0 max-w-full rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                             selectedTagIds.includes(
                               tag.id
                             )
@@ -1383,7 +1381,7 @@ export default function CertificateLibrary() {
                   </div>
 
                   {isAddingTag && (
-                    <div className="mt-3 flex gap-2 bg-slate-50 p-3">
+                    <div className="mt-3 flex min-w-0 flex-wrap gap-2 rounded-lg bg-slate-50 p-3">
                       <input
                         value={
                           newTagName
@@ -1393,7 +1391,7 @@ export default function CertificateLibrary() {
                             e.target.value
                           )
                         }
-                        className={`${inputClass} flex-1`}
+                        aria-label="ชื่อ Tag ใหม่" className={`${inputClass} flex-1 basis-36`}
                       />
 
                       <button
@@ -1401,7 +1399,7 @@ export default function CertificateLibrary() {
                         onClick={
                           handleAddTag
                         }
-                        className="rounded-lg bg-blue-600 px-4 text-xs font-bold text-white"
+                        className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                       >
                         เพิ่ม
                       </button>
@@ -1411,13 +1409,13 @@ export default function CertificateLibrary() {
               </form>
             </div>
 
-            <div className="flex shrink-0 justify-end gap-3 border-t px-6 py-3">
+            <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
               <button
                 type="button"
                 onClick={
                   resetForm
                 }
-                className="rounded-xl border px-5 py-2.5 text-sm font-bold"
+                className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
               >
                 ยกเลิก
               </button>
@@ -1428,13 +1426,13 @@ export default function CertificateLibrary() {
                 disabled={
                   isSaving
                 }
-                className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white disabled:opacity-50"
+                aria-busy={isSaving} className="min-h-11 rounded-lg bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving
                   ? "กำลังบันทึก..."
                   : editingId
                   ? "บันทึกการแก้ไข"
-                  : "เพิ่มลงคลัง"}
+                  : "บันทึก"}
               </button>
             </div>
           </div>
@@ -1452,7 +1450,7 @@ function ImageCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
+    <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-2">
       <div className="h-24 w-full overflow-hidden rounded-lg bg-slate-100">
         <img
           src={src}
@@ -1468,7 +1466,7 @@ function ImageCard({
           backgroundColor: "#dc2626",
           color: "#ffffff",
         }}
-        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-bold shadow-sm transition hover:opacity-90"
+        className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
       >
         <FaTrash />
         ลบรูป
@@ -1478,15 +1476,17 @@ function ImageCard({
 }
 
 function Field({
+  htmlFor,
   label,
   children,
 }: {
+  htmlFor: string;
   label: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-bold">
+      <label htmlFor={htmlFor} className="mb-2 block text-sm font-semibold leading-5 text-slate-700">
         {label}
       </label>
 
