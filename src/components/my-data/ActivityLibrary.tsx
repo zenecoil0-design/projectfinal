@@ -1,4 +1,6 @@
 "use client";
+import LibraryLoadStatus from "./LibraryLoadStatus";
+import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
 import {
@@ -74,7 +76,7 @@ const ALLOWED_IMAGE_TYPES = [
   "image/webp",
 ];
 
-export default function ActivityLibrary() {
+export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
   const supabase = useMemo(
     () => createClient(),
     []
@@ -83,11 +85,9 @@ export default function ActivityLibrary() {
   const fileInputRef =
     useRef<HTMLInputElement | null>(null);
 
-  const [userId, setUserId] =
-    useState("");
+  const userId = ownerId;
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
   const [isSaving, setIsSaving] =
     useState(false);
@@ -143,27 +143,8 @@ export default function ActivityLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  const loadData = useCallback(async (
-    currentUserId: string
-  ) => {
-    const [
-      {
-        data: activitiesData,
-        error: activitiesError,
-      },
-      {
-        data: tagsData,
-        error: tagsError,
-      },
-      {
-        data: activityTagsData,
-        error: activityTagsError,
-      },
-      {
-        data: imagesData,
-        error: imagesError,
-      },
-    ] = await Promise.all([
+  const loadData = useCallback((uid: string) => run(uid,
+    () => Promise.all([
       supabase
         .from(
           "user_library_activities"
@@ -180,7 +161,7 @@ export default function ActivityLibrary() {
         )
         .eq(
           "user_id",
-          currentUserId
+          uid
         )
         .order("created_at", {
           ascending: false,
@@ -191,7 +172,7 @@ export default function ActivityLibrary() {
         .select("id, name")
         .eq(
           "user_id",
-          currentUserId
+          uid
         )
         .order("name"),
 
@@ -211,101 +192,47 @@ export default function ActivityLibrary() {
           "id, activity_id, image_url, sort_order"
         )
         .order("sort_order"),
-    ]);
-
-    if (activitiesError) {
-      console.error(
-        activitiesError
-      );
-    }
-
-    if (tagsError) {
-      console.error(tagsError);
-    }
-
-    if (activityTagsError) {
-      console.error(
-        activityTagsError
-      );
-    }
-
-    if (imagesError) {
-      console.error(imagesError);
-    }
-
-    const cleanActivities: ActivityRow[] =
-      activitiesData ?? [];
-
-    const cleanTags: UserTag[] =
-      tagsData ?? [];
-
-    const cleanActivityTags: ActivityTagRow[] =
-      activityTagsData ?? [];
-
-    const cleanImages: ActivityImageRow[] =
-      imagesData ?? [];
-
-    setTags(cleanTags);
-
-    setActivities(
-      cleanActivities.map(
-        (activity) => ({
-          ...activity,
-
-          tagIds:
-            cleanActivityTags
-              .filter(
-                (item) =>
-                  item.activity_id ===
-                  activity.id
-              )
-              .map(
-                (item) =>
-                  item.tag_id
-              ),
-
-          images:
-            cleanImages
-              .filter(
-                (image) =>
-                  image.activity_id ===
-                  activity.id
-              )
-              .map(
-                (image) => ({
-                  id: image.id,
-                  image_url:
-                    image.image_url,
-                  sort_order:
-                    image.sort_order,
-                })
-              ),
-        })
-      )
-    );
-  }, [supabase]);
-
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
+    ]),
+    result => {
+    const [
+      {
+        data: activitiesData,
+        error: activitiesError,
+      },
+      {
+        data: tagsData,
+        error: tagsError,
+      },
+      {
+        data: activityTagsData,
+        error: activityTagsError,
+      },
+      {
+        data: imagesData,
+        error: imagesError,
+      },
+    ] = result;
+      const mainFailed = Boolean(activitiesError || imagesError);
+      const tagsFailed = Boolean(tagsError || activityTagsError);
+      const links: ActivityTagRow[] = activityTagsData ?? [];
+      const images: ActivityImageRow[] = imagesData ?? [];
+      if (!tagsFailed) setTags(tagsData ?? []);
+      if (!mainFailed) {
+        const rows: ActivityRow[] = activitiesData ?? [];
+        setActivities(previous => rows.map(row => ({
+          ...row,
+          tagIds: tagsFailed
+            ? previous.find(item => item.id === row.id)?.tagIds ?? []
+            : links.filter(link => link.activity_id === row.id).map(link => link.tag_id),
+          images: images.filter(image => image.activity_id === row.id).map(image => ({
+            id: image.id, image_url: image.image_url, sort_order: image.sort_order,
+          })),
+        })));
       }
+    return { mainError: mainFailed, tagsError: tagsFailed };
+  }), [supabase, run]);
 
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase, loadData]);
+  useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -575,6 +502,7 @@ export default function ActivityLibrary() {
   };
 
   const handleAddTag = async () => {
+    if (!canSave) return;
     const clean =
       newTagName.trim();
 
@@ -826,6 +754,7 @@ export default function ActivityLibrary() {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+    if (!canSave) return;
 
     if (!userId) return;
 
@@ -1033,7 +962,7 @@ export default function ActivityLibrary() {
     existingImages.length +
     newFiles.length;
 
-  if (isLoading) {
+  if (isLoading && !loaded && !loadError && !tagsLoadError) {
     return (
       <Loading text="กำลังโหลดผลงานและกิจกรรม..." />
     );
@@ -1041,15 +970,16 @@ export default function ActivityLibrary() {
 
   return (
     <>
+      <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <SectionHeader
           title="ผลงานและกิจกรรม"
-          count={activities.length}
+          count={loaded ? activities.length : null}
           buttonText="เพิ่มผลงานหรือกิจกรรม"
           onAdd={openCreateForm}
         />
 
-        {activities.length ===
+        {loaded && !loadError && activities.length ===
         0 ? (
           <EmptyState
             icon={
@@ -1133,6 +1063,7 @@ export default function ActivityLibrary() {
 
                         <div className="flex flex-wrap justify-end gap-2">
                           <IconButton
+                            disabled={!canSave}
                             label="แก้ไข"
                             onClick={() =>
                               openEditForm(
@@ -1174,11 +1105,11 @@ export default function ActivityLibrary() {
                         </p>
                       )}
 
-                      <TagList
+                      {!tagsLoadError && <TagList
                         tags={
                           itemTags
                         }
-                      />
+                      />}
                     </div>
                   </article>
                 );
@@ -1198,6 +1129,7 @@ export default function ActivityLibrary() {
           isSaving={
             isSaving
           }
+          canSave={canSave}
           submitText={
             editingId
               ? "บันทึกการแก้ไข"
@@ -1214,6 +1146,7 @@ export default function ActivityLibrary() {
             aria-busy={isSaving}
             className="@container min-w-0 space-y-5"
           >
+                <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
             <Field htmlFor="activity-library-title" label="ชื่อผลงาน / กิจกรรม *">
               <input id="activity-library-title" autoFocus
                 value={title}
@@ -1361,7 +1294,7 @@ export default function ActivityLibrary() {
               </Field>
             </div>
 
-            <TagSelector
+            <fieldset disabled={!canSave} className="min-w-0 disabled:opacity-60"><TagSelector
               tags={tags}
               selectedTagIds={
                 selectedTagIds
@@ -1384,7 +1317,7 @@ export default function ActivityLibrary() {
               handleAddTag={
                 handleAddTag
               }
-            />
+            /></fieldset>
           </form>
         </LibraryModal>
       )}
@@ -1436,6 +1369,7 @@ function LibraryModal({
   formId,
   isSaving,
   submitText,
+  canSave,
   onClose,
 }: {
   title: string;
@@ -1443,6 +1377,7 @@ function LibraryModal({
   formId: string;
   isSaving: boolean;
   submitText: string;
+  canSave: boolean;
   onClose: () => void;
 }) {
   return (
@@ -1488,7 +1423,7 @@ function LibraryModal({
             type="submit"
             form={formId}
             disabled={
-              isSaving
+              isSaving || !canSave
             }
             aria-busy={isSaving} className="min-h-11 rounded-lg bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -1655,7 +1590,7 @@ function SectionHeader({
   onAdd,
 }: {
   title: string;
-  count: number;
+  count: number | null;
   buttonText: string;
   onAdd: () => void;
 }) {
@@ -1667,7 +1602,7 @@ function SectionHeader({
         </h2>
 
         <p className="mt-1 text-sm text-slate-500">
-          มีทั้งหมด {count} รายการ
+          {count === null ? "ยังโหลดรายการไม่สำเร็จ" : `มีทั้งหมด ${count} รายการ`}
         </p>
       </div>
 
@@ -1720,17 +1655,20 @@ function Loading({
 function IconButton({
   children,
   danger = false,
+  disabled = false,
   label,
   onClick,
 }: {
   children: React.ReactNode;
   danger?: boolean;
+  disabled?: boolean;
   label: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       aria-label={label}
       onClick={onClick}
       className={`flex min-h-11 min-w-11 items-center justify-center rounded-lg border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${

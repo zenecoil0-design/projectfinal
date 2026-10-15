@@ -17,13 +17,15 @@ test.beforeEach(async ({ context, request }) => {
 
 async function fixtures(page: Page, config: Section) {
   const longName = 'ชื่อรายการภาษาไทยยาวไม่มีช่องว่าง'.repeat(6);
-  const state = { loading: false, release: () => {}, empty: false, failSave: false, deletes: 0, rows: [{ id: 'library-existing', user_id: user.id, [config.titleKey]: longName, level: 'มัธยมศึกษา', study_plan: '', gpa: null, logo_url: '', start_year: '', end_year: '', description: 'รายละเอียดภาษาไทยยาว'.repeat(10), organization: '', activity_date: null, issued_by: '', issued_date: null }] as Record<string, unknown>[] };
-  await page.route('**/rest/v1/user_tags?**', route => route.fulfill({ json: [{ id: 'tag-long', name: 'Tagยาวไม่มีช่องว่าง'.repeat(7) }] }));
-  await page.route(`**/rest/v1/user_library_${config.key}_tags?**`, route => route.fulfill({ json: [{ [`${config.key}_id`]: 'library-existing', tag_id: 'tag-long' }] }));
+  const state = { account: user.id, mainError: false, tagsError: false, linksError: false, imageError: false, reads: 0, writes: 0, tagWrites: 0, loading: false, release: () => {}, empty: false, failSave: false, deletes: 0, rows: [{ id: 'library-existing', user_id: user.id, [config.titleKey]: longName, level: 'มัธยมศึกษา', study_plan: '', gpa: null, logo_url: '', start_year: '', end_year: '', description: 'รายละเอียดภาษาไทยยาว'.repeat(10), organization: '', activity_date: null, issued_by: '', issued_date: null }] as Record<string, unknown>[] };
+  await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: state.account } }));
+  await page.route('**/rest/v1/user_tags?**', route => route.fulfill(state.tagsError ? { status: 500, json: { message: 'private database details' } } : { json: [{ id: 'tag-long', name: 'Tagยาวไม่มีช่องว่าง'.repeat(7) }] }));
+  await page.route(`**/rest/v1/user_library_${config.key}_tags?**`, route => { if (route.request().method() !== 'GET') state.tagWrites++; return route.fulfill(state.linksError ? { status: 500, json: { message: 'private relationship details' } } : { json: [{ [`${config.key}_id`]: 'library-existing', tag_id: 'tag-long' }] }); });
   await page.route(`**/rest/v1/user_library_${config.plural}?**`, async route => {
     const method = route.request().method();
     if (method === 'DELETE') { state.deletes++; return route.fulfill({ json: null }); }
     if (method === 'POST' || method === 'PATCH') {
+      state.writes++;
       if (state.failSave) return route.fulfill({ status: 500, json: { message: 'Mock save failure' } });
       const body = route.request().postDataJSON();
       const id = new URL(route.request().url()).searchParams.get('id')?.replace('eq.', '');
@@ -32,13 +34,15 @@ async function fixtures(page: Page, config: Section) {
       else Object.assign(row!, body);
       return route.fulfill({ json: row });
     }
+    state.reads++;
+    const response = { error: state.mainError, rows: state.empty ? [] : structuredClone(state.rows) };
     if (state.loading) await new Promise<void>(resolve => { state.release = resolve; });
-    return route.fulfill({ json: state.empty ? [] : state.rows });
+    return route.fulfill(response.error ? { status: 500, json: { message: 'private database details' } } : { json: response.rows });
   });
   if (config.key !== 'education') {
     state.rows.push({ ...state.rows[0], id: 'library-no-image', [config.titleKey]: 'รายการไม่มีรูปและไม่มี Tags', description: '' });
     const pictures = [[80, 160], [160, 80]].map(([width, height]) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#2563eb"/><rect x="10" y="10" width="${width-20}" height="${height-20}" fill="#f59e0b"/></svg>`)}`);
-    await page.route(`**/rest/v1/user_library_${config.key}_images?**`, route => route.fulfill({ json: pictures.map((image_url, sort_order) => ({ id: `image-${sort_order}`, [`${config.key}_id`]: 'library-existing', image_url, sort_order })) }));
+    await page.route(`**/rest/v1/user_library_${config.key}_images?**`, route => route.fulfill(state.imageError ? { status: 500, json: { message: 'private image details' } } : { json: pictures.map((image_url, sort_order) => ({ id: `image-${sort_order}`, [`${config.key}_id`]: 'library-existing', image_url, sort_order })) }));
   }
   return { state, longName };
 }
@@ -110,6 +114,82 @@ for (const config of sections) {
     await page.locator('article').filter({ has: page.getByRole('heading', { name: 'ข้อมูลแก้ไข', exact: true }) }).getByRole('button', { name: /ลบ/ }).click();
     expect(state.deletes).toBe(0);
     await expect(page.getByRole('heading', { name: 'ข้อมูลแก้ไข', exact: true })).toBeVisible();
+  });
+
+  test(`${config.key}: failed load is not empty, retry is deduplicated, stale category response is ignored`, async ({ page }) => {
+    const { state, longName } = await fixtures(page, config); state.mainError = true;
+    await openSection(page, config);
+    await expect(page.locator('main [role=alert]')).toContainText('โหลดรายการหรือรูปภาพไม่สำเร็จ');
+    await expect(page.getByText(/ยังไม่มี/)).toHaveCount(0);
+    await expect(page.getByText('private database details')).toHaveCount(0);
+    state.mainError = false; state.loading = true;
+    const before = state.reads;
+    await page.getByRole('button', { name: 'ลองใหม่', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'กำลังลองใหม่...' })).toBeDisabled();
+    expect(state.reads).toBe(before + 1);
+    // Unmount while an old successful response is pending; a newly mounted request must win.
+    const release = () => state.release();
+    await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.key === 'education' ? 'ผลงานและกิจกรรม' : 'ประวัติการศึกษา', exact: true }).click();
+    state.loading = false; state.rows[0][config.titleKey] = 'ผลคำขอใหม่';
+    await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'ผลคำขอใหม่', exact: true })).toBeVisible();
+    release();
+    await expect(page.getByRole('heading', { name: longName, exact: true })).toHaveCount(0);
+  });
+
+  test(`${config.key}: account change invalidates an old pending response`, async ({ page }) => {
+    const { state, longName } = await fixtures(page, config); state.loading = true;
+    await openSection(page, config);
+    await expect(page.getByRole('status')).toContainText('กำลังโหลด');
+    const release = () => state.release();
+    state.loading = false; state.account = '00000000-0000-0000-0000-000000000002'; state.rows[0][config.titleKey] = 'ข้อมูลบัญชีใหม่';
+    const request = page.waitForRequest(request => request.url().includes(`user_library_${config.plural}?`) && new URL(request.url()).searchParams.get('user_id') === `eq.${state.account}`);
+    await page.evaluate(owner => { const channel = new BroadcastChannel('sb-127-auth-token'); channel.postMessage({ event: 'SIGNED_IN', session: { user: { id: owner } } }); channel.close(); }, state.account);
+    await request;
+    await expect(page.getByRole('heading', { name: 'ข้อมูลบัญชีใหม่', exact: true })).toBeVisible();
+    release();
+    await expect(page.getByRole('heading', { name: longName, exact: true })).toHaveCount(0);
+  });
+
+  for (const failure of ['tagsError', 'linksError'] as const) {
+    test(`${config.key}: ${failure} blocks writes, retry preserves draft and original tag selection`, async ({ page }) => {
+      const { state, longName } = await fixtures(page, config); state[failure] = true;
+      await openSection(page, config);
+      await expect(page.getByRole('heading', { name: longName, exact: true })).toBeVisible();
+      await expect(page.locator('main [role=alert]')).toContainText('โหลด Tags ไม่สำเร็จ');
+      await expect(page.locator('article').first().getByRole('button', { name: /แก้ไข/ })).toBeDisabled();
+      await page.getByRole('button', { name: config.add, exact: true }).click();
+      const form = page.getByRole('dialog');
+      await form.getByLabel(config.title, { exact: true }).fill('แบบร่างต้องอยู่หลัง retry');
+      await expect(form.getByRole('button', { name: /^บันทึก/ })).toBeDisabled();
+      expect(state.writes).toBe(0); expect(state.tagWrites).toBe(0);
+      state[failure] = false;
+      await form.getByRole('button', { name: 'ลองใหม่', exact: true }).click();
+      await expect(form.getByRole('button', { name: /^บันทึก/ })).toBeEnabled();
+      await expect(form.getByLabel(config.title, { exact: true })).toHaveValue('แบบร่างต้องอยู่หลัง retry');
+      await form.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+      await page.locator('article').first().getByRole('button', { name: /แก้ไข/ }).click();
+      await expect(form.getByRole('button', { name: /Tagยาวไม่มีช่องว่าง/ })).toHaveAttribute('aria-pressed', 'true');
+      expect(state.tagWrites).toBe(0);
+    });
+  }
+
+  test(`${config.key}: failed refresh retains the previous successful list`, async ({ page }) => {
+    const { state, longName } = await fixtures(page, config);
+    await openSection(page, config);
+    await expect(page.getByRole('heading', { name: longName, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: config.add, exact: true }).click();
+    const form = page.getByRole('dialog');
+    await form.getByLabel(config.title, { exact: true }).fill('รายการใหม่');
+    if (config.key === 'education') await form.getByLabel('ระดับการศึกษา *', { exact: true }).fill('มัธยมศึกษา');
+    state.mainError = true;
+    await form.getByRole('button', { name: /^บันทึก/ }).click();
+    await expect(form).toHaveCount(0);
+    await expect(page.locator('main [role=alert]')).toContainText('กำลังแสดงข้อมูลที่โหลดไว้ก่อนหน้า');
+    await expect(page.getByRole('heading', { name: longName, exact: true })).toBeVisible();
+    state.mainError = false;
+    await page.getByRole('button', { name: 'ลองใหม่', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'รายการใหม่', exact: true })).toBeVisible();
   });
 
   test(`${config.key}: loading state waits for library response`, async ({ page }) => {

@@ -1,4 +1,6 @@
 "use client";
+import LibraryLoadStatus from "./LibraryLoadStatus";
+import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
 import {
@@ -61,7 +63,7 @@ const MAX_SIZE =
 const inputClass =
   "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:text-sm";
 
-export default function CertificateLibrary() {
+export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
   const supabase = useMemo(
     () => createClient(),
     []
@@ -70,11 +72,9 @@ export default function CertificateLibrary() {
   const fileInputRef =
     useRef<HTMLInputElement | null>(null);
 
-  const [userId, setUserId] =
-    useState("");
+  const userId = ownerId;
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
   const [isSaving, setIsSaving] =
     useState(false);
@@ -133,27 +133,8 @@ export default function CertificateLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  const loadData = useCallback(async (
-    uid: string
-  ) => {
-    const [
-      {
-        data: certificateData,
-        error: certificateError,
-      },
-      {
-        data: tagsData,
-        error: tagsError,
-      },
-      {
-        data: tagLinks,
-        error: tagLinksError,
-      },
-      {
-        data: imageData,
-        error: imageError,
-      },
-    ] = await Promise.all([
+  const loadData = useCallback((uid: string) => run(uid,
+    () => Promise.all([
       supabase
         .from(
           "user_library_certificates"
@@ -200,91 +181,46 @@ export default function CertificateLibrary() {
           "id, certificate_id, image_url, sort_order"
         )
         .order("sort_order"),
-    ]);
-
-    if (
-      certificateError ||
-      tagsError ||
-      tagLinksError ||
-      imageError
-    ) {
-      console.error(
-        certificateError ||
-          tagsError ||
-          tagLinksError ||
-          imageError
-      );
-    }
-
-    const tagsLinks: CertificateTagRow[] =
-      tagLinks ?? [];
-
-    const images: CertificateImageRow[] =
-      imageData ?? [];
-
-    setTags(
-      tagsData ?? []
-    );
-
-    setCertificates(
-      (certificateData ?? []).map(
-        (certificate) => ({
-          ...certificate,
-
-          tagIds:
-            tagsLinks
-              .filter(
-                (item) =>
-                  item.certificate_id ===
-                  certificate.id
-              )
-              .map(
-                (item) =>
-                  item.tag_id
-              ),
-
-          images:
-            images
-              .filter(
-                (image) =>
-                  image.certificate_id ===
-                  certificate.id
-              )
-              .map(
-                (image) => ({
-                  id: image.id,
-                  image_url:
-                    image.image_url,
-                  sort_order:
-                    image.sort_order,
-                })
-              ),
-        })
-      )
-    );
-  }, [supabase]);
-
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
+    ]),
+    result => {
+    const [
+      {
+        data: certificateData,
+        error: certificateError,
+      },
+      {
+        data: tagsData,
+        error: tagsError,
+      },
+      {
+        data: tagLinks,
+        error: tagLinksError,
+      },
+      {
+        data: imageData,
+        error: imageError,
+      },
+    ] = result;
+      const mainFailed = Boolean(certificateError || imageError);
+      const tagsFailed = Boolean(tagsError || tagLinksError);
+      const links: CertificateTagRow[] = tagLinks ?? [];
+      const images: CertificateImageRow[] = imageData ?? [];
+      if (!tagsFailed) setTags(tagsData ?? []);
+      if (!mainFailed) {
+        setCertificates(previous => (certificateData ?? []).map(row => ({
+          ...row,
+          tagIds: tagsFailed
+            ? previous.find(item => item.id === row.id)?.tagIds ?? []
+            : links.filter(link => link.certificate_id === row.id).map(link => link.tag_id),
+          images: images.filter(image => image.certificate_id === row.id).map(image => ({
+            id: image.id, image_url: image.image_url, sort_order: image.sort_order,
+          })),
+        })));
       }
+    return { mainError: mainFailed, tagsError: tagsFailed };
+  }), [supabase, run]);
 
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase, loadData]);
+  useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -547,6 +483,7 @@ export default function CertificateLibrary() {
     );
 
   const handleAddTag = async () => {
+    if (!canSave) return;
     const name =
       newTagName.trim();
 
@@ -763,6 +700,7 @@ export default function CertificateLibrary() {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+    if (!canSave) return;
 
     if (!title.trim()) {
       alert(
@@ -959,7 +897,7 @@ export default function CertificateLibrary() {
     existingImages.length +
     newFiles.length;
 
-  if (isLoading) {
+  if (isLoading && !loaded && !loadError && !tagsLoadError) {
     return (
       <div role="status" className="mt-6 flex min-h-52 items-center justify-center rounded-xl bg-white p-4">
         กำลังโหลดเกียรติบัตร...
@@ -969,6 +907,7 @@ export default function CertificateLibrary() {
 
   return (
     <>
+      <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <div className="flex min-w-0 flex-col items-start gap-4 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between">
           <div>
@@ -976,13 +915,13 @@ export default function CertificateLibrary() {
               เกียรติบัตร
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+{loaded &&             <p className="mt-1 text-sm text-slate-500">
               มีทั้งหมด{" "}
               {
                 certificates.length
               }{" "}
               รายการ
-            </p>
+            </p>}
           </div>
 
           <button
@@ -997,7 +936,7 @@ export default function CertificateLibrary() {
           </button>
         </div>
 
-        {certificates.length ===
+        {loaded && !loadError && certificates.length ===
         0 ? (
           <div className="mt-5 flex min-h-52 flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-5 text-center">
             <FaCertificate className="text-3xl text-blue-600" />
@@ -1077,7 +1016,8 @@ export default function CertificateLibrary() {
                                 item
                               )
                             }
-                            aria-label={`แก้ไขเกียรติบัตร ${item.title}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                            disabled={!canSave}
+                          aria-label={`แก้ไขเกียรติบัตร ${item.title}`} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                           >
                             <FaEdit />
                           </button>
@@ -1104,7 +1044,7 @@ export default function CertificateLibrary() {
                         </p>
                       )}
 
-                      {itemTags.length >
+                      {!tagsLoadError && itemTags.length >
                         0 && (
                         <div className="mt-4 flex min-w-0 flex-wrap gap-2">
                           {itemTags.map(
@@ -1170,6 +1110,7 @@ export default function CertificateLibrary() {
                 }
                 aria-busy={isSaving} className="@container min-w-0 space-y-5"
               >
+                <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
                 <div>
                   <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <label htmlFor="certificate-library-images" className="text-sm font-semibold text-slate-700">
@@ -1332,7 +1273,7 @@ export default function CertificateLibrary() {
                   </Field>
                 </div>
 
-                <div>
+                <fieldset disabled={!canSave} className="min-w-0 disabled:opacity-60">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-slate-700">Tags</p>
 
@@ -1405,7 +1346,7 @@ export default function CertificateLibrary() {
                       </button>
                     </div>
                   )}
-                </div>
+                </fieldset>
               </form>
             </div>
 
@@ -1424,7 +1365,7 @@ export default function CertificateLibrary() {
                 form="certificate-form"
                 type="submit"
                 disabled={
-                  isSaving
+                  isSaving || !canSave
                 }
                 aria-busy={isSaving} className="min-h-11 rounded-lg bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
               >

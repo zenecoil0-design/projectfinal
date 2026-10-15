@@ -1,4 +1,6 @@
 "use client";
+import LibraryLoadStatus from "./LibraryLoadStatus";
+import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
 import {
@@ -47,7 +49,7 @@ type EducationTagRow = {
 const inputClass =
   "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:text-sm";
 
-export default function EducationLibrary() {
+export default function EducationLibrary({ ownerId }: { ownerId: string }) {
   const supabase = useMemo(
     () => createClient(),
     []
@@ -56,11 +58,9 @@ export default function EducationLibrary() {
   const fileInputRef =
     useRef<HTMLInputElement | null>(null);
 
-  const [userId, setUserId] =
-    useState("");
+  const userId = ownerId;
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
   const [isSaving, setIsSaving] =
     useState(false);
@@ -126,23 +126,8 @@ export default function EducationLibrary() {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  const loadData = useCallback(async (
-    uid: string
-  ) => {
-    const [
-      {
-        data: educationData,
-        error: educationError,
-      },
-      {
-        data: tagsData,
-        error: tagsError,
-      },
-      {
-        data: tagLinks,
-        error: tagLinksError,
-      },
-    ] = await Promise.all([
+  const loadData = useCallback((uid: string) => run(uid,
+    () => Promise.all([
       supabase
         .from(
           "user_library_educations"
@@ -183,68 +168,38 @@ export default function EducationLibrary() {
         .select(
           "education_id, tag_id"
         ),
-    ]);
-
-    if (
-      educationError ||
-      tagsError ||
-      tagLinksError
-    ) {
-      console.error(
-        educationError ||
-          tagsError ||
-          tagLinksError
-      );
-    }
-
-    const links: EducationTagRow[] =
-      tagLinks ?? [];
-
-    setTags(
-      tagsData ?? []
-    );
-
-    setEducations(
-      (educationData ?? []).map(
-        (education) => ({
-          ...education,
-
-          tagIds: links
-            .filter(
-              (item) =>
-                item.education_id ===
-                education.id
-            )
-            .map(
-              (item) =>
-                item.tag_id
-            ),
-        })
-      )
-    );
-  }, [supabase]);
-
-  useEffect(() => {
-    const initialize = async () => {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser();
-
-      if (!user) {
-        setIsLoading(false);
-        return;
+    ]),
+    result => {
+    const [
+      {
+        data: educationData,
+        error: educationError,
+      },
+      {
+        data: tagsData,
+        error: tagsError,
+      },
+      {
+        data: tagLinks,
+        error: tagLinksError,
+      },
+    ] = result;
+      const mainFailed = Boolean(educationError);
+      const tagsFailed = Boolean(tagsError || tagLinksError);
+      const links: EducationTagRow[] = tagLinks ?? [];
+      if (!tagsFailed) setTags(tagsData ?? []);
+      if (!mainFailed) {
+        setEducations(previous => (educationData ?? []).map(row => ({
+          ...row,
+          tagIds: tagsFailed
+            ? previous.find(item => item.id === row.id)?.tagIds ?? []
+            : links.filter(link => link.education_id === row.id).map(link => link.tag_id),
+        })));
       }
+    return { mainError: mainFailed, tagsError: tagsFailed };
+  }), [supabase, run]);
 
-      setUserId(user.id);
-
-      await loadData(user.id);
-
-      setIsLoading(false);
-    };
-
-    initialize();
-  }, [supabase, loadData]);
+  useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
     setEditingId(null);
@@ -409,6 +364,7 @@ export default function EducationLibrary() {
   };
 
   const handleAddTag = async () => {
+    if (!canSave) return;
     const name =
       newTagName.trim();
 
@@ -560,6 +516,7 @@ export default function EducationLibrary() {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+    if (!canSave) return;
 
     if (
       !level.trim() ||
@@ -819,7 +776,7 @@ export default function EducationLibrary() {
     await loadData(userId);
   };
 
-  if (isLoading) {
+  if (isLoading && !loaded && !loadError && !tagsLoadError) {
     return (
       <Loading text="กำลังโหลดประวัติการศึกษา..." />
     );
@@ -827,17 +784,18 @@ export default function EducationLibrary() {
 
   return (
     <>
+      <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <SectionHeader
           count={
-            educations.length
+            loaded ? educations.length : null
           }
           onAdd={
             openCreate
           }
         />
 
-        {educations.length ===
+        {loaded && !loadError && educations.length ===
         0 ? (
           <EmptyState />
         ) : (
@@ -906,6 +864,7 @@ export default function EducationLibrary() {
                               education
                             )
                           }
+                          disabled={!canSave}
                           aria-label={`แก้ไขประวัติการศึกษา ${education.school_name}`}
                           className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                         >
@@ -955,7 +914,7 @@ export default function EducationLibrary() {
                       </div>
                     </div>
 
-                    {itemTags.length >
+                    {!tagsLoadError && itemTags.length >
                       0 && (
                       <div className="mt-4 flex min-w-0 flex-wrap gap-2">
                         {itemTags.map(
@@ -1023,6 +982,7 @@ export default function EducationLibrary() {
                 aria-busy={isSaving}
                 className="@container min-w-0 space-y-5"
               >
+                <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
                 <div>
                   <p className="mb-2 text-sm font-semibold text-slate-700">
                     ตราโรงเรียน / โลโก้สถานศึกษา
@@ -1197,7 +1157,7 @@ export default function EducationLibrary() {
                   </Field>
                 </div>
 
-                <TagEditor
+                <fieldset disabled={!canSave} className="min-w-0 disabled:opacity-60"><TagEditor
                   tags={tags}
                   selectedTagIds={
                     selectedTagIds
@@ -1220,7 +1180,7 @@ export default function EducationLibrary() {
                   handleAddTag={
                     handleAddTag
                   }
-                />
+                /></fieldset>
               </form>
             </div>
 
@@ -1239,7 +1199,7 @@ export default function EducationLibrary() {
                 form="education-form"
                 type="submit"
                 disabled={
-                  isSaving
+                  isSaving || !canSave
                 }
                 aria-busy={isSaving}
                 className="min-h-11 rounded-lg bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1393,7 +1353,7 @@ function SectionHeader({
   count,
   onAdd,
 }: {
-  count: number;
+  count: number | null;
   onAdd: () => void;
 }) {
   return (
@@ -1404,7 +1364,7 @@ function SectionHeader({
         </h2>
 
         <p className="mt-1 text-sm leading-6 text-slate-600">
-          มีทั้งหมด {count} รายการ
+          {count === null ? "ยังโหลดรายการไม่สำเร็จ" : `มีทั้งหมด ${count} รายการ`}
         </p>
       </div>
 

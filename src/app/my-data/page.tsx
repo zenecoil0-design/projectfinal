@@ -36,13 +36,21 @@ export default function MyDataPage() {
   const [isLoading, setIsLoading] =
     useState(true);
 
+  const [accountId, setAccountId] = useState("");
+
   useEffect(() => {
+    let active = true;
+    let revision = 0;
+    let verifiedOwner = "";
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const checkUser = async () => {
+      const ticket = ++revision;
       const {
         data: { user },
         error,
       } = await supabase.auth.getUser();
 
+      if (!active || ticket !== revision) return;
       if (error || !user) {
         router.replace(
           "/login?next=/my-data"
@@ -51,10 +59,22 @@ export default function MyDataPage() {
         return;
       }
 
+      verifiedOwner = user.id;
+      setAccountId(user.id);
       setIsLoading(false);
     };
 
-    checkUser();
+    void checkUser();
+    // Only invalidate the UI here. Auth verification still uses getUser above.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user.id === verifiedOwner) return;
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      revision++;
+      setIsLoading(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (active) void checkUser(); }, 0);
+    });
+    return () => { active = false; revision++; clearTimeout(timer); subscription.unsubscribe(); };
   }, [router, supabase]);
 
   if (isLoading) {
@@ -151,16 +171,16 @@ export default function MyDataPage() {
         </section>
 
         {activeTab === "education" && (
-          <EducationLibrary />
+          <EducationLibrary key={accountId} ownerId={accountId} />
         )}
 
         {activeTab === "activity" && (
-          <ActivityLibrary />
+          <ActivityLibrary key={accountId} ownerId={accountId} />
         )}
 
         {activeTab ===
           "certificate" && (
-          <CertificateLibrary />
+          <CertificateLibrary key={accountId} ownerId={accountId} />
         )}
       </main>
     </div>
