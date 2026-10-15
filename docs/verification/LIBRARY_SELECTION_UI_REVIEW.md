@@ -39,4 +39,18 @@
 
 ## การตรวจรวมหลังครบสามส่วน
 
-จะรายงาน build และผลทดสอบรวมเฉพาะเส้นทางเลือกข้อมูลเมื่อรันครบ ไม่ถือว่าผลรายหมวดเป็นผล production build
+- `npm run build` รันหนึ่งครั้งหลังครบสามส่วน ผ่าน compile, TypeScript และ static generation; มี warning เดิมเรื่อง middleware convention
+- ทดสอบบน production build ผ่าน 7 ข้อ: regression การเลือกทั้งสามหมวด 6 ข้อ และเคสเดิม failed atomic save retains selection and warns before leaving อีก 1 ข้อ
+- ทดสอบรวมใช้ Chromium + mock Supabase ไม่ใช่ผลฐานข้อมูลจริง ไม่รัน database tests
+- ผลรูป/สถานะ/keyboard/การรักษาลำดับและข้อมูลผ่าน ไม่มีการแก้ source เพิ่มหลังผลรวมผ่าน
+- ตรวจภาพ desktop/mobile 1440px/390px ครบสามหมวด เก็บภาพตัวอย่างจากข้อมูลจำลอง 6 ภาพ
+
+## จุดส่งต่องาน
+
+- การศึกษา: `c63ebff0f95219ede0a719341327e01aa4bdaa3f`
+- กิจกรรม: `b661cde8572522acfb775671ea9a901e6a14be49`
+- เกียรติบัตร: `abf68eef0fcfd49c29a282bf5a6704765a9d44a6`
+- แต่ละส่วนส่งขึ้น branch และ fetch ตรวจเนื้อหากับ remote ก่อนเริ่มส่วนถัดไป
+- source ที่แก้คือ EducationForm.tsx, ActivityForm.tsx, CertificateForm.tsx; regression เพิ่มเฉพาะเส้นทางเลือกข้อมูลใน tests/e2e/library-selection.spec.ts
+- ไม่เพิ่ม dependency ใน repository; เบราว์เซอร์ทดสอบเป็นเครื่องมือแยกนอก repository
+- งาน UI รอบนี้ครบแล้ว ให้ตรวจ HEAD จริงก่อนเริ่มงานใหม่ ไม่อ้างว่าติดตั้ง/เปลี่ยนระบบจริงจากผล mock
