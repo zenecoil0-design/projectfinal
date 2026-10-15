@@ -119,8 +119,10 @@ const labelClassName = "mb-2 block text-sm font-semibold leading-5 text-slate-70
 
 export default function ProfileForm({
   onNext,
+  active = true,
 }: {
   onNext: () => void;
+  active?: boolean;
 }) {
   const { reportLoaded, markSaved, status, exporting } = useEditorSession();
   const mounted = useRef(true);
@@ -1124,7 +1126,7 @@ export default function ProfileForm({
 
               อัปโหลดรูปภาพใหม่
 
-              <CropInput
+              <CropInput active={active}
                 type="file"
                 accept="image/png,image/jpeg"
                 className="sr-only"

@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 import Link from "next/link";
@@ -53,6 +54,7 @@ function EditorContent() {
   const portfolioId =
     searchParams.get("portfolio");
 
+  const desktop = useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => true);
   const [templateBusy, setTemplateBusy] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
@@ -362,6 +364,7 @@ function EditorContent() {
         <aside className={`${mobilePanel === "form" ? "flex" : "hidden"} md:flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white`}>
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
             <FormContainer
+              visible={desktop || mobilePanel === "form"}
               onStepChange={handleStepChange}
               currentStep={
                 currentStep
@@ -462,4 +465,12 @@ function EditorContent() {
       </div>
     </div>
   );
+}
+
+// Match the existing md form/preview layout; this state only controls transient crop dialogs.
+function desktopSnapshot() { return window.matchMedia("(min-width: 48rem)").matches; }
+function subscribeDesktop(onChange: () => void) {
+  const media = window.matchMedia("(min-width: 48rem)");
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
 }

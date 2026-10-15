@@ -22,11 +22,12 @@ const steps: { section: Section; title: string; heading: string; Form: typeof Co
 
 type Props = {
   currentStep: number | null;
+  visible: boolean;
   onStepChange: (step: number | null) => void;
   onNext: (fromStep: number) => void;
 };
 
-export default function FormContainer({ currentStep, onStepChange, onNext }: Props) {
+export default function FormContainer({ currentStep, visible, onStepChange, onNext }: Props) {
   const { status, dirty } = useEditorSession();
   const scroller = useRef<HTMLDivElement>(null);
   const navigation = useRef({ step: currentStep, revision: 0 });
@@ -35,7 +36,7 @@ export default function FormContainer({ currentStep, onStepChange, onNext }: Pro
   useLayoutEffect(() => {
     navigation.current = { step: currentStep, revision: navigation.current.revision + 1 };
     const container = scroller.current;
-    if (!container || currentStep === null) return;
+    if (!container || !visible || currentStep === null) return;
     const header = container.querySelector<HTMLButtonElement>("#editor-heading-" + steps[currentStep - 1].section);
     if (!header) return;
     // A successful save may fold the focused submit button. Keep keyboard focus visible.
@@ -48,7 +49,7 @@ export default function FormContainer({ currentStep, onStepChange, onNext }: Pro
     if (frame.height && (target.top < frame.top || target.bottom > frame.bottom)) {
       container.scrollTop += target.top - frame.top - 8;
     }
-  }, [currentStep]);
+  }, [currentStep, visible]);
 
   return <div ref={scroller} aria-label="แบบฟอร์มพอร์ต" className="box-border h-full w-full min-w-0 overflow-x-hidden overflow-y-auto bg-white p-3 sm:p-4">
     <div className="min-w-0 space-y-3">
@@ -72,7 +73,7 @@ export default function FormContainer({ currentStep, onStepChange, onNext }: Pro
           <div id={"editor-panel-" + section} role="region" aria-labelledby={"editor-heading-" + section} data-editor-panel={section} hidden={!open} inert={!open}
             onSubmitCapture={() => submissions.current.set(step, navigation.current.revision)} className="min-w-0 px-3 pb-1 pt-4 sm:px-4">
             <h3 className="mb-4 border-b border-slate-200 pb-2 text-base font-bold text-slate-800">{heading}</h3>
-            <Form onNext={() => {
+            <Form active={open && visible} onNext={() => {
               if (navigation.current.step === step && submissions.current.get(step) === navigation.current.revision) onNext(step);
             }} />
           </div>

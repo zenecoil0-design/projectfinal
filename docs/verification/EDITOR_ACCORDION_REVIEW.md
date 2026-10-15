@@ -15,9 +15,36 @@
 
 ผลตรวจ A: mock Playwright 8 tests ผ่าน (39.6s): Accordion 2 tests และ library-selection เดิม 6 tests ครอบคลุมพับทั้งหมด/keyboard, ไม่โหลดหรือ save ตอนพับ, Preview page count คงเดิม, save fail/success/หมวดสุดท้าย/ผลช้า และ selection order/Tags/draft/failure ของทั้งสามหมวด; lint เฉพาะไฟล์ที่แก้ 0 errors/0 warnings และ git diff --check ผ่าน
 
-## ส่วน B — รอตรวจ
+Commit A ที่ push และตรวจ remote แล้ว: `703ae3b62e56fedb7084615741d5585f0ddd0919`
 
-ยังต้องตรวจ draft ของสามฟอร์มข้อความ, รูปครอป/object URL, dialog ของ panel ที่พับ, async เปลี่ยนพอร์ต, mobile panel switch และ keyboard focus รวมทั้ง production build/tests ของ Editor ที่ได้รับผลกระทบ
+## ส่วน B — draft รูป async และ mobile
+
+- พบว่า CropInput ใช้ portal/native dialog นอก panel: hidden/inert ของ Accordion เพียงอย่างเดียวไม่ปิดครอปที่ยังไม่ยืนยัน จึงส่ง active จากหมวดที่เปิดและพื้นที่ฟอร์มที่มองเห็นจริง รวม breakpoint md ของ layout เดิม
+- เมื่อพับหมวดหรือสลับไป Preview จะ reset เฉพาะ input/queue ของครอปที่ยังไม่ยืนยัน ไม่ remount ฟอร์ม ไม่ทิ้ง pending File/ผลครอปที่ยืนยันแล้วใน parent และไม่ revoke object URL ของรูปที่ยังใช้อยู่
+- ใช้ generation ของ queue และ cleanup ปฏิเสธ callback ครอปที่เสร็จหลังพับ/ยกเลิก ไม่เปิด dialog เก่าซ้ำ ไม่เขียนผลเก่าทับ draft
+- เปลี่ยนขนาดจากมือถือ Preview กลับ desktop แล้วฟอร์มที่เห็นยังครอปได้ตามปกติ; default active ของ CropInput เป็น true สำหรับ caller เดิม ไม่แก้ไฟล์ /my-data
+- เพิ่ม regression อีก 4 tests: draft สามฟอร์ม/Tab/คำเตือนออก Editor, รูปหน้าปกและโปรไฟล์/URL/mobile panel, late crop callback และ late save หลังนำทางผ่าน Dashboard ไปพอร์ตใหม่
+
+### ผลตรวจสุดท้าย
+
+- `npm run build` ผ่านหนึ่งครั้ง โดยใช้ Supabase URL/key ของ mock server
+- Production mock Playwright ผ่าน **23/23 tests (33.9s)**: editor.spec.ts 11, library-selection.spec.ts 6, editor-accordion.spec.ts 6; ไม่ skip หรือลด assertions เดิม
+- ครอบคลุมหนึ่งหมวด/พับทั้งหมด/Enter/Space, draft ข้อความ/Tags/ลำดับรายการ, crop ที่ยืนยัน/URL, ไม่มี save/fetch จากการพับ, Preview page count เดิม, save fail/success/หมวดสุดท้าย, save เก่าหลังเปลี่ยนหมวดหรือพอร์ต, mobile form/Preview และ control ที่พับไม่รับ Tab
+- ตรวจภาพจริงจาก browser mock ที่ 1440px และ 390px ทั้งเปิดและพับทั้งหมด ไม่มีหน้าล้นแนวนอน; ไม่ใช่การตรวจบนโทรศัพท์จริงหรือทุกเบราว์เซอร์
+- lint เฉพาะไฟล์ B ที่แก้: 0 errors, 3 warnings เดิมเรื่อง img ใน CoverForm/ProfileForm/CropInput; `git diff --check` ผ่าน
+- ไม่มีการทดสอบกับฐานข้อมูล/Storage จริง ไม่มี migration/reset และไม่รัน database tests หรือ /my-data ทั้งชุด
+
+### ไฟล์ที่เปลี่ยน
+
+- A: src/app/editor/page.tsx, src/components/layout/FormContainer.tsx, tests/e2e/editor.spec.ts, tests/e2e/library-selection.spec.ts, tests/e2e/helpers/editor.ts, tests/e2e/editor-accordion.spec.ts และเอกสารนี้/DESIGN_SYSTEM.md
+- B: src/app/editor/page.tsx, src/components/layout/FormContainer.tsx, src/components/forms/CoverForm.tsx, src/components/forms/ProfileForm.tsx, src/components/images/CropInput.tsx, tests/e2e/editor-accordion.spec.ts และเอกสารนี้/DESIGN_SYSTEM.md
+
+### ปัญหาเดิม/ข้อจำกัดแยกจากงาน Accordion
+
+- Editor บางฟอร์มยังไม่ได้รายงาน Tags/ความสัมพันธ์ Tags ที่โหลดไม่ครบเป็น loadError; ไม่แก้ในงานนี้
+- เป้าหมายเกียรติบัตร 2 รูป, autosave, visibility, snapshot/รับอัปเดตจากคลัง และงาน Editor อื่นยังเป็นงานแยก
+- เพดาน PDF 10 หน้าที่มีอยู่เดิมยังคงอยู่ตามขอบเขตห้ามแก้ PDF ในรอบนี้; ไม่ถือว่าตรงข้อกำหนดเป้าหมายที่ยกเลิกเพดานแล้ว
+- browser Back/Forward guard ของคลังและ type errors ใน database tests ไม่ได้ตรวจหรือแก้ในรอบนี้
 
 ## ขอบเขตและงานค้าง
 

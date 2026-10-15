@@ -1,26 +1,44 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
 import { createPortal } from "react-dom";
 
-type Selection = { files: File[]; done: File[] };
+type Selection = { id: number; files: File[]; done: File[] };
+type Props = ComponentProps<"input"> & { active?: boolean };
 
 /** Use the original input contract so existing upload validation and storage paths stay intact. */
-export default function CropInput({ onChange, ...props }: ComponentProps<"input">) {
+export default function CropInput({ active = true, ...props }: Props) {
+  // Reset only the transient crop queue/input; confirmed files live in the parent form.
+  return <CropSelection key={active ? "active" : "inactive"} active={active} {...props} />;
+}
+
+function CropSelection({ onChange, active = true, ...props }: Props) {
   const pendingEvent = useRef<ChangeEvent<HTMLInputElement> | null>(null);
   const [selection, setSelection] = useState<Selection | null>(null);
+  const generation = useRef(0);
+  const cancel = useCallback(() => {
+    generation.current++;
+    if (pendingEvent.current) pendingEvent.current.target.value = "";
+    pendingEvent.current = null;
+    setSelection(null);
+  }, []);
+  useLayoutEffect(() => () => { generation.current++; pendingEvent.current = null; }, []);
   function choose(event: ChangeEvent<HTMLInputElement>) {
+    if (!active) return;
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
+    const id = ++generation.current;
+    pendingEvent.current = null;
+    setSelection(null);
     if (files.some(file => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024)) {
       onChange?.(event); // Existing form displays its validation message.
       return;
     }
     pendingEvent.current = event;
-    setSelection({ files, done: [] });
+    setSelection({ id, files, done: [] });
   }
   function accept(file: File) {
-    if (!selection) return;
+    if (!selection || !active || selection.id !== generation.current || !pendingEvent.current) return;
     const done = [...selection.done, file];
     if (done.length < selection.files.length) {
       setSelection({ ...selection, done });
@@ -28,18 +46,15 @@ export default function CropInput({ onChange, ...props }: ComponentProps<"input"
     }
     const transfer = new DataTransfer();
     done.forEach(item => transfer.items.add(item));
-    if (pendingEvent.current) {
-      pendingEvent.current.target.files = transfer.files;
-      onChange?.(pendingEvent.current);
-    }
+    const event = pendingEvent.current;
+    event.target.files = transfer.files;
+    pendingEvent.current = null;
+    onChange?.(event);
     setSelection(null);
   }
   return <>
     <input {...props} type="file" onChange={choose} />
-    {selection && createPortal(<CropDialog key={selection.done.length} file={selection.files[selection.done.length]} onAccept={accept} onCancel={() => {
-      if (pendingEvent.current) pendingEvent.current.target.value = "";
-      setSelection(null);
-    }} />, document.body)}
+    {active && selection && createPortal(<CropDialog key={selection.id + "-" + selection.done.length} file={selection.files[selection.done.length]} onAccept={accept} onCancel={cancel} />, document.body)}
   </>;
 }
 
