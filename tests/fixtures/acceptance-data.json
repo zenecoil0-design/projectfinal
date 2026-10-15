@@ -1,0 +1,43 @@
+{
+  "purpose": "Synthetic acceptance fixture manifest; not a production seed or confirmed database schema",
+  "accounts": [
+    {"alias": "A", "email": "student-a@example.invalid"},
+    {"alias": "B", "email": "student-b@example.invalid"}
+  ],
+  "portfolios": [
+    {"alias": "P1", "owner": "A", "title": "พอร์ตคณะวิศวกรรมศาสตร์"},
+    {"alias": "P2", "owner": "A", "title": "พอร์ตคณะวิทยาศาสตร์"},
+    {"alias": "PB", "owner": "B", "title": "พอร์ตคณะวิศวกรรมศาสตร์"}
+  ],
+  "educations": [
+    {"alias": "ED1", "owner": "A", "level": "มัธยมศึกษา", "school": "โรงเรียนทดสอบ", "gpax": 3.5, "logo": null},
+    {"alias": "ED2", "owner": "B", "level": "มัธยมศึกษา", "school": "โรงเรียนทดสอบ", "gpax": 3.9, "logo": null}
+  ],
+  "activities": [
+    {"alias": "ACT1", "owner": "A", "title": "กิจกรรมอาสา", "description": "ข้อความทดสอบบรรทัดแรก\nข้อความบรรทัดที่สอง", "imageAliases": ["IMG1", "IMG2", "IMG3", "IMG4"]},
+    {"alias": "ACT2", "owner": "A", "title": "กิจกรรมชื่ออย่างเดียว", "description": "", "imageAliases": []},
+    {"alias": "ACTB", "owner": "B", "title": "กิจกรรมอาสา", "description": "รายการของบัญชี B", "imageAliases": []}
+  ],
+  "certificates": [
+    {"alias": "CERT1", "owner": "A", "title": "เกียรติบัตรทดสอบ", "description": "ข้อความขนาดเล็กสำหรับตรวจความคมชัด", "imageAliases": ["IMG5", "IMG6"]},
+    {"alias": "CERT2", "owner": "A", "title": "เกียรติบัตรชื่ออย่างเดียว", "description": "", "imageAliases": []}
+  ],
+  "tags": [{"owner": "A", "name": "จิตอาสา"}, {"owner": "B", "name": "จิตอาสา"}],
+  "imagesToPrepare": {
+    "IMG1": "portrait synthetic image", "IMG2": "landscape synthetic image",
+    "IMG3": "square synthetic image", "IMG4": "Thai text synthetic image",
+    "IMG5": "landscape certificate with small Thai text", "IMG6": "portrait certificate with small Thai text"
+  },
+  "scenarios": {
+    "selectionOrder": ["ACT2", "ACT1"],
+    "P1ActivityImages": ["IMG1", "IMG3"],
+    "P2ActivityImages": ["IMG2", "IMG4"],
+    "updatedGpax": 3.75,
+    "clock": "2026-10-15",
+    "birthday": "2008-10-15",
+    "expectedAutoAge": 18,
+    "manualAge": 20,
+    "pageCounts": [11, 25],
+    "pdfByteBoundaries": [9999999, 10000000, 10000001]
+  }
+}

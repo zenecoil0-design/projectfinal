@@ -61,7 +61,7 @@ Branch: `codex/portfolio-system-fixes`
 | F37 | บีบอัด PDF และยืนยันเมื่อถึง 10 MB | ต้องทำเพิ่ม | [export-pdf.ts](https://github.com/zenecoil0-design/projectfinal/blob/5ad8310f46dc0f931c0aed6b7403504f5af282dd/src/lib/editor/export-pdf.ts) | ลองบีบอัดแล้ว throw เมื่อเกิน; <=10,000,000 ยังผ่าน ต่างจากเป้าหมายต่ำกว่าและยืนยันที่เท่ากัน | PDF-04 |
 | F38 | แยกพอร์ต/กัน response เก่าทับ | มีฐานแล้ว | [page.tsx](https://github.com/zenecoil0-design/projectfinal/blob/5ad8310f46dc0f931c0aed6b7403504f5af282dd/src/app/editor/page.tsx) | มี reset/loading และชุดทดสอบกรณีตอบช้า; ต้องครอบคลุม autosave ใหม่ด้วย | SAVE-06 |
 | F39 | RLS/Storage/ความเป็นส่วนตัวครบระบบ | ต้องตรวจระบบจริง | [client.ts](https://github.com/zenecoil0-design/projectfinal/blob/5ad8310f46dc0f931c0aed6b7403504f5af282dd/src/lib/supabase/client.ts) | การกรอง user_id และ RPC ไม่แทน RLS/Storage policies; พบใช้ public URL ต้องตรวจการเข้าถึงจริง | SEC-01 |
-| F40 | ชุดทดสอบเดิม | ต้องทำเพิ่ม | [editor.spec.ts](https://github.com/zenecoil0-design/projectfinal/blob/5ad8310f46dc0f931c0aed6b7403504f5af282dd/tests/e2e/editor.spec.ts) | พบ 2 unit/database tests และ 10 E2E tests; บางเคสยืนยันเพดาน 10 หน้า/หน้าว่างแบบเก่า ต้องปรับ | REG-01 |
+| F40 | ชุดทดสอบเดิม | ต้องทำเพิ่ม | [editor.spec.ts](https://github.com/zenecoil0-design/projectfinal/blob/5ad8310f46dc0f931c0aed6b7403504f5af282dd/tests/e2e/editor.spec.ts) | พบ 2 unit/database tests และ 9 E2E tests; บางเคสยืนยันเพดาน 10 หน้า/หน้าว่างแบบเก่า ต้องปรับ | REG-01 |
 
 ## ลำดับงานที่แนะนำ
 
@@ -83,3 +83,7 @@ Branch: `codex/portfolio-system-fixes`
 - เอกสารรอบนี้ไม่เปลี่ยนโค้ดแอป ไม่ใช้ผลทดสอบจากรายงานเก่ามาแทนผลรอบปัจจุบัน
 
 อ่านแผนทดสอบเป้าหมายเต็มได้ที่ [SYSTEM_TEST_PLAN.md](SYSTEM_TEST_PLAN.md)
+
+## อัปเดตหลังเริ่มงาน M00 (15 ตุลาคม 2026)
+
+ผล audit ด้านบนเป็น static audit ณ baseline เดิม การรันจริงภายหลังอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) ตรวจ discovery พบ E2E 9 เคส จึงแก้ตัวเลขเดิมที่นับเป็น 10; การผ่านชุดเดิมไม่เปลี่ยนสถานะฟีเจอร์ใหม่เป็นเสร็จ
