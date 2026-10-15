@@ -8,6 +8,7 @@ export default function CoverPreview() {
   const coverStore = useCoverStore();
   const profileStore = useProfileStore();
 
+  const fullName = [coverStore.firstName.trim(), coverStore.lastName.trim()].filter(Boolean).join(" ");
   const template = useTemplate();
   if (template === "modern") return <Paper data-section="หน้าปก" className="portfolio-page editorial-cover">
     <div className="editorial-cover-top"><span>แฟ้มสะสมผลงาน</span><span>SELECTED WORKS</span></div>
@@ -17,7 +18,7 @@ export default function CoverPreview() {
       <div className="editorial-portrait">{profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปโปรไฟล์" /> : <span>YOUR<br />NEXT<br />CHAPTER.</span>}</div>
       <span className="editorial-art-caption">LEARNING · CREATIVITY · GROWTH</span>
     </div>
-    <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{`${profileStore.firstName} ${profileStore.lastName}`.trim() || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
+    <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{fullName || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
     <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>01 / PORTFOLIO</span></div>
   </Paper>;
 
@@ -59,9 +60,7 @@ export default function CoverPreview() {
         {/* ส่วนท้าย: ชื่อ-สกุล และ ชื่อโรงเรียน */}
         <div className="flex flex-col items-center gap-3 text-center mb-10">
           <h2 className="text-3xl font-bold text-slate-700">
-            {profileStore.firstName || profileStore.lastName 
-              ? `${profileStore.firstName} ${profileStore.lastName}` 
-              : "ชื่อ - นามสกุล"}
+            {fullName || "ชื่อ - นามสกุล"}
           </h2>
           
           <div className="h-1 w-20 bg-blue-500 rounded-full"></div>

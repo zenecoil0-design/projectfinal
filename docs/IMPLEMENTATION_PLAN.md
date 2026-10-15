@@ -1,4 +1,4 @@
-> สถานะล่าสุด 2026-10-15: เจ้าของอนุญาตล้างข้อมูลทดลองโดยเก็บบัญชี ไม่ต้อง backup ชุดนี้ก่อน reset; ได้ trigger function bodies ครบแล้ว อนุญาตเตรียม/ทดสอบ M01 ใน local ต่อได้ ส่วน live reset/Storage cleanup และ integration ยังรอรันจริง ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
+> สถานะล่าสุด 2026-10-15: เจ้าของอนุญาตล้างข้อมูลทดลองโดยเก็บบัญชี ไม่ต้อง backup ชุดนี้ก่อน reset; ได้ trigger function bodies ครบแล้ว อนุญาตเตรียม/ทดสอบ M01 ใน local ต่อได้ เจ้าของรัน reset/foundation แล้ว เก็บบัญชี 2 บัญชี; Storage เหลือ 15 placeholders และยืนยันบันทึกปก/รีเฟรชผ่าน; integration ส่วนอื่นยังรอตรวจ ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
 
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
@@ -8,7 +8,7 @@
 
 เอกสารนี้เป็นแผนงานกลางสำหรับไค ผู้พัฒนา หรือ AI ที่มารับช่วงต่อ ใช้บอกว่าจะทำอะไร ทำก่อน–หลังอย่างไร ต้องได้ผลลัพธ์อะไร และมีหลักฐานแบบใดจึงนับว่าเสร็จ แบ่งเป็น **13 ส่วนใหญ่ (M00–M12) และ 65 งานย่อย** รวมช่วงเตรียมงานและทดสอบส่งมอบ
 
-ผู้ใช้มอบหมายให้เริ่มดำเนินงานแล้ว ปัจจุบันทำ M00 baseline และเตรียมเครื่องมือตรวจฐานข้อมูลจริง ผลตรวจอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) เริ่ม migration พื้นฐาน M01.03/.04 แล้ว แต่ยังไม่รันกับ Supabase จริง และยังไม่จบ snapshot/revision
+ผู้ใช้มอบหมายให้เริ่มดำเนินงานแล้ว ปัจจุบันทำ M00 baseline และเตรียมเครื่องมือตรวจฐานข้อมูลจริง ผลตรวจอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) เริ่ม migration พื้นฐาน M01.03/.04 แล้ว เจ้าของรัน foundation บน Supabase และส่งผลแล้ว ยังไม่จบ snapshot/revision
 
 - Repository: `zenecoil0-design/projectfinal`
 - Branch งานปัจจุบัน: `codex/portfolio-next-phase`
@@ -425,3 +425,8 @@ Branch / HEAD ล่าสุด / Commit ที่ push:
 | 2026-10-15 | 1.0 | สร้างแผน 13 ส่วน 65 งานย่อยจากเอกสารและ audit ที่เผยแพร่แล้ว แยกสถานะของเดิม/งานใหม่ พร้อม dependency เกณฑ์จบและทะเบียนส่งต่อ |
 
 **จุดทำต่อ:** รันขั้นตอนใน M01_DATABASE_SETUP.md แล้วตรวจผลฐานจริง; ทำ data contract snapshot/revision/asset และต่อยอด M01.01/.02/.05 ก่อนปิด M01 ทั้งส่วน ไม่ต้องขอ metadata หรือ function bodies เดิมซ้ำ
+
+
+### Checkpoint หน้าปก 2026-10-15
+
+คำขอแทรกจากเจ้าของ: เพิ่มชื่อ–นามสกุลฝั่งซ้ายของหน้าปก ดำเนินการบนฐาน edf2c0e ใช้ cover fields + migration 202610150002; save แบบ upsert ตาม unique portfolio_id ป้องกันแถวซ้ำ แสดงชื่อบน preview ทั้งสองแบบและรวมชื่อใน dirty state การเปลี่ยนพอร์ต reset ค่าเหมือนส่วนอื่น ยังไม่ถือว่า M06 ทั้งส่วนหรือ autosave เสร็จ

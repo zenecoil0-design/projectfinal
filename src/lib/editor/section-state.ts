@@ -15,7 +15,7 @@ export const editorStores = [useCoverStore, useProfileStore, useEducationStore, 
 export function sectionSnapshot(section: Section): string {
   const cover = useCoverStore.getState();
   switch (section) {
-    case "cover": return JSON.stringify([cover.portfolioTitle, cover.schoolName, cover.coverImage]);
+    case "cover": return JSON.stringify([cover.portfolioTitle, cover.schoolName, cover.coverImage, cover.firstName, cover.lastName]);
     case "preface": return JSON.stringify([cover.prefaceText, cover.authorName]);
     case "profile": return JSON.stringify(useProfileStore.getState());
     case "education": return JSON.stringify(useEducationStore.getState().educations);

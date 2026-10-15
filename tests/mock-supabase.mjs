@@ -4,7 +4,7 @@ const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: '
 let database;
 const reset = () => database = {
   portfolios: [ {id:'a', user_id:userId, title:'Portfolio A', template_key:'classic'}, {id:'b', user_id:userId, title:'Portfolio B', template_key:'classic'} ],
-  covers: [{id:'cover-a',portfolio_id:'a', title:'ALPHA',school_name:'School A', cover_image_url:'http://127.0.0.1:54321/sample.png'}],
+  covers: [{id:'cover-a',portfolio_id:'a', title:'ALPHA',first_name:'Alpha',last_name:'Student',school_name:'School A', cover_image_url:'http://127.0.0.1:54321/sample.png'}],
   prefaces:[{id:'preface-a',portfolio_id:'a',content:'คำนำที่บันทึกไว้ของพอร์ต A',signature_name:'Alpha Author'}],
   profiles:[{id:'profile-a',portfolio_id:'a',first_name:'Alpha',last_name:'Student',social_links:[],custom_fields:[],gpax:null}],
   user_library_educations:[{id:'education-a',user_id:userId,level:'มัธยมศึกษา',school_name:'Saved School',study_plan:'วิทย์คณิต',gpa:3.5,logo_url:'',start_year:'2023',end_year:'2026'}],
@@ -38,6 +38,13 @@ createServer(async (req,res) => {
   const matches = row => [...url.searchParams].every(([key,value])=> !value.startsWith('eq.') || String(row[key])===value.slice(3));
   const rows=(database[table]??[]).filter(matches);
   if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body)); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
+  if(req.method==='POST' && req.headers.prefer?.includes('resolution=merge-duplicates')) {
+    const key=url.searchParams.get('on_conflict');
+    const existing=(database[table]??[]).find(row=>row[key]===body[key]);
+    if(existing) Object.assign(existing,body);
+    else (database[table]??=[]).push({id:crypto.randomUUID(),...body});
+    return res.end('null');
+  }
   if(req.method==='POST') { (database[table]??=[]).push(...(Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}])); return res.end('null'); }
   if(req.headers.accept?.includes('vnd.pgrst.object+json')) return res.end(JSON.stringify(rows[0]??null));
   res.end(JSON.stringify(rows));

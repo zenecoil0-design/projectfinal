@@ -171,3 +171,33 @@ test('mobile export detects overflowing content while preview tab is hidden', as
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
   await expect(page.getByText('เนื้อหาล้นหน้า 2',{exact:false})).toBeVisible();
 });
+
+test('cover names preview, persist independently, survive reload and clear on portfolio switch', async ({page}) => {
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('Alpha');
+  await page.getByLabel('ชื่อบนหน้าปก',{exact:true}).fill('โฟล์ค');
+  await page.getByLabel('นามสกุลบนหน้าปก',{exact:true}).fill('ทดสอบ');
+  await expect(page.locator('[data-section="หน้าปก"]')).toContainText('โฟล์ค ทดสอบ');
+  await expect(page.getByText('ยังไม่บันทึก:',{exact:false})).toContainText('หน้าปก');
+  await page.route('**/rest/v1/covers?**',route=>route.request().method()==='POST' ? route.fulfill({status:500,json:{message:'Cover save failed'}}) : route.continue());
+  await page.locator('form:visible button[type="submit"]').click();
+  await expect(page.getByText('Cover save failed')).toBeVisible();
+  await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('โฟล์ค');
+  await page.unroute('**/rest/v1/covers?**');
+  await page.locator('form:visible button[type="submit"]').click();
+  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeEnabled();
+  await page.reload();
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('โฟล์ค');
+  await expect(page.getByLabel('นามสกุลบนหน้าปก',{exact:true})).toHaveValue('ทดสอบ');
+  await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
+  await expect(page.getByText('บันทึกเทมเพลตแล้ว')).toBeVisible();
+  await expect(page.locator('[data-section="หน้าปก"]')).toContainText('โฟล์ค ทดสอบ');
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:'/tmp/cover-name-fields-mobile.png'});
+  await page.goto('/editor?portfolio=b');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('');
+  await expect(page.getByLabel('นามสกุลบนหน้าปก',{exact:true})).toHaveValue('');
+});

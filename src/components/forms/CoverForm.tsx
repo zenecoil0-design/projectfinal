@@ -103,6 +103,8 @@ export default function CoverForm({
                 id,
                 title,
                 school_name,
+                first_name,
+                last_name,
                 cover_image_url
               `
             )
@@ -123,6 +125,9 @@ export default function CoverForm({
           if (error) {
             throw error;
           }
+
+          store.setCover("firstName", data?.first_name ?? "");
+          store.setCover("lastName", data?.last_name ?? "");
 
           // ถ้ามีข้อมูล Cover ของ Portfolio นี้แล้ว
           if (data) {
@@ -380,79 +385,15 @@ export default function CoverForm({
           );
       }
 
-      // หา Cover เดิมของ Portfolio นี้
-      const {
-        data: existingCover,
-        error:
-          existingCoverError,
-      } = await supabase
-        .from("covers")
-        .select("id")
-        .eq(
-          "portfolio_id",
-          portfolioId
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          }
-        )
-        .limit(1)
-        .maybeSingle();
-
-      if (
-        existingCoverError
-      ) {
-        throw existingCoverError;
-      }
-
-      const payload = {
-        portfolio_id:
-          portfolioId,
-
-        title:
-          store.portfolioTitle.trim(),
-
-        school_name:
-          store.schoolName.trim(),
-
-        cover_image_url:
-          coverImageUrl || null,
-      };
-
-      // ถ้ามีแล้ว -> update
-      if (
-        existingCover?.id
-      ) {
-        const {
-          error:
-            updateError,
-        } = await supabase
-          .from("covers")
-          .update(payload)
-          .eq(
-            "id",
-            existingCover.id
-          );
-
-        if (updateError) {
-          throw updateError;
-        }
-      } else {
-        // ถ้ายังไม่มี -> insert
-
-        const {
-          error:
-            insertError,
-        } = await supabase
-          .from("covers")
-          .insert(payload);
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
+      const { error: saveError } = await supabase.from("covers").upsert({
+        portfolio_id: portfolioId,
+        title: store.portfolioTitle.trim(),
+        school_name: store.schoolName.trim(),
+        first_name: store.firstName.trim(),
+        last_name: store.lastName.trim(),
+        cover_image_url: coverImageUrl || null,
+      }, { onConflict: "portfolio_id" });
+      if (saveError) throw saveError;
 
       // เปลี่ยน blob URL ให้เป็น Supabase public URL
       if (!mounted.current) return;
@@ -465,6 +406,8 @@ export default function CoverForm({
         null
       );
 
+      store.setCover("firstName", store.firstName.trim());
+      store.setCover("lastName", store.lastName.trim());
       markSaved("cover");
       setSuccessMessage(
         "บันทึกข้อมูลหน้าปกเรียบร้อยแล้ว"
@@ -550,6 +493,25 @@ export default function CoverForm({
               required
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-bold outline-none focus:border-blue-500"
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cover-first-name" className="mb-1 block text-[11px] font-semibold text-slate-500">ชื่อบนหน้าปก</label>
+              <input id="cover-first-name" type="text" autoComplete="given-name"
+                value={store.firstName}
+                onChange={event => { store.setCover("firstName", event.target.value); setSuccessMessage(""); }}
+                placeholder="ชื่อ"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label htmlFor="cover-last-name" className="mb-1 block text-[11px] font-semibold text-slate-500">นามสกุลบนหน้าปก</label>
+              <input id="cover-last-name" type="text" autoComplete="family-name"
+                value={store.lastName}
+                onChange={event => { store.setCover("lastName", event.target.value); setSuccessMessage(""); }}
+                placeholder="นามสกุล"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500" />
+            </div>
           </div>
 
           {/* School */}
