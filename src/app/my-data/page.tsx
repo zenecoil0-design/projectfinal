@@ -13,6 +13,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
+import { LibraryDraftGuard, useLibraryGuard } from "@/components/my-data/LibraryDraftGuard";
 import EducationLibrary from "@/components/my-data/EducationLibrary";
 import ActivityLibrary from "@/components/my-data/ActivityLibrary";
 import CertificateLibrary from "@/components/my-data/CertificateLibrary";
@@ -91,6 +92,16 @@ export default function MyDataPage() {
     );
   }
 
+  return <LibraryDraftGuard key={accountId}>
+    <LibraryContent accountId={accountId} activeTab={activeTab} setActiveTab={setActiveTab} />
+  </LibraryDraftGuard>;
+}
+
+function LibraryContent({ accountId, activeTab, setActiveTab }: {
+  accountId: string; activeTab: TabType; setActiveTab: (tab: TabType) => void;
+}) {
+  const router = useRouter();
+  const { requestExit, busy } = useLibraryGuard();
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
@@ -98,6 +109,7 @@ export default function MyDataPage() {
           <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/dashboard"
+              onNavigate={event => { event.preventDefault(); requestExit(() => router.push("/dashboard")); }}
               aria-label="กลับ Dashboard"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             >
@@ -135,36 +147,36 @@ export default function MyDataPage() {
 
         <section className="mt-6">
           <div role="group" aria-label="หมวดคลังข้อมูล" className="grid min-w-0 grid-cols-1 gap-2 @min-[40rem]:grid-cols-3">
-            <TabButton
+            <TabButton disabled={busy}
               active={
                 activeTab === "education"
               }
               icon={<FaBook />}
               title="ประวัติการศึกษา"
               onClick={() =>
-                setActiveTab("education")
+                activeTab !== "education" && requestExit(() => setActiveTab("education"))
               }
             />
 
-            <TabButton
+            <TabButton disabled={busy}
               active={
                 activeTab === "activity"
               }
               icon={<FaTrophy />}
               title="ผลงานและกิจกรรม"
               onClick={() =>
-                setActiveTab("activity")
+                activeTab !== "activity" && requestExit(() => setActiveTab("activity"))
               }
             />
 
-            <TabButton
+            <TabButton disabled={busy}
               active={
                 activeTab === "certificate"
               }
               icon={<FaCertificate />}
               title="เกียรติบัตร"
               onClick={() =>
-                setActiveTab("certificate")
+                activeTab !== "certificate" && requestExit(() => setActiveTab("certificate"))
               }
             />
           </div>
@@ -188,11 +200,13 @@ export default function MyDataPage() {
 }
 
 function TabButton({
+  disabled,
   active,
   icon,
   title,
   onClick,
 }: {
+  disabled: boolean;
   active: boolean;
   icon: React.ReactNode;
   title: string;
@@ -201,6 +215,7 @@ function TabButton({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       aria-pressed={active}
       className={`flex min-h-11 min-w-0 items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${

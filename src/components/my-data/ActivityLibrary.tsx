@@ -1,4 +1,5 @@
 "use client";
+import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
 import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
@@ -143,7 +144,14 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
   const [isAddingTag, setIsAddingTag] =
     useState(false);
 
-  const loadData = useCallback((uid: string) => run(uid,
+  const requestExit = useLibraryDraft({
+    open: showForm, saving: isSaving, values: [title, description, activityDate, organization, newTagName],
+    tagIds: selectedTagIds, images: existingImages, files: newFiles,
+  });
+  const draftReads = useRef(0);
+  useEffect(() => () => { draftReads.current++; }, []);
+
+  const loadData = useCallback((uid: string, fresh = false) => run(uid,
     () => Promise.all([
       supabase
         .from(
@@ -230,11 +238,12 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
         })));
       }
     return { mainError: mainFailed, tagsError: tagsFailed };
-  }), [supabase, run]);
+  }, fresh), [supabase, run]);
 
   useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
+    draftReads.current++;
     setEditingId(null);
 
     setTitle("");
@@ -261,6 +270,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     setShowForm(false);
   };
 
+  const requestClose = () => requestExit(resetForm);
+
   const openCreateForm = () => {
     resetForm();
     setShowForm(true);
@@ -269,6 +280,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
   const openEditForm = (
     activity: Activity
   ) => {
+    draftReads.current++;
     setEditingId(activity.id);
 
     setTitle(activity.title);
@@ -336,6 +348,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
   const handleFiles = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    const ticket = draftReads.current;
     const files = Array.from(
       event.target.files ?? []
     );
@@ -407,6 +420,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
             fileToDataUrl(file)
         )
       );
+
+    if (ticket !== draftReads.current) return;
 
     const finalFiles: File[] =
       [];
@@ -754,7 +769,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    if (!canSave) return;
+    if (isSaving || !canSave) return;
 
     if (!userId) return;
 
@@ -886,7 +901,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
         }
       }
 
-      await loadData(userId);
+      await loadData(userId, true);
 
       resetForm();
     } catch (error) {
@@ -955,7 +970,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
         .remove(paths);
     }
 
-    await loadData(userId);
+    await loadData(userId, true);
   };
 
   const totalImages =
@@ -1137,7 +1152,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
           }
           formId="activity-library-form"
           onClose={
-            resetForm
+            requestClose
           }
         >
           <form
@@ -1146,6 +1161,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
             aria-busy={isSaving}
             className="@container min-w-0 space-y-5"
           >
+                <fieldset disabled={isSaving} className="min-w-0 space-y-5">
                 <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
             <Field htmlFor="activity-library-title" label="ชื่อผลงาน / กิจกรรม *">
               <input id="activity-library-title" autoFocus
@@ -1318,7 +1334,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
                 handleAddTag
               }
             /></fieldset>
-          </form>
+          </fieldset>
+              </form>
         </LibraryModal>
       )}
     </>
@@ -1397,7 +1414,7 @@ function LibraryModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="ปิดฟอร์มผลงานหรือกิจกรรม" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+            disabled={isSaving} aria-label="ปิดฟอร์มผลงานหรือกิจกรรม" className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             <FaTimes />
           </button>

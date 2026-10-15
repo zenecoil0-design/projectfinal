@@ -1,5 +1,7 @@
 # ตรวจ UI คลังข้อมูล /my-data
 
+สถานะต่อจากรายงาน UI: ประเด็น loadError/retry และคำเตือนข้อมูลค้างได้รับการดำเนินงานใน [MY_DATA_RESILIENCE_REVIEW.md](MY_DATA_RESILIENCE_REVIEW.md) แล้ว รายการข้อจำกัดด้านล่างเป็นสิ่งที่พบ ณ รอบ UI เดิม ให้ใช้รายงานใหม่สำหรับสถานะล่าสุด โดยเกียรติบัตร 2 รูปและ Editor Tags loadError ยังเป็นงานแยก
+
 ฐานก่อนเริ่ม: local/remote `codex/portfolio-next-phase` ตรงกันที่ `1e43a74cca5e614f7da67527c9ed3672623c1eee`, working tree สะอาด ไม่แก้ main
 
 ## ส่วน 1 — หน้าและการศึกษา

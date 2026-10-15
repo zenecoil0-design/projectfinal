@@ -16,8 +16,8 @@ export function useLibraryLoad() {
     mounted.current = true;
     return () => { mounted.current = false; lifetime.version++; pending.current = null; };
   }, []);
-  const run = useCallback(<T,>(owner: string, query: () => Promise<T>, apply: (result: T) => Result) => {
-    if (pending.current?.owner === owner) return pending.current.promise;
+  const run = useCallback(<T,>(owner: string, query: () => Promise<T>, apply: (result: T) => Result, replace = false) => {
+    if (!replace && pending.current?.owner === owner) return pending.current.promise;
     const ticket = ++request.current.version;
     const current = () => mounted.current && ticket === request.current.version;
     setState(previous => ({ ...previous, isLoading: true }));
