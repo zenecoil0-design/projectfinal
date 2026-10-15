@@ -1,14 +1,14 @@
-> สถานะล่าสุด 2026-10-15: เจ้าของอนุญาตล้างข้อมูลทดลองโดยเก็บบัญชี ไม่ต้อง backup ชุดนี้ก่อน reset; ได้ trigger function bodies ครบแล้ว ตาราง BLOCKED ด้านล่างเป็นประวัติก่อนคำสั่งล่าสุด อนุญาตเตรียม/ทดสอบ M01 ใน local ต่อได้ ส่วน live reset/Storage cleanup และ integration ยังรอรันจริง ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
+> สถานะล่าสุด 2026-10-15: เจ้าของอนุญาตล้างข้อมูลทดลองโดยเก็บบัญชี ไม่ต้อง backup ชุดนี้ก่อน reset; ได้ trigger function bodies ครบแล้ว อนุญาตเตรียม/ทดสอบ M01 ใน local ต่อได้ ส่วน live reset/Storage cleanup และ integration ยังรอรันจริง ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
 
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
-ฉบับ 1.3 • 15 ตุลาคม 2569 (Asia/Bangkok)
+ฉบับ 1.4 • 15 ตุลาคม 2569 (Asia/Bangkok)
 
 ## 1. เป้าหมายของเอกสาร
 
 เอกสารนี้เป็นแผนงานกลางสำหรับไค ผู้พัฒนา หรือ AI ที่มารับช่วงต่อ ใช้บอกว่าจะทำอะไร ทำก่อน–หลังอย่างไร ต้องได้ผลลัพธ์อะไร และมีหลักฐานแบบใดจึงนับว่าเสร็จ แบ่งเป็น **13 ส่วนใหญ่ (M00–M12) และ 65 งานย่อย** รวมช่วงเตรียมงานและทดสอบส่งมอบ
 
-ผู้ใช้มอบหมายให้เริ่มดำเนินงานแล้ว ปัจจุบันทำ M00 baseline และเตรียมเครื่องมือตรวจฐานข้อมูลจริง ผลตรวจอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) ยังไม่ได้เริ่ม migration หรือเปลี่ยนฟีเจอร์แอป
+ผู้ใช้มอบหมายให้เริ่มดำเนินงานแล้ว ปัจจุบันทำ M00 baseline และเตรียมเครื่องมือตรวจฐานข้อมูลจริง ผลตรวจอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) เริ่ม migration พื้นฐาน M01.03/.04 แล้ว แต่ยังไม่รันกับ Supabase จริง และยังไม่จบ snapshot/revision
 
 - Repository: `zenecoil0-design/projectfinal`
 - Branch งานปัจจุบัน: `codex/portfolio-next-phase`
@@ -47,7 +47,7 @@
 
 **สถานะผลทดสอบแยกต่างหาก:** NOT_RUN, PASS, FAIL, BLOCKED ตาม SYSTEM_TEST_PLAN ห้ามนำ READY หรือมีโค้ดแล้วไปแทน PASS
 
-สถานะปัจจุบันหลัง checkpoint นี้ถูก push: M00.01–M00.03 เป็น DONE, M00.04–M00.05 เป็น BLOCKED โดย M00.05 มี fixture manifest แล้วแต่ยังไม่มี staging fixtures จริง ส่วน M01–M12 ยังคง TODO รวม 3 DONE / 2 BLOCKED / 60 TODO ไม่ใช้จำนวนนี้เป็นเปอร์เซ็นต์ความสมบูรณ์ของระบบ
+สถานะปัจจุบันหลัง checkpoint นี้ถูก push: M00.01–M00.03 เป็น DONE, M00.04–M00.05 เป็น BLOCKED โดย M00.05 มี fixture manifest แล้วแต่ยังไม่มี staging fixtures จริง M01.03/.04 เป็น IN_PROGRESS โดยมี checkpoint foundation ผ่าน local tests แล้ว ส่วนงานอื่นคง TODO รวม 3 DONE / 2 BLOCKED / 2 IN_PROGRESS / 58 TODO ไม่ใช้จำนวนนี้เป็นเปอร์เซ็นต์ความสมบูรณ์ของระบบ
 
 สถานะส่วนใหญ่: READY เมื่อเริ่มงานย่อยแรกได้; IN_PROGRESS เมื่อมีงานย่อยเริ่มจริง; DONE เฉพาะเมื่องานย่อยทั้งหมด DONE และเกณฑ์จบส่วนผ่าน งานที่รอ prerequisite ตามแผนให้คง TODO ไม่ใช้ BLOCKED จนมีอุปสรรคจริง
 
@@ -70,7 +70,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | รหัส | ส่วนใหญ่ | ต้องผ่านก่อน | สถานะ | ผลลัพธ์หลัก |
 | --- | --- | --- | --- | --- |
 | M00 | ตั้งต้นงานและยืนยันสภาพแวดล้อม | เริ่มได้ทันที | BLOCKED | ได้ฐานโค้ดและข้อมูลจริงที่เชื่อถือได้ก่อนออกแบบ migration |
-| M01 | โครงสร้างข้อมูล สิทธิ์ และสัญญาการบันทึก | M00 | TODO | มีฐานข้อมูลรองรับข้อกำหนดทั้งหมดโดยไม่ทำฟีเจอร์เดิมเสีย |
+| M01 | โครงสร้างข้อมูล สิทธิ์ และสัญญาการบันทึก | M00 (เตรียม local ต่อได้ตามคำสั่งล่าสุด) | IN_PROGRESS | มีฐานข้อมูลรองรับข้อกำหนดทั้งหมดโดยไม่ทำฟีเจอร์เดิมเสีย |
 | M02 | คลังข้อมูลและ Tags ตามข้อกำหนดใหม่ | M01 | TODO | คลังทั้งสามหมวดพร้อมเป็นแหล่งข้อมูลที่ถูกต้อง |
 | M03 | เลือกข้อมูลและรูปเข้าแต่ละพอร์ตแบบ B | M01, M02 | TODO | พอร์ตเก็บเนื้อหาของตนเองและเลือกภาพโดยไม่แก้คลัง |
 | M04 | รับอัปเดต ลบคลัง และวงจรข้อมูล | M03 | TODO | ข้อมูลหลายพอร์ตสอดคล้องโดยผู้ใช้ควบคุมการรับอัปเดตได้ |
@@ -108,7 +108,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M01 — โครงสร้างข้อมูล สิทธิ์ และสัญญาการบันทึก
 
 **เป้าหมาย:** มีฐานข้อมูลรองรับข้อกำหนดทั้งหมดโดยไม่ทำฟีเจอร์เดิมเสีย  
-**สถานะส่วน:** TODO • **Dependency:** M00  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M00 (live verification ยังรอ)
 **จุดเริ่มตรวจ:** `supabase/migrations, src/lib/supabase, src/lib/editor, src/store`  
 **ผูกกับ audit:** F11,F12,F13,F14,F16,F19,F23,F26,F31,F39  
 **เคสตรวจรับ:** SEC-01, SEC-02, SEC-03, SEC-04
@@ -117,8 +117,8 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M01.01 ออกแบบข้อมูลพอร์ตและ snapshot | TODO | มี relations เดิม ไม่มี B ถาวร | กำหนด source ID/version, snapshot payload, selected asset IDs, sort_order, revision, visibility, template/colors, age mode; ตรวจ mapping schema จริงก่อนกำหนดชื่อตาราง | บันทึก data contract และแผนเปลี่ยนข้อมูลที่ caller/store/preview ใช้ตรงกัน |
 | M01.02 ออกแบบการเขียนและ conflict | TODO | มี RPC selection เดิม | กำหนด atomic writes, expected revision, error รูปแบบเดียว, การปฏิเสธ stale request และการ retry ไม่สร้างข้อมูลซ้ำ | มีสัญญา request/response และกรณี conflict/unauthorized/not found ที่ทดสอบได้ |
-| M01.03 ทำ migration และ backfill | TODO | ยังไม่ทำโครงสร้างใหม่ | ต่อยอด schema แบบเป็นขั้นตอน รักษาข้อมูลเดิม สร้าง snapshot ของพอร์ตเดิมจากข้อมูล ณ ย้ายและบันทึกข้อจำกัด | ทดสอบ migrate/restore ใน staging พร้อมจำนวนรายการก่อน/หลัง; ห้ามอ้างกู้เวอร์ชันอดีตที่ไม่เคยเก็บ |
-| M01.04 บังคับ ownership และ validation | TODO | มี ownership บางเส้นทาง | RLS/RPC ตรวจเจ้าของรายการ รูป Tags พอร์ต เพดานภาพ และชื่อบังคับ; ไม่พึ่ง UI | A ไม่เข้าถึง B ผ่าน API โดยตรง; invalid writes rollback ได้ |
+| M01.03 ทำ migration และ backfill | IN_PROGRESS | foundation migration พร้อม; snapshot ยังไม่ทำ | ต่อยอด schema แบบเป็นขั้นตอน รักษาข้อมูลเดิม สร้าง snapshot ของพอร์ตเดิมจากข้อมูล ณ ย้ายและบันทึกข้อจำกัด | ทดสอบ migrate/restore ใน staging พร้อมจำนวนรายการก่อน/หลัง; ห้ามอ้างกู้เวอร์ชันอดีตที่ไม่เคยเก็บ |
+| M01.04 บังคับ ownership และ validation | IN_PROGRESS | relation ownership/title/grants ผ่าน local; image limits ยังไม่ทำ | RLS/RPC ตรวจเจ้าของรายการ รูป Tags พอร์ต เพดานภาพ และชื่อบังคับ; ไม่พึ่ง UI | A ไม่เข้าถึง B ผ่าน API โดยตรง; invalid writes rollback ได้ |
 | M01.05 กำหนดวงจรไฟล์ภาพ | TODO | ยังไม่มีวงจร snapshot asset | ใช้ asset identity/object key คงที่แยกเวอร์ชัน เก็บ reference และ cleanup retry; ตรวจ public URL กับนโยบายจริง | snapshot เก่ามีไฟล์จริงให้โหลด; ไฟล์ที่มีผู้ใช้อ้างอิงไม่ถูก cleanup |
 
 **เกณฑ์จบ M01:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
@@ -349,7 +349,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | ID | ประเด็น | ผู้รับผิดชอบ/จังหวะ | สถานะ | วิธีปิดประเด็น |
 | --- | --- | --- | --- | --- |
 | D01 | schema/RLS/Storage/Auth จริง และสิทธิ์เข้าถึง | ผู้ทำ M00.03 | RECORDED | ดู M00_SCHEMA_REVIEW.md; การสำรวจเสร็จ ข้อจำกัด live access บันทึกแล้ว การตรวจ runtime รอ staging |
-| D02 | เกียรติบัตรเดิมเกิน 2 รูปและช่องวันที่/หน่วยงาน | ผู้ทำ M00.04/M01.03 | OPEN | นับแล้ว: เกียรติบัตรเกินเพดาน 2 รายการ ช่องเก่ายังมีข้อมูล; รอ backup และวิธีจัดการที่ไม่ตัดข้อมูลเอง |
+| D02 | เกียรติบัตรเดิมเกิน 2 รูปและช่องวันที่/หน่วยงาน | ผู้ทำ M00.04/M01.03 | OPEN | นับแล้ว: เกียรติบัตรเกินเพดาน 2 รายการ ช่องเก่ายังมีข้อมูล; เจ้าของอนุญาตล้างข้อมูลทดลองแล้ว รอผล reset จริง ไม่ต้อง backup ชุดนี้ |
 | D03 | รูปที่ถูกแทน/ลบตอนรับ update | ผู้ทำ M04.02 | OPEN | ออกแบบหน้าสรุปผลและวิธีเลือกรูปใหม่ รักษาหลักผู้ใช้รู้และยืนยัน |
 | D04 | UX เมื่อสองแท็บบันทึกชนกัน | ผู้ทำ M01.02/M05.04 | OPEN | ใช้ revision ปฏิเสธการทับเงียบและให้เลือก/กู้ค่าค้าง บันทึกแนวทางที่ใช้ |
 | D05 | กฎวันเกิด 29 ก.พ. ในปีไม่อธิกสุรทิน | ผู้ทำ M06.02 | OPEN | ระบุวันอ้างอิงและกฎที่เลือกให้ชัดก่อนรับ AGE-04 ไม่เดาว่าเทสต์ผ่าน |
@@ -381,7 +381,8 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M00.01 | ไค | DONE | 957e35d | repository/กติกา | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | ตรวจ remote อีกครั้งเมื่อกลับมาทำงาน | 2026-10-15 |
 | M00.02 | ไค | DONE | 957e35d | lint/unit/build/E2E mock | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | PASS baseline; ไม่แทน integration จริง | 2026-10-15 |
 | M00.03 | ไค | DONE | 885706c | metadata/Auth และ probes | [ผลตรวจ](M00_SCHEMA_REVIEW.md) | commit ที่เพิ่ม M00_SCHEMA_REVIEW.md | สำรวจเสร็จ; ยังไม่ใช่ live integration PASS | 2026-10-15 |
-| M00.04 | ไค | BLOCKED | c1cca0a | inventory/backup guide | [รายงาน](M00_INVENTORY_REVIEW.md) | commit ที่เพิ่ม M00_INVENTORY_REVIEW.md บน branch ใหม่ | ได้ยอดจริงแล้ว รอ backup/restore; ยังไม่ยืนยัน staging | 2026-10-15 |
+| M00.04 | ไค | BLOCKED | c1cca0a | inventory/backup guide | [รายงาน](M00_INVENTORY_REVIEW.md) | commit ที่เพิ่ม M00_INVENTORY_REVIEW.md บน branch ใหม่ | ได้ยอดจริงและ function bodies ครบ reset ขึ้น 4c870cc แล้ว รอ live reset/verify; backup ชุดทดลองถูกยกเว้นโดยเจ้าของ | 2026-10-15 |
+| M01.03/.04 | ไค | IN_PROGRESS | 4c870cc | foundation migration และ tests | ดู M01_DATABASE_SETUP.md; local suite 10/10 | checkpoint ที่เพิ่ม migration 202610150001 | รอ live verify และทำ snapshot/revision/image limits ต่อ | 2026-10-15 |
 | M00.05 | ไค | BLOCKED | 957e35d | fixture manifest | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | รอ staging accounts/assets/seed ตาม schema | 2026-10-15 |
 
 แบบส่งต่อที่ต้องกรอกก่อนหยุดงาน:
@@ -417,9 +418,10 @@ Branch / HEAD ล่าสุด / Commit ที่ push:
 
 | วันที่ | ฉบับ | การเปลี่ยนแปลง |
 | --- | --- | --- |
+| 2026-10-15 | 1.4 | รับอนุญาตล้างข้อมูลทดลองเก็บบัญชี; reset ขึ้น 4c870cc; foundation migration ผ่าน local tests ยังรอ live execution |
 | 2026-10-15 | 1.3 | รับยอดจริง/trigger metadata แล้ว; main รับ snapshot เดิมตามคำสั่ง; ทำต่อบน codex/portfolio-next-phase และเตรียม backup |
 | 2026-10-15 | 1.2 | รับ metadata/Auth แล้ว ปิดงานสำรวจ M00.03; เพิ่ม probes และ SQL inventory; M00.04/.05 ยังรอฐานจริง |
 | 2026-10-15 | 1.1 | บันทึก baseline จริงและ checkpoint M00; รอข้อมูล Supabase; แก้จำนวน E2E เป็น 9 |
 | 2026-10-15 | 1.0 | สร้างแผน 13 ส่วน 65 งานย่อยจากเอกสารและ audit ที่เผยแพร่แล้ว แยกสถานะของเดิม/งานใหม่ พร้อม dependency เกณฑ์จบและทะเบียนส่งต่อ |
 
-**จุดทำต่อ:** ตรวจหน้า Database → Backups ตาม M00_BACKUP_GUIDE.md จัด backup/restore และตรวจ trigger function bodies จากนั้นเตรียม staging fixtures ใน M00.04/M00.05 ก่อนปิด M00 และเริ่ม M01 ไม่ต้องรัน baseline ซ้ำโดยไม่มีโค้ดเปลี่ยนหรือความเสี่ยงใหม่
+**จุดทำต่อ:** รันขั้นตอนใน M01_DATABASE_SETUP.md แล้วตรวจผลฐานจริง; ทำ data contract snapshot/revision/asset และต่อยอด M01.01/.02/.05 ก่อนปิด M01 ทั้งส่วน ไม่ต้องขอ metadata หรือ function bodies เดิมซ้ำ

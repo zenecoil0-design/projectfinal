@@ -34,7 +34,12 @@ export async function baseline() {
     CREATE UNIQUE INDEX user_tags_unique_name ON public.user_tags(user_id,lower(name));
   `);
   for (const table of ["covers", "prefaces", "profiles", "activities", "certificates", "educations"]) {
-    await db.exec(`CREATE TABLE public.${table}(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),portfolio_id uuid REFERENCES public.portfolios(id));`);
+    await db.exec(`CREATE TABLE public.${table}(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),portfolio_id uuid REFERENCES public.portfolios(id));
+      ALTER TABLE public.${table} ENABLE ROW LEVEL SECURITY;`);
+    if (["covers", "prefaces", "profiles"].includes(table)) {
+      await db.exec(`CREATE POLICY own_section ON public.${table} FOR ALL TO authenticated USING(EXISTS(SELECT 1 FROM public.portfolios p WHERE p.id=portfolio_id AND p.user_id=auth.uid())) WITH CHECK(EXISTS(SELECT 1 FROM public.portfolios p WHERE p.id=portfolio_id AND p.user_id=auth.uid()));
+        CREATE TRIGGER touch_portfolio_from_${table} AFTER INSERT OR UPDATE OR DELETE ON public.${table} FOR EACH ROW EXECUTE FUNCTION public.touch_portfolio_updated_at();`);
+    }
   }
   for (const [kind, plural] of sections) {
     await db.exec(`
@@ -53,7 +58,10 @@ export async function baseline() {
     if (kind !== "education") {
       await db.exec(`CREATE TABLE public.user_library_${kind}_images(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),${kind}_id uuid NOT NULL REFERENCES public.user_library_${plural}(id) ON DELETE CASCADE,image_url text NOT NULL,sort_order integer NOT NULL DEFAULT 0);
         ALTER TABLE public.user_library_${kind}_images ENABLE ROW LEVEL SECURITY;
-        CREATE POLICY baseline_images ON public.user_library_${kind}_images FOR ALL USING(EXISTS(SELECT 1 FROM public.user_library_${plural} l WHERE l.id=${kind}_id AND l.user_id=auth.uid())) WITH CHECK(EXISTS(SELECT 1 FROM public.user_library_${plural} l WHERE l.id=${kind}_id AND l.user_id=auth.uid()));`);
+        CREATE POLICY read_images ON public.user_library_${kind}_images FOR SELECT USING(EXISTS(SELECT 1 FROM public.user_library_${plural} l WHERE l.id=${kind}_id AND l.user_id=auth.uid()));
+        CREATE POLICY insert_images ON public.user_library_${kind}_images FOR INSERT WITH CHECK(EXISTS(SELECT 1 FROM public.user_library_${plural} l WHERE l.id=${kind}_id AND l.user_id=auth.uid()));
+        CREATE POLICY delete_images ON public.user_library_${kind}_images FOR DELETE USING(EXISTS(SELECT 1 FROM public.user_library_${plural} l WHERE l.id=${kind}_id AND l.user_id=auth.uid()));`);
+      if (kind === "certificate") await db.exec(`CREATE POLICY update_images ON public.user_library_certificate_images FOR UPDATE USING(EXISTS(SELECT 1 FROM public.user_library_certificates l WHERE l.id=certificate_id AND l.user_id=auth.uid())) WITH CHECK(EXISTS(SELECT 1 FROM public.user_library_certificates l WHERE l.id=certificate_id AND l.user_id=auth.uid()));`);
     }
   }
   await db.exec(`ALTER TABLE public.portfolios ENABLE ROW LEVEL SECURITY;
