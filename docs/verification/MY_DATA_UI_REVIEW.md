@@ -39,3 +39,25 @@
 - ปัญหา Tags loadError ใน Editor ที่ส่งต่อมาอยู่นอกขอบเขต ไม่แก้ Editor
 
 การตรวจทั้งหมดข้างต้นเป็น mock ใน Chromium บนเครื่องทดสอบ ไม่ใช่ Supabase จริงหรือโทรศัพท์จริง ไม่รัน migration/reset/ฐานข้อมูลทั้งชุด
+
+## ผลรวมหลังครบสามส่วน
+
+| ส่วน | Commit ที่ตรวจ remote แล้ว |
+| --- | --- |
+| หน้าและการศึกษา | `efafb4ad3932d3930d6689b72710a5d2a89de15c` |
+| ผลงานและกิจกรรม | `959012354671a0bf4a92f9d0af57ef8d7bd900e0` |
+| เกียรติบัตร | `a9e189542dddd0607cae46ccafdd9af61dd5def2` |
+
+- Production build หนึ่งครั้ง: `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key npm run build` ผ่าน compile/TypeScript/static generation; มี warning middleware convention เดิม
+- ทดสอบรวมกับ production build: `LD_LIBRARY_PATH=/workspace/scratch/c9bc59bd45e7/browser-runtime PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/workspace/scratch/c9bc59bd45e7/browser-runtime/chromium npx playwright test tests/e2e/my-data.spec.ts --reporter=line` — **9 passed (18.4s)**
+- รอบรวมเพิ่มตรวจเปิดแก้ไขรายการที่มีภาพ 2 รูปในทั้งสองขนาด และเลือกรูปต้นฉบับแล้วเห็น preview ก่อนยกเลิกฟอร์ม (ไม่ upload); ไม่ได้ทดสอบ crop export ใหม่หรือ Storage จริง เพราะไม่ได้แก้กลไกเหล่านี้
+- จอ desktop 1440x1000/mobile 390x568 ใช้ภาพจำลองแนวตั้ง/แนวนอน ชื่อและ Tags ไทยยาว ไม่มีภาพ/Tags/ข้อมูลรอง; ตรวจ overflow, ปุ่มท้าย modal และภาพด้วยตา มี 16 PNG จาก production mock run
+- lint ตามแต่ละส่วน 0 errors, warning img เดิมรวม 6; test file lint ผ่านหลังเพิ่มกรณีรวม; git diff --check ผ่าน
+- AST เทียบฐาน `1e43a74` ยืนยัน root logic และ onClick/onChange/onSubmit/value/disabled/required/min/max/step/accept/multiple ของ source ทั้ง 4 ไฟล์ไม่เปลี่ยน
+- หลังผลผ่านไม่มีการแก้ source เพิ่ม จึงไม่รัน build/tests ซ้ำ; commit ปิดงานเก็บเฉพาะกรณีทดสอบรวมและรายงานนี้
+
+### ส่งต่อ Astra
+
+งาน UI ครบสามหมวด รักษาธีมเดิม คอลัมน์ตามพื้นที่ฟอร์ม ช่องกรอก/label/ปุ่ม/Tags/focus/modal เข้าชุดกับ Editor; ไม่แตะ Editor, Preview/A4/PDF, query/mapping/handlers/validation หรือฐานข้อมูล
+
+ประเด็นที่ต้องวางแผนแยก: ไม่มี unsaved warning ในคลังเดิม, ไม่มี loadError สำหรับแยกโหลดล้มเหลวจากคลังว่าง, เกียรติบัตรยังเป็น 4 รูปในโค้ดเดิมต่างจากเป้าหมาย 2; คงไว้ทั้งหมดในรอบ UI นี้ ต้องตรวจ HEAD จริงและรักษางานใหม่กว่าเมื่อเริ่มรอบถัดไป

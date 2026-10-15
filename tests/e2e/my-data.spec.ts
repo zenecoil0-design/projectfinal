@@ -61,6 +61,15 @@ for (const config of sections) {
         expect(image.width).toBeLessThanOrEqual(image.frame);
         expect(image.fit).toBe(config.key === 'activity' ? 'cover' : 'contain');
       }
+      if (config.key !== 'education') {
+        await page.locator('article').filter({ has: page.getByRole('heading', { name: longName, exact: true }) }).getByRole('button', { name: /แก้ไข/ }).click();
+        const editing = page.getByRole('dialog');
+        await expect(editing.locator('img')).toHaveCount(2);
+        await expect(editing.getByLabel(config.title, { exact: true })).toHaveValue(longName);
+        await expect(editing.getByRole('button', { name: /^บันทึก/ })).toBeInViewport();
+        await page.screenshot({ path: testInfo.outputPath(`${config.key}-edit-${width}.png`) });
+        await editing.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+      }
       await page.getByRole('button', { name: config.add, exact: true }).click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
@@ -126,6 +135,9 @@ for (const config of sections) {
     await chooser.setFiles({ name: 'mock.png', mimeType: 'image/png', buffer: await image.body() });
     await expect(page.locator('dialog')).toBeVisible();
     await page.locator('dialog').getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+    await dialog.locator('input[type=file]').setInputFiles({ name: 'mock.png', mimeType: 'image/png', buffer: await image.body() });
+    await page.locator('dialog').getByRole('button', { name: 'ใช้รูปต้นฉบับ', exact: true }).click();
+    await expect(dialog.locator('img')).toHaveCount(1);
     await dialog.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
   });
