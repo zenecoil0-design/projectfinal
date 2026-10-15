@@ -114,6 +114,9 @@ type ProfileRow = {
     | null;
 };
 
+const inputClassName = "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 sm:text-sm";
+const labelClassName = "mb-2 block text-sm font-semibold leading-5 text-slate-700";
+
 export default function ProfileForm({
   onNext,
 }: {
@@ -1090,7 +1093,7 @@ export default function ProfileForm({
       onSubmit={
         handleSave
       }
-      className="flex flex-col gap-6 pb-10"
+      className="@container flex min-w-0 flex-col gap-5 pb-6"
     >
       <fieldset disabled={exporting || isSaving || isLoading || status.profile === "error"} className="contents">
       {/* PROFILE IMAGE */}
@@ -1100,7 +1103,7 @@ export default function ProfileForm({
           รูปถ่ายโปรไฟล์
         </h3>
 
-        <div className="flex items-center gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="flex min-w-0 items-start gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4">
           <div className="relative flex h-32 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-200 shadow-inner">
             {store.profileImage ? (
               <img
@@ -1115,8 +1118,8 @@ export default function ProfileForm({
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="flex w-max cursor-pointer items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-100">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <label className="flex min-h-11 w-fit max-w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-100 focus-within:ring-2 focus-within:ring-blue-500">
               <FaCamera className="text-sm" />
 
               อัปโหลดรูปภาพใหม่
@@ -1124,7 +1127,7 @@ export default function ProfileForm({
               <CropInput
                 type="file"
                 accept="image/png,image/jpeg"
-                className="hidden"
+                className="sr-only"
                 onChange={
                   handleImageUpload
                 }
@@ -1137,7 +1140,7 @@ export default function ProfileForm({
                 onClick={
                   handleRemoveImage
                 }
-                className="flex w-max items-center gap-1 text-left text-xs font-semibold text-red-500 hover:text-red-700"
+                className="flex min-h-11 w-fit items-center gap-2 rounded-md px-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
               >
                 <FaTrash className="text-[10px]" />
 
@@ -1145,7 +1148,7 @@ export default function ProfileForm({
               </button>
             )}
 
-            <span className="mt-1 text-[10px] leading-relaxed text-slate-400">
+            <span className="text-xs leading-5 text-slate-500">
               JPG, PNG ขนาดไม่เกิน 5MB
             </span>
           </div>
@@ -1159,9 +1162,9 @@ export default function ProfileForm({
           1. ข้อมูลพื้นฐาน
         </h3>
 
-        <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="grid min-w-0 grid-cols-1 gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4 @min-[24rem]:grid-cols-2">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-firstName" className={labelClassName}>
               ชื่อจริง
 
               <span className="text-red-500">
@@ -1171,6 +1174,7 @@ export default function ProfileForm({
             </label>
 
             <input
+              id="profile-firstName"
               type="text"
               value={
                 store.firstName
@@ -1184,13 +1188,13 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
               required
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-lastName" className={labelClassName}>
               นามสกุล
 
               <span className="text-red-500">
@@ -1200,6 +1204,7 @@ export default function ProfileForm({
             </label>
 
             <input
+              id="profile-lastName"
               type="text"
               value={
                 store.lastName
@@ -1213,17 +1218,18 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
               required
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-nickname" className={labelClassName}>
               ชื่อเล่น
             </label>
 
             <input
+              id="profile-nickname"
               type="text"
               value={
                 store.nickname
@@ -1237,17 +1243,18 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-full grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-birthday" className={labelClassName}>
                 วันเกิด
               </label>
 
               <input
+                id="profile-birthday"
                 type="date"
                 value={
                   store.birthday
@@ -1261,30 +1268,31 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <p id="profile-age-label" className={labelClassName}>
                 อายุ (ปี)
-              </label>
+              </p>
 
-              <div className="w-full rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-center text-sm font-bold text-slate-500">
+              <output aria-labelledby="profile-age-label" className="flex min-h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-base font-semibold text-slate-600 sm:text-sm">
                 {calculateAge(
                   store.birthday
                 )}
-              </div>
+              </output>
             </div>
           </div>
 
-          <div className="col-span-2 grid grid-cols-3 gap-4">
+          <div className="col-span-full grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-nationality" className={labelClassName}>
                 สัญชาติ
               </label>
 
               <input
+                id="profile-nationality"
                 type="text"
                 value={
                   store.nationality
@@ -1298,16 +1306,17 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-ethnicity" className={labelClassName}>
                 เชื้อชาติ
               </label>
 
               <input
+                id="profile-ethnicity"
                 type="text"
                 value={
                   store.ethnicity
@@ -1321,16 +1330,17 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-religion" className={labelClassName}>
                 ศาสนา
               </label>
 
               <input
+                id="profile-religion"
                 type="text"
                 value={
                   store.religion
@@ -1344,7 +1354,7 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
           </div>
@@ -1359,13 +1369,14 @@ export default function ProfileForm({
           (แสดงบนหน้าประวัติ)
         </h3>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="flex min-w-0 flex-col gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-school" className={labelClassName}>
               ชื่อโรงเรียนปัจจุบัน
             </label>
 
             <input
+              id="profile-school"
               type="text"
               value={
                 store.school
@@ -1379,17 +1390,18 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-plan" className={labelClassName}>
                 แผนการเรียน
               </label>
 
               <input
+                id="profile-plan"
                 type="text"
                 value={
                   store.plan
@@ -1403,17 +1415,18 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
 
             <div>
-              <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-gpax" className={labelClassName}>
                 เกรดเฉลี่ยสะสม
                 (GPAX)
               </label>
 
               <input
+                id="profile-gpax"
                 type="number"
                 step="0.01"
                 value={
@@ -1428,7 +1441,7 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
           </div>
@@ -1442,16 +1455,17 @@ export default function ProfileForm({
           3. ข้อมูลการติดต่อ
         </h3>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="flex min-w-0 flex-col gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
+          <div className="grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
             <div>
-              <label className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-phone" className={`${labelClassName} flex items-center gap-2`}>
                 <FaPhone className="text-slate-400" />
 
                 เบอร์โทรศัพท์
               </label>
 
               <input
+                id="profile-phone"
                 type="tel"
                 value={
                   store.phone
@@ -1465,18 +1479,19 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
 
             <div>
-              <label className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+              <label htmlFor="profile-email" className={`${labelClassName} flex items-center gap-2`}>
                 <FaEnvelope className="text-slate-400" />
 
                 อีเมล
               </label>
 
               <input
+                id="profile-email"
                 type="email"
                 value={
                   store.email
@@ -1490,19 +1505,20 @@ export default function ProfileForm({
                       .value
                   )
                 }
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                className={inputClassName}
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-address" className={`${labelClassName} flex items-center gap-2`}>
               <FaMapMarkerAlt className="text-slate-400" />
 
               ที่อยู่ปัจจุบัน
             </label>
 
             <textarea
+              id="profile-address"
               value={
                 store.address
               }
@@ -1516,27 +1532,27 @@ export default function ProfileForm({
                 )
               }
               rows={2}
-              className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={`${inputClassName} min-h-24 resize-y leading-7`}
             />
           </div>
 
           {/* SOCIAL */}
 
           <div className="flex flex-col gap-2 border-t border-slate-200 pt-3">
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <p className={labelClassName}>
               ช่องทางการติดต่ออื่นๆ
               (Social Media)
-            </label>
+            </p>
 
             {store.socials.map(
               (
-                social
+                social, index
               ) => (
                 <div
                   key={
                     social.id
                   }
-                  className="flex overflow-hidden rounded-md border border-slate-300 bg-white transition-all focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
+                  className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-md border border-slate-300 bg-white transition-colors focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
                 >
                   <div className="flex items-center justify-center border-r border-slate-300 bg-slate-100 px-3">
                     {renderSocialIcon(
@@ -1545,6 +1561,7 @@ export default function ProfileForm({
                   </div>
 
                   <select
+                    aria-label={`แพลตฟอร์มช่องทางติดต่อ ${index + 1}`}
                     value={
                       social.platform
                     }
@@ -1558,7 +1575,7 @@ export default function ProfileForm({
                           .value
                       )
                     }
-                    className="w-28 cursor-pointer border-r border-slate-300 bg-slate-50 px-2 py-2 text-sm text-slate-700 outline-none"
+                    className={`${store.socials.length > 1 ? "col-span-1" : "col-span-2"} min-h-11 min-w-0 cursor-pointer bg-slate-50 px-3 py-2 text-base text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:text-sm`}
                   >
                     <option value="facebook">
                       Facebook
@@ -1574,6 +1591,7 @@ export default function ProfileForm({
                   </select>
 
                   <input
+                    aria-label={`ข้อมูลช่องทางติดต่อ ${index + 1}`}
                     type="text"
                     value={
                       social.link
@@ -1588,7 +1606,7 @@ export default function ProfileForm({
                           .value
                       )
                     }
-                    className="w-full px-3 py-2 text-sm outline-none"
+                    className="col-span-full row-start-2 min-h-11 w-full min-w-0 border-t border-slate-300 px-3 py-2 text-base text-slate-800 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:text-sm"
                   />
 
                   {store.socials.length >
@@ -1600,7 +1618,8 @@ export default function ProfileForm({
                           social.id
                         )
                       }
-                      className="border-l border-slate-300 px-3 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                      aria-label={`ลบช่องทางติดต่อ ${index + 1}`}
+                      className="col-start-3 row-start-1 flex min-h-11 min-w-11 items-center justify-center border-l border-slate-300 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-500"
                     >
                       <FaTrash />
                     </button>
@@ -1614,7 +1633,7 @@ export default function ProfileForm({
               onClick={
                 store.addSocial
               }
-              className="mt-1 flex w-max items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
+              className="flex min-h-11 w-fit max-w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             >
               <FaPlus />
 
@@ -1635,14 +1654,15 @@ export default function ProfileForm({
           </span>
         </h3>
 
-        <div className="flex flex-col gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+        <div className="flex min-w-0 flex-col gap-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-skills" className={labelClassName}>
               ความสามารถพิเศษ
               (Skills)
             </label>
 
             <input
+              id="profile-skills"
               type="text"
               value={
                 store.skills
@@ -1656,17 +1676,18 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-semibold text-slate-500">
+            <label htmlFor="profile-motto" className={labelClassName}>
               คติประจำใจ
               (Motto)
             </label>
 
             <input
+              id="profile-motto"
               type="text"
               value={
                 store.motto
@@ -1680,7 +1701,7 @@ export default function ProfileForm({
                     .value
                 )
               }
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClassName}
             />
           </div>
 
@@ -1694,7 +1715,7 @@ export default function ProfileForm({
                 key={
                   field.id
                 }
-                className="group relative flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-all"
+                className="flex min-w-0 flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
               >
                 <button
                   type="button"
@@ -1703,19 +1724,21 @@ export default function ProfileForm({
                       field.id
                     )
                   }
-                  className="absolute right-2 top-2 rounded p-1 text-xs text-slate-400 transition-colors hover:text-red-500"
+                  aria-label="ลบหัวข้อนี้"
+                  className="flex min-h-11 min-w-11 items-center justify-center self-end rounded-md text-red-600 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                   title="ลบหัวข้อนี้"
                 >
                   <FaTrash />
                 </button>
 
-                <div className="grid grid-cols-3 gap-2 pr-6">
-                  <div className="col-span-1">
-                    <label className="mb-0.5 block text-[10px] font-bold text-blue-500">
+                <div className="grid min-w-0 grid-cols-1 gap-5 @min-[24rem]:grid-cols-2">
+                  <div className="min-w-0">
+                    <label htmlFor={`profile-custom-title-${field.id}`} className={labelClassName}>
                       ชื่อหัวข้อ
                     </label>
 
                     <input
+                      id={`profile-custom-title-${field.id}`}
                       type="text"
                       value={
                         field.title
@@ -1731,16 +1754,17 @@ export default function ProfileForm({
                         )
                       }
                       placeholder="เช่น ภาษา"
-                      className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs font-bold outline-none focus:border-blue-500"
+                      className={inputClassName}
                     />
                   </div>
 
-                  <div className="col-span-2">
-                    <label className="mb-0.5 block text-[10px] font-semibold text-slate-500">
+                  <div className="min-w-0">
+                    <label htmlFor={`profile-custom-value-${field.id}`} className={labelClassName}>
                       รายละเอียด
                     </label>
 
                     <input
+                      id={`profile-custom-value-${field.id}`}
                       type="text"
                       value={
                         field.value
@@ -1756,7 +1780,7 @@ export default function ProfileForm({
                         )
                       }
                       placeholder="เช่น ไทย, อังกฤษ"
-                      className="w-full rounded border border-slate-300 px-2 py-1.5 text-xs outline-none focus:border-blue-500"
+                      className={inputClassName}
                     />
                   </div>
                 </div>
@@ -1769,7 +1793,7 @@ export default function ProfileForm({
             onClick={
               store.addCustomField
             }
-            className="mt-1 flex items-center justify-center gap-2 rounded-lg border border-dashed border-blue-300 bg-white px-4 py-2.5 text-xs font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-50"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-blue-300 bg-white px-4 py-3 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             <FaFolderPlus className="text-sm" />
 
@@ -1778,35 +1802,42 @@ export default function ProfileForm({
         </div>
       </div>
 
-      {/* ERROR */}
+      <div className="space-y-3 border-t border-slate-200 pt-4">
+        <p className="text-sm leading-6 text-slate-600">
+          กดบันทึกเพื่อเก็บประวัติส่วนตัวและไปเลือกประวัติการศึกษา
+        </p>
 
-      {errorMessage && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold leading-5 text-red-600">
-          {errorMessage}
-        </div>
-      )}
+        {/* ERROR */}
 
-      {/* SUCCESS */}
+        {errorMessage && (
+          <div role="alert" className="break-words rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700">
+            {errorMessage}
+          </div>
+        )}
 
-      {successMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold leading-5 text-emerald-700">
-          {successMessage}
-        </div>
-      )}
+        {/* SUCCESS */}
 
-      {/* SAVE */}
+        {successMessage && (
+          <div role="status" className="break-words rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium leading-6 text-emerald-700">
+            {successMessage}
+          </div>
+        )}
 
-      <button
-        type="submit"
-        disabled={
-          isSaving
-        }
-        className="mt-2 rounded-lg bg-slate-800 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isSaving
-          ? "กำลังบันทึก..."
-          : "💾 บันทึกข้อมูลประวัติส่วนตัว"}
-      </button>
+        {/* SAVE */}
+
+        <button
+          type="submit"
+          disabled={
+            isSaving
+          }
+          aria-busy={isSaving}
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSaving
+            ? "กำลังบันทึก..."
+            : "บันทึกและไปหน้าถัดไป"}
+        </button>
+      </div>
       </fieldset>
     </form>
   );
