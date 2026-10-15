@@ -54,7 +54,7 @@
 
 M00.03 สำรวจโครงสร้าง/ค่าตั้งค่าและบันทึกข้อจำกัดครบ; DONE หลัง checkpoint นี้ขึ้น branch แล้ว M00 ทั้งส่วนยัง BLOCKED เพราะ:
 
-1. M00.04: รอผล `supabase-data-inventory.sql` จาก SQL Editor และสถานะ backup ฐาน/ไฟล์ รวมหลักฐาน restore ในที่แยก
+1. M00.04: ได้ผล inventory แล้ว ดู [รายงานต่อเนื่อง](M00_INVENTORY_REVIEW.md); รอ backup ฐาน/ไฟล์ และหลักฐาน restore ในที่แยก
 2. M00.05: รอ staging ที่ใช้ทดสอบได้และบัญชี A/B/ไฟล์/seed-reset จริง; fixture manifest ที่มีอยู่ยังไม่เท่ากับสร้างข้อมูลสำเร็จ
 
 SQL inventory เป็น SELECT คืนยอดรวมกับ trigger metadata ไม่สำรองไฟล์ ไม่พิสูจน์ว่า Storage object ดาวน์โหลดได้ และไม่แมปทุก URL ไป physical object ใช้เป็นรอบตรวจผลกระทบเบื้องต้นก่อนวางแผน backup และ cleanup เมื่อได้ trigger definition ต้องตรวจฟังก์ชันที่เกี่ยวข้องต่อก่อน migration
@@ -65,3 +65,5 @@ SQL inventory เป็น SELECT คืนยอดรวมกับ trigger m
 - [Supabase — Storage Buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals): public bucket downloads ข้ามการควบคุมสิทธิ์อ่าน ส่วนการเขียน/ลบยังตรวจสิทธิ์
 
 ตรวจเอกสารวันที่ 15 ตุลาคม 2026; ใช้อธิบายกลไก ไม่แทนการทดสอบโปรเจกต์จริง
+
+อัปเดตหลังรับ inventory: ยืนยัน trigger 11 ตัวและยอดข้อมูลจริงแล้ว รายละเอียด/ข้อจำกัดล่าสุดอยู่ใน M00_INVENTORY_REVIEW.md ข้อค้นพบด้านบนยังเก็บเป็นหลักฐานรอบ metadata

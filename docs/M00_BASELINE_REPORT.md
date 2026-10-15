@@ -2,7 +2,7 @@
 
 อัปเดต 15 ตุลาคม 2026 (Asia/Bangkok) • ผู้ดำเนินการ: ไค
 
-**สถานะส่วนใหญ่: BLOCKED — baseline ผ่าน และได้รับ metadata/Auth จริงจากเจ้าของแล้ว; รอยอดข้อมูล backup/restore และ staging**
+**สถานะส่วนใหญ่: BLOCKED — baseline ผ่าน และได้รับ metadata/Auth จริงจากเจ้าของแล้ว; ได้ inventory แล้ว; รอ backup/restore และ staging**
 
 อัปเดตรอบตรวจ schema: ดู [M00_SCHEMA_REVIEW.md](M00_SCHEMA_REVIEW.md) ข้อมูลด้านล่างเป็นประวัติ baseline ก่อนรับ metadata ยกเว้นตารางสถานะและจุดส่งต่อที่ปรับให้เป็นปัจจุบัน
 
@@ -77,15 +77,15 @@ npm run test:e2e
 | M00.01 | DONE | ตรวจ HEAD ใหม่ก่อนเริ่มรอบถัดไปตามปกติ |
 | M00.02 | DONE สำหรับ baseline repository/mock ตามผลด้านบน | staging integration ยังอยู่ใน M00.03/M00.05 ไม่อ้างผ่านจาก mock |
 | M00.03 | DONE | ได้ metadata/Auth และบันทึกข้อจำกัดใน M00_SCHEMA_REVIEW.md; ยังไม่ใช่ runtime integration |
-| M00.04 | BLOCKED | SQL นับผลกระทบพร้อมและผ่านฐานจำลอง รอผลจากฐานจริงและหลักฐาน backup/restore |
+| M00.04 | BLOCKED | ได้รับยอดจริงแล้ว ดู M00_INVENTORY_REVIEW.md; รอหลักฐาน backup/restore |
 | M00.05 | BLOCKED (เตรียม manifest แล้ว) | ยังไม่สร้างบัญชี staging/ไฟล์ภาพจริง/seed-reset ตาม schema และตรวจ integration |
 
 **ยังไม่เริ่ม M01 implementation:** AGENTS ข้อ 6 ให้ตรวจ schema/RLS/Storage จริงก่อน migration และ dependency ในแผนให้ M00 ผ่านก่อน ไม่ข้ามเงื่อนไขเพื่อทำเครื่องหมายว่าเสร็จ
 
-สิ่งที่ต้องการจากเจ้าของตอนนี้คือผล [SQL inventory](../scripts/inspection/supabase-data-inventory.sql) และสถานะสำรองฐานข้อมูล/ไฟล์กับ staging ตาม [README](../scripts/inspection/README.md) ได้รับ metadata และภาพ Auth แล้ว ไม่ต้องส่งซ้ำ
+ได้รับ metadata ภาพ Auth และ inventory แล้ว ไม่ต้องส่งซ้ำ เจ้าของยังไม่ยืนยันว่ามี backup ดู [ผลล่าสุด](M00_INVENTORY_REVIEW.md) และ [คู่มือสำรอง](M00_BACKUP_GUIDE.md) สำหรับขั้นถัดไป
 
 ## จุดส่งต่องานครั้งถัดไป
 
-รับยอด inventory และ trigger metadata → ประเมินผลกระทบ → ตรวจ backup/restore และ staging fixtures → ปิด M00 เฉพาะเมื่อครบ → push ก่อนเริ่ม M01
+ตรวจ backup/restore และ trigger function bodies → เตรียม staging fixtures → ปิด M00 เฉพาะเมื่อครบ → push ก่อนเริ่ม M01
 
 เคส 100 ข้อใน SYSTEM_TEST_PLAN ยังคง NOT_RUN สำหรับระบบเป้าหมาย ชุดทดสอบเดิมผ่านไม่ได้แปลว่าฟีเจอร์ใหม่ผ่าน โดยเฉพาะเคสเดิมที่ยังคาดหวังเพดาน PDF 10 หน้า

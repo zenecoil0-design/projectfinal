@@ -24,7 +24,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 2. Repository และ branch
 
 - Repository: `zenecoil0-design/projectfinal`
-- Branch งานที่ผู้ใช้ระบุ: `codex/portfolio-system-fixes`
+- Branch งานปัจจุบัน: `codex/portfolio-next-phase` (แยกหลังคำสั่งเจ้าของวันที่ 15 ตุลาคม 2026)
+- นำสถานะ branch เดิม `codex/portfolio-system-fixes` ที่ `c1cca0a4f9b4aaad6591cbf86cd46ab13159cfa6` เข้า main แล้วตามคำสั่ง ก่อนเริ่มแก้ไฟล์รอบใหม่; ดู docs/M00_INVENTORY_REVIEW.md
+- การอนุญาตครั้งนี้สำหรับ snapshot ดังกล่าว ไม่ถือเป็นการอนุญาต merge งานในอนาคตเข้า main อัตโนมัติ
 - จุดอ้างอิงเอกสาร: `60f4d5686d6df01d5b8500aeaa0608938bda09ca` ห้าม reset branch กลับ commit นี้
 - ก่อนทำงานตรวจ remote, branch, working tree และ commit ล่าสุดจริง หากมีการเปลี่ยนตั้งแต่เอกสารนี้ ให้ปรับความเข้าใจจากโค้ดล่าสุด
 - รักษา `main` ไม่แก้หรือ merge เข้า main โดยไม่ได้รับคำสั่ง

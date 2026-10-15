@@ -2,16 +2,17 @@
 
 ได้รับ `metadata_report` และภาพ Auth จากเจ้าของแล้ววันที่ 15 ตุลาคม 2026 ดู [ผลตรวจ](../../docs/M00_SCHEMA_REVIEW.md) **ไม่ต้องส่งสองส่วนนี้ซ้ำ**
 
-## ขั้นตอนถัดไป: นับข้อมูลเดิม
+## ขั้นตอนปัจจุบัน: สำรองก่อน migration
 
-1. เปิดโปรเจกต์ Supabase → **SQL Editor → New query**
-2. คัดลอก [supabase-data-inventory.sql](supabase-data-inventory.sql) ทั้งไฟล์แล้ว Run ด้วยบัญชีเจ้าของโปรเจกต์
-3. ส่งผลแถวเดียวชื่อ `inventory_report` กลับในแชต จะคัดลอก JSON หรือ export CSV ก็ได้
-4. แจ้งว่ามี backup ฐานข้อมูล/ไฟล์ Storage และโปรเจกต์ staging แยกไว้หรือยัง หากไม่มีก็บอกว่า “ยังไม่มี” เพื่อจัดขั้นตอนต่อให้ตรงสภาพจริง
+ได้รับ inventory แล้วเวลา 13:23:57 วันที่ 15 ตุลาคม 2026 (ไทย) ดู [สรุปผล](../../docs/M00_INVENTORY_REVIEW.md) **ไม่ต้องรัน query เดิมซ้ำทันที**
 
-SQL นี้อ่านอย่างเดียว ไม่แก้ตาราง ไม่ลบข้อมูล คืนเฉพาะยอดรวมและ metadata ของ triggers ไม่ส่งชื่อ/อีเมล/เนื้อหานักเรียนหรือ URL รูป แต่ควรตรวจ trigger definitions ก่อนส่งเพราะ trigger ที่เขียนเองอาจมี arguments ที่ไม่ควรเผยแพร่ ถ้า error ให้ส่งข้อความ error ไม่ต้องแก้ฐานเพื่อให้ query ผ่าน
+เปิดโปรเจกต์ Supabase → **Database → Backups** แล้วส่งภาพรายการ/สถานะเพื่อเลือกวิธีสำรองให้ตรงแผนบริการ คู่มือทั้งฐานและไฟล์อยู่ที่ [M00_BACKUP_GUIDE.md](../../docs/M00_BACKUP_GUIDE.md) ยังไม่ต้องกด Restore
 
-ผ่านการทดสอบบน PGlite ด้วยข้อมูลจำลองแล้ว ยังไม่ได้รันบนฐานจริง การรันใน SQL Editor สิทธิ์เจ้าของใช้ดูยอดรวม ไม่พิสูจน์ว่า RLS ของ session ผู้ใช้ทำงานถูกต้อง
+ก่อน migration ต้องอ่าน body ของสามฟังก์ชันที่ trigger metadata อ้างถึงด้วย: รัน [supabase-trigger-functions.sql](supabase-trigger-functions.sql) ใน SQL Editor ได้ เป็น SELECT อ่านอย่างเดียว ตรวจผลว่าฟังก์ชันไม่มี secret ฝังไว้ก่อนส่ง ไม่ต้องส่ง dump ฐานจริงหรือ connection string
+
+## เมื่อต้องนับใหม่ภายหลัง
+
+คัดลอก [supabase-data-inventory.sql](supabase-data-inventory.sql) ไป SQL Editor → New query → Run ด้วยบัญชีเจ้าของ จะได้ `inventory_report` เป็นยอดรวมกับ trigger metadata ไม่แก้/ลบข้อมูล และไม่ถือเป็น backup การรันด้วยสิทธิ์เจ้าของไม่แทนการทดสอบ RLS ด้วย session ผู้ใช้
 
 ## สิ่งที่ query ตรวจ
 
