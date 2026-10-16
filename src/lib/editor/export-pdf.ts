@@ -62,10 +62,11 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
       clone.style.margin = "0";
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
+      let canvas: HTMLCanvasElement | undefined;
       try {
         // The mobile form tab hides the preview; validate the visible-size clone too.
         if (inspectPages(wrapper).overflow.length) throw new Error(`เนื้อหาล้นหน้า ${index + 1} กรุณาลดข้อความหรือจำนวนรูปในรายการนั้น`);
-        const canvas = await toCanvas(clone, {
+        canvas = await toCanvas(clone, {
           pixelRatio, backgroundColor: getComputedStyle(clone).backgroundColor,
           width: 794, height: 1123, canvasWidth: 794, canvasHeight: 1123,
           style: { margin: "0", boxShadow: "none", borderRadius: "0", transform: "none", width: "794px", height: "1123px" },
@@ -76,9 +77,10 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
         const width = canvas.width * ratio;
         const height = canvas.height * ratio;
         pdf.addImage(canvas.toDataURL("image/jpeg", quality), "JPEG", (210 - width) / 2, (297 - height) / 2, width, height, undefined, "FAST");
-        canvas.width = 0;
-        canvas.height = 0;
-      } finally { wrapper.remove(); }
+      } finally {
+        if (canvas) { canvas.width = 0; canvas.height = 0; }
+        wrapper.remove();
+      }
     }
     const blob = pdf.output("blob");
     if (blob.size <= MAX_PDF_BYTES) return blob;

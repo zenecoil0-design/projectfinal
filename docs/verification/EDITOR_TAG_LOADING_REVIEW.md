@@ -73,7 +73,7 @@ Commit A ที่ push/fetch ตรวจ remote และเนื้อหา
 - hook เก็บ filter choice ระหว่าง retry และมี fallback พร้อมข้อความหาก Tag ไม่มีใน snapshot สำเร็จแล้ว แต่ไม่เพิ่ม live updates เพื่อจำลอง Tag ที่ถูกลบขณะเปิด Editor
 - ข้อความ error ของรายการหลัก/การบันทึกที่ใช้ getErrorMessage เป็นพฤติกรรมเดิม ไม่ได้ปรับระบบ error ทั้ง Editor; ข้อผิดพลาดจาก Tags ในรอบนี้แสดงข้อความไทยคงที่ไม่เผยรายละเอียดภายใน
 - ไม่ตรวจบนโทรศัพท์จริงหรือทุก browser; cross-account case เป็น mock auth event + unit lifetime ไม่ใช่การพิสูจน์ RLS จริง
-- งาน autosave, visibility/A4, snapshot, จำนวนรูปเกียรติบัตรเป้าหมาย 2 รูป, PDF 10 หน้าเดิม, Back/Forward guard คลัง และ type errors ของ database tests ยังเป็นงานแยก ไม่ถือว่า Editor ทั้งระบบเสร็จ
+- งาน autosave, visibility/A4, snapshot, จำนวนรูปเกียรติบัตรเป้าหมาย 2 รูป, Back/Forward guard คลัง และ type errors ของ database tests ยังเป็นงานแยก ไม่ถือว่า Editor ทั้งระบบเสร็จ; เพดาน PDF 10 หน้าเดิมถูกถอดใน [รอบถัดมา](PDF_PAGE_LIMIT_REVIEW.md) แต่ข้อจำกัด 10 MB ยังอยู่
 
 ## HEAD และการส่งงาน
 

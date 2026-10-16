@@ -13,7 +13,7 @@ The branch is intended for review/testing. Do not merge it into `main` until the
 - Replace delete-then-insert selection writes with a single SQL transaction/RPC for education, activities and certificates. No unsafe fallback if the RPC is missing.
 - Add image cropping to existing file inputs, including library uploads. Original images can be retained. Cropped output is JPEG, with transparency flattened onto white.
 - Keep the current visual template; pack education/activity/certificate cards by measured height. A card too large for one page is rejected at export, not silently split or truncated.
-- Export A4 PDF with a 10-page/10,000,000-byte limit. Reduce image resolution/quality on size retries. Output uses raster pages, so PDF text is not selectable.
+- Historical baseline: A4 PDF had a 10-page/10,000,000-byte limit. Update 2026-10-16: the page-count ceiling is removed; the 10,000,000-byte behavior remains unchanged. See [current PDF verification](verification/PDF_PAGE_LIMIT_REVIEW.md). Output is still raster and text is not selectable.
 - Bundle Noto Sans Thai fonts for consistent Thai rendering. Keep the existing desktop split view; mobile uses separate form/preview tabs.
 - Fix ESLint errors and preserve `?portfolio=...` through login redirects; protect `/my-data` in middleware as well.
 

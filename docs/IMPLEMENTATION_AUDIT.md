@@ -7,6 +7,8 @@ Branch: `codex/portfolio-system-fixes`
 
 ## วิธีอ่านและขอบเขต
 
+อัปเดตหลัง baseline 16 ตุลาคม 2026: F33 ส่วนเพดานจำนวนหน้าถอดแล้วทั้ง UI/export และตรวจ PDF จริง 12/20/25 หน้า ดู [รายงาน PDF](verification/PDF_PAGE_LIMIT_REVIEW.md) ตาราง/ผล static ด้านล่างเป็นประวัติที่ commit อ้างอิงเดิม ไม่ใช่สถานะใหม่ทั้งหมด; 10 MB, pagination split และ PDF ส่วนอื่นยังค้าง
+
 นี่คือการตรวจโค้ดแบบ static จากไฟล์ implementation/config/test ที่เกี่ยวข้อง 59 ไฟล์และเอกสารฐาน ไม่ใช่รายงานว่าระบบผ่านการทดสอบจริง ตรวจทั้งเส้นทางฟอร์ม store preview export และ migration ที่มีใน repository ไม่ใช้ภาพ schema เก่าที่อ่านไม่ได้เป็นหลักฐาน
 
 - **มีฐานแล้ว**: พบ implementation ที่รองรับแกนของงาน ต้องรันทดสอบจริงก่อนรับงาน

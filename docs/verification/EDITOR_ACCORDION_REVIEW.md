@@ -43,7 +43,7 @@ Commit A ที่ push และตรวจ remote แล้ว: `703ae3b62e56
 
 - สถานะเดิมเมื่อจบรอบ Accordion: Editor บางฟอร์มยังไม่รายงาน Tags ที่โหลดไม่ครบ; รอบถัดมาแก้ครบสามหมวดแล้ว ดู [Editor Tags loading review](EDITOR_TAG_LOADING_REVIEW.md) สำหรับ error/retry, dependency ของ save และผลตรวจล่าสุด
 - เป้าหมายเกียรติบัตร 2 รูป, autosave, visibility, snapshot/รับอัปเดตจากคลัง และงาน Editor อื่นยังเป็นงานแยก
-- เพดาน PDF 10 หน้าที่มีอยู่เดิมยังคงอยู่ตามขอบเขตห้ามแก้ PDF ในรอบนี้; ไม่ถือว่าตรงข้อกำหนดเป้าหมายที่ยกเลิกเพดานแล้ว
+- เมื่อจบรอบ Accordion ยังมีเพดาน PDF 10 หน้า; รอบถัดมา [ถอดเพดานจำนวนหน้าแล้ว](PDF_PAGE_LIMIT_REVIEW.md) โดยข้อจำกัด 10 MB เดิมยังอยู่
 - browser Back/Forward guard ของคลังและ type errors ใน database tests ไม่ได้ตรวจหรือแก้ในรอบนี้
 
 ## ขอบเขตและงานค้าง

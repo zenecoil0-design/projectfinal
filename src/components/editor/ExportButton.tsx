@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useEditorSession } from "./EditorSession";
 import { createPortfolioPdf, inspectPages } from "@/lib/editor/export-pdf";
 import { errorMessage } from "@/lib/errors";
@@ -8,6 +8,7 @@ export default function ExportButton({ container, title, busy = false }: { conta
   const { status, dirty, exporting, setExporting } = useEditorSession();
   const [message, setMessage] = useState("");
   const [count, setCount] = useState(0);
+  const inFlight = useRef(false);
   const ready = Object.values(status).every(value => value === "ready");
   useEffect(() => {
     const element = container.current;
@@ -19,7 +20,8 @@ export default function ExportButton({ container, title, busy = false }: { conta
     return () => observer.disconnect();
   }, [container, ready]);
   const download = async () => {
-    if (!container.current || exporting) return;
+    if (!container.current || inFlight.current || exporting || busy || !ready || dirty.length > 0) return;
+    inFlight.current = true;
     setExporting(true);
     setMessage("กำลังเตรียม PDF…");
     try {
@@ -34,6 +36,7 @@ export default function ExportButton({ container, title, busy = false }: { conta
     } catch (error) {
       setMessage(errorMessage(error) || "ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่");
     } finally {
+      inFlight.current = false;
       setExporting(false);
     }
   };
