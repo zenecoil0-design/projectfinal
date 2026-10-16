@@ -1,4 +1,6 @@
 "use client";
+import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
+import { useEditorTags } from "@/components/editor/useEditorTags";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -51,7 +53,6 @@ type LibraryEducation = {
 
   end_year: string | null;
 
-  tagIds: string[];
 };
 
 type EducationRow = {
@@ -70,16 +71,6 @@ type EducationRow = {
   start_year: string | null;
 
   end_year: string | null;
-};
-
-type UserTag = {
-  id: string;
-  name: string;
-};
-
-type EducationTagRow = {
-  education_id: string;
-  tag_id: string;
 };
 
 type PortfolioEducationRow = {
@@ -119,15 +110,8 @@ export default function EducationForm({
       LibraryEducation[]
     >([]);
 
-  const [tags, setTags] =
-    useState<UserTag[]>([]);
-
-  const [
-    selectedFilterTag,
-    setSelectedFilterTag,
-  ] = useState<
-    string | null
-  >(null);
+  const tagLoad = useEditorTags(supabase, "education");
+  const { tags, filterTag: selectedFilterTag, setFilterTag: setSelectedFilterTag, load: loadTags } = tagLoad;
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -240,24 +224,14 @@ export default function EducationForm({
             );
           }
 
+          void loadTags(user.id);
+
           const [
             {
               data:
                 educationData,
               error:
                 educationError,
-            },
-
-            {
-              data: tagData,
-              error: tagError,
-            },
-
-            {
-              data:
-                educationTagData,
-              error:
-                educationTagError,
             },
 
             {
@@ -300,44 +274,7 @@ export default function EducationForm({
                   }
                 ),
 
-              // =========================================
-              // Tags
-              // =========================================
-
-              supabase
-                .from(
-                  "user_tags"
-                )
-                .select(
-                  "id, name"
-                )
-                .eq(
-                  "user_id",
-                  user.id
-                )
-                .order(
-                  "name",
-                  {
-                    ascending:
-                      true,
-                  }
-                ),
-
-              // =========================================
-              // Education <-> Tag
-              // =========================================
-
-              supabase
-                .from(
-                  "user_library_education_tags"
-                )
-                .select(
-                  "education_id, tag_id"
-                ),
-
-              // =========================================
               // Portfolio <-> Education
-              // =========================================
 
               supabase
                 .from(
@@ -367,22 +304,6 @@ export default function EducationForm({
             throw educationError;
           }
 
-          if (tagError) {
-            console.error(
-              "Load education tags error:",
-              tagError
-            );
-          }
-
-          if (
-            educationTagError
-          ) {
-            console.error(
-              "Load education tag relations error:",
-              educationTagError
-            );
-          }
-
           if (
             portfolioEducationError
           ) {
@@ -393,18 +314,13 @@ export default function EducationForm({
             EducationRow[] =
             educationData ?? [];
 
-          const tagRows:
-            EducationTagRow[] =
-            educationTagData ??
-            [];
-
           const portfolioRows:
             PortfolioEducationRow[] =
             portfolioEducationData ??
             [];
 
           // =========================================
-          // สร้าง Library พร้อม tagIds
+          // สร้าง Library (Tags แยกโหลดเพื่อไม่แตะ selection ตอน retry)
           // =========================================
 
           const mappedLibrary:
@@ -414,28 +330,8 @@ export default function EducationForm({
                 education
               ) => ({
                 ...education,
-
-                tagIds:
-                  tagRows
-                    .filter(
-                      (
-                        relation
-                      ) =>
-                        relation.education_id ===
-                        education.id
-                    )
-                    .map(
-                      (
-                        relation
-                      ) =>
-                        relation.tag_id
-                    ),
               })
             );
-
-          setTags(
-            tagData ?? []
-          );
 
           setLibraryEducations(
             mappedLibrary
@@ -503,6 +399,7 @@ export default function EducationForm({
     supabase,
     setEducations,
     reportLoaded,
+    loadTags,
   ]);
 
   // =====================================================
@@ -565,9 +462,7 @@ export default function EducationForm({
     selectedFilterTag
       ? libraryEducations.filter(
           (education) =>
-            education.tagIds.includes(
-              selectedFilterTag
-            )
+            tagLoad.hasTag(education.id, selectedFilterTag)
         )
       : libraryEducations;
 
@@ -643,14 +538,16 @@ export default function EducationForm({
           <p className="text-sm leading-6 text-slate-600">ยังไม่ได้เลือกรายการ เลือกประวัติการศึกษาที่ต้องการใส่ในพอร์ต แล้วกดบันทึก</p>
         )}
 
+        <EditorTagNotice state={tagLoad} disabled={exporting || isSaving} />
+
         {tags.length > 0 && (
           <div role="group" aria-label="กรองประวัติการศึกษาด้วย Tag" className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FaFilter aria-hidden="true" />กรองด้วย Tag</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" aria-pressed={selectedFilterTag === null} onClick={() => setSelectedFilterTag(null)}
+              <button type="button" disabled={!tagLoad.ready} aria-pressed={selectedFilterTag === null} onClick={() => setSelectedFilterTag(null)}
                 className={`min-h-11 max-w-full rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === null ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>ทั้งหมด</button>
               {tags.map(tag => (
-                <button key={tag.id} type="button" aria-pressed={selectedFilterTag === tag.id} onClick={() => setSelectedFilterTag(tag.id)}
+                <button key={tag.id} type="button" disabled={!tagLoad.ready} aria-pressed={selectedFilterTag === tag.id} onClick={() => setSelectedFilterTag(tag.id)}
                   className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === tag.id ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>
                   <FaTag aria-hidden="true" className="shrink-0 text-xs" /><span className="min-w-0">{tag.name}</span>
                 </button>
@@ -688,7 +585,7 @@ export default function EducationForm({
           <div role="group" aria-label="รายการประวัติการศึกษาจากคลัง" className="flex min-w-0 flex-col gap-3">
             {filteredEducations.map(education => {
               const selected = isSelected(education.id);
-              const itemTags = tags.filter(tag => education.tagIds.includes(tag.id));
+              const itemTags = tagLoad.tagsFor(education.id);
               return (
                 <label key={education.id} className={`block min-w-0 cursor-pointer rounded-xl border p-3 text-left wrap-anywhere transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue-500 ${selected ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}>
                   <span className="flex min-w-0 items-start gap-3">

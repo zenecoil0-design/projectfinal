@@ -3,10 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { editorStores, sections, sectionNames, sectionSnapshot, type Section } from "@/lib/editor/section-state";
 
+import type { TagSection } from "@/lib/editor/tag-loader";
+
 type Status = "loading" | "ready" | "error";
 const initialStatus = Object.fromEntries(sections.map(section => [section, "loading"])) as Record<Section, Status>;
 const SessionContext = createContext<{
   status: Record<Section, Status>;
+  tagStatus: Record<TagSection, Status>;
+  reportTags: (section: TagSection, status: Status) => void;
   dirty: Section[];
   exporting: boolean;
   setExporting: (value: boolean) => void;
@@ -16,6 +20,11 @@ const SessionContext = createContext<{
 
 export function EditorSession({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState(initialStatus);
+  const [tagStatus, setTagStatus] = useState<Record<TagSection, Status>>({ education: "loading", activity: "loading", certificate: "loading" });
+  // Metadata readiness never changes the selection baseline.
+  const reportTags = useCallback((section: TagSection, next: Status) => {
+    setTagStatus(previous => previous[section] === next ? previous : { ...previous, [section]: next });
+  }, []);
   const [exporting, setExporting] = useState(false);
   const [dirty, setDirty] = useState<Section[]>([]);
   const baselines = useRef<Partial<Record<Section, string>>>({});
@@ -62,7 +71,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
     };
   }, [dirty, exporting]);
 
-  const value = useMemo(() => ({ status, dirty, exporting, setExporting, reportLoaded, markSaved }), [status, dirty, exporting, reportLoaded, markSaved]);
+  const value = useMemo(() => ({ status, tagStatus, reportTags, dirty, exporting, setExporting, reportLoaded, markSaved }), [status, tagStatus, reportTags, dirty, exporting, reportLoaded, markSaved]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
@@ -73,11 +82,13 @@ export function useEditorSession() {
 }
 
 export function EditorStatus() {
-  const { status, dirty } = useEditorSession();
+  const { status, tagStatus, dirty } = useEditorSession();
   const loading = sections.filter(section => status[section] === "loading");
   const failed = sections.filter(section => status[section] === "error");
+  const tagFailures = (Object.keys(tagStatus) as TagSection[]).filter(section => tagStatus[section] === "error");
+  const tagsLoading = Object.values(tagStatus).some(value => value === "loading");
   return <div role="status" className="border-b border-slate-200 bg-white px-4 py-2 text-xs text-slate-600">
-    {loading.length ? `กำลังโหลดข้อมูลอีก ${loading.length} หมวด…` : failed.length ? `โหลดไม่สำเร็จ: ${failed.map(section => sectionNames[section]).join(", ")} — กรุณารีเฟรชเพื่อลองใหม่` : "โหลดข้อมูลครบทุกหมวดแล้ว"}
+    {loading.length ? `กำลังโหลดข้อมูลอีก ${loading.length} หมวด…` : failed.length ? `โหลดไม่สำเร็จ: ${failed.map(section => sectionNames[section]).join(", ")} — กรุณารีเฟรชเพื่อลองใหม่` : tagFailures.length ? `ข้อมูลรายการหลักพร้อม แต่โหลด Tags ไม่ครบ: ${tagFailures.map(section => sectionNames[section]).join(", ")} — ลองใหม่ในหมวดนั้น` : tagsLoading ? "ข้อมูลรายการหลักพร้อม กำลังโหลด Tags…" : "โหลดข้อมูลครบทุกหมวดแล้ว"}
     {dirty.length > 0 && <span className="ml-3 font-semibold text-amber-700">ยังไม่บันทึก: {dirty.map(section => sectionNames[section]).join(", ")}</span>}
   </div>;
 }

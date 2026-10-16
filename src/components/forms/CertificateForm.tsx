@@ -1,4 +1,6 @@
 "use client";
+import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
+import { useEditorTags } from "@/components/editor/useEditorTags";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -33,11 +35,6 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
-type UserTag = {
-  id: string;
-  name: string;
-};
-
 type LibraryCertificateImage = {
   id: string;
   image_url: string;
@@ -50,7 +47,6 @@ type LibraryCertificate = {
   description: string;
   issued_by: string | null;
   issued_date: string | null;
-  tagIds: string[];
   images: LibraryCertificateImage[];
 };
 
@@ -60,11 +56,6 @@ type CertificateRow = {
   description: string;
   issued_by: string | null;
   issued_date: string | null;
-};
-
-type CertificateTagRow = {
-  certificate_id: string;
-  tag_id: string;
 };
 
 type CertificateImageRow = {
@@ -111,15 +102,8 @@ export default function CertificateForm({
       LibraryCertificate[]
     >([]);
 
-  const [tags, setTags] =
-    useState<UserTag[]>([]);
-
-  const [
-    selectedFilterTag,
-    setSelectedFilterTag,
-  ] = useState<
-    string | null
-  >(null);
+  const tagLoad = useEditorTags(supabase, "certificate");
+  const { tags, filterTag: selectedFilterTag, setFilterTag: setSelectedFilterTag, load: loadTags } = tagLoad;
 
   const [isLoading, setIsLoading] =
     useState(true);
@@ -209,24 +193,14 @@ export default function CertificateForm({
             );
           }
 
+          void loadTags(user.id);
+
           const [
             {
               data:
                 certificateData,
               error:
                 certificateError,
-            },
-
-            {
-              data: tagData,
-              error: tagError,
-            },
-
-            {
-              data:
-                certificateTagData,
-              error:
-                certificateTagError,
             },
 
             {
@@ -269,32 +243,6 @@ export default function CertificateForm({
                   }
                 ),
 
-              supabase
-                .from(
-                  "user_tags"
-                )
-                .select(
-                  "id, name"
-                )
-                .eq(
-                  "user_id",
-                  user.id
-                )
-                .order(
-                  "name",
-                  {
-                    ascending:
-                      true,
-                  }
-                ),
-
-              supabase
-                .from(
-                  "user_library_certificate_tags"
-                )
-                .select(
-                  "certificate_id, tag_id"
-                ),
 
               supabase
                 .from(
@@ -339,22 +287,6 @@ export default function CertificateForm({
             throw certificateError;
           }
 
-          if (tagError) {
-            console.error(
-              "Load certificate tags error:",
-              tagError
-            );
-          }
-
-          if (
-            certificateTagError
-          ) {
-            console.error(
-              "Load certificate tag relations error:",
-              certificateTagError
-            );
-          }
-
           if (
             certificateImageError
           ) {
@@ -370,11 +302,6 @@ export default function CertificateForm({
           const certificateRows:
             CertificateRow[] =
             certificateData ?? [];
-
-          const tagRows:
-            CertificateTagRow[] =
-            certificateTagData ??
-            [];
 
           const imageRows:
             CertificateImageRow[] =
@@ -393,22 +320,6 @@ export default function CertificateForm({
                 certificate
               ) => ({
                 ...certificate,
-
-                tagIds:
-                  tagRows
-                    .filter(
-                      (
-                        relation
-                      ) =>
-                        relation.certificate_id ===
-                        certificate.id
-                    )
-                    .map(
-                      (
-                        relation
-                      ) =>
-                        relation.tag_id
-                    ),
 
                 images:
                   imageRows
@@ -443,10 +354,6 @@ export default function CertificateForm({
                     ),
               })
             );
-
-          setTags(
-            tagData ?? []
-          );
 
           setLibraryCertificates(
             mappedLibrary
@@ -510,6 +417,7 @@ export default function CertificateForm({
     supabase,
     setCertificates,
     reportLoaded,
+    loadTags,
   ]);
 
   const selectedIds =
@@ -562,9 +470,7 @@ export default function CertificateForm({
           (
             certificate
           ) =>
-            certificate.tagIds.includes(
-              selectedFilterTag
-            )
+            tagLoad.hasTag(certificate.id, selectedFilterTag)
         )
       : libraryCertificates;
 
@@ -631,14 +537,16 @@ export default function CertificateForm({
           <p className="text-sm leading-6 text-slate-600">ยังไม่ได้เลือกรายการ เลือกเกียรติบัตรที่ต้องการใส่ในพอร์ต แล้วกดบันทึก</p>
         )}
 
+        <EditorTagNotice state={tagLoad} disabled={exporting || isSaving} />
+
         {tags.length > 0 && (
           <div role="group" aria-label="กรองเกียรติบัตรด้วย Tag" className="min-w-0 rounded-xl border border-slate-200 bg-white p-3">
             <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><FaFilter aria-hidden="true" />กรองด้วย Tag</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" aria-pressed={selectedFilterTag === null} onClick={() => setSelectedFilterTag(null)}
+              <button type="button" disabled={!tagLoad.ready} aria-pressed={selectedFilterTag === null} onClick={() => setSelectedFilterTag(null)}
                 className={`min-h-11 max-w-full rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === null ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>ทั้งหมด</button>
               {tags.map(tag => (
-                <button key={tag.id} type="button" aria-pressed={selectedFilterTag === tag.id} onClick={() => setSelectedFilterTag(tag.id)}
+                <button key={tag.id} type="button" disabled={!tagLoad.ready} aria-pressed={selectedFilterTag === tag.id} onClick={() => setSelectedFilterTag(tag.id)}
                   className={`inline-flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-sm font-semibold wrap-anywhere transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${selectedFilterTag === tag.id ? "border-blue-600 bg-blue-600 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-blue-300"}`}>
                   <FaTag aria-hidden="true" className="shrink-0 text-xs" /><span className="min-w-0">{tag.name}</span>
                 </button>
@@ -676,7 +584,7 @@ export default function CertificateForm({
           <div role="group" aria-label="รายการเกียรติบัตรจากคลัง" className="flex min-w-0 flex-col gap-3">
             {filteredCertificates.map(certificate => {
               const selected = isSelected(certificate.id);
-              const itemTags = tags.filter(tag => certificate.tagIds.includes(tag.id));
+              const itemTags = tagLoad.tagsFor(certificate.id);
               return (
                 <label key={certificate.id} className={`block min-w-0 cursor-pointer rounded-xl border p-3 text-left wrap-anywhere transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-blue-500 ${selected ? "border-blue-500 bg-blue-50 shadow-sm ring-1 ring-blue-200" : "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"}`}>
                   <span className="flex min-w-0 items-start gap-3">

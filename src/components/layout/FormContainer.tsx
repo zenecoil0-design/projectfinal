@@ -28,7 +28,7 @@ type Props = {
 };
 
 export default function FormContainer({ currentStep, visible, onStepChange, onNext }: Props) {
-  const { status, dirty } = useEditorSession();
+  const { status, tagStatus, dirty } = useEditorSession();
   const scroller = useRef<HTMLDivElement>(null);
   const navigation = useRef({ step: currentStep, revision: 0 });
   const submissions = useRef(new Map<number, number>());
@@ -56,7 +56,8 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
       {steps.map(({ section, title, heading, Form }, index) => {
         const step = index + 1;
         const open = currentStep === step;
-        const message = status[section] === "loading" ? "กำลังโหลด" : status[section] === "error" ? "โหลดไม่สำเร็จ" : dirty.includes(section) ? "ยังไม่บันทึก" : "พร้อมแก้ไข";
+        const metadata = section === "education" || section === "activity" || section === "certificate" ? tagStatus[section] : "ready";
+        const message = status[section] === "loading" ? "กำลังโหลด" : status[section] === "error" ? "โหลดไม่สำเร็จ" : metadata === "error" ? "Tags โหลดไม่ครบ" : metadata === "loading" ? "กำลังโหลด Tags" : dirty.includes(section) ? "ยังไม่บันทึก" : "พร้อมแก้ไข";
         return <section key={section} className="min-w-0 rounded-xl border border-slate-200 bg-white">
           <h2>
             <button type="button" id={"editor-heading-" + section} aria-expanded={open} aria-controls={"editor-panel-" + section}
@@ -64,7 +65,7 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
               className={"flex min-h-14 w-full min-w-0 items-center gap-3 rounded-xl px-4 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 " + (open ? "bg-blue-50 text-blue-800" : "text-slate-800 hover:bg-slate-50")}>
               <span className="min-w-0 flex-1 wrap-anywhere">
                 <span className="block text-sm font-bold leading-6">{step}. {title}</span>
-                <span className={"mt-0.5 block text-xs font-medium leading-5 " + (status[section] === "error" ? "text-red-700" : dirty.includes(section) ? "text-amber-700" : "text-slate-500")}>{message}</span>
+                <span className={"mt-0.5 block text-xs font-medium leading-5 " + ((status[section] === "error" || metadata === "error") ? "text-red-700" : dirty.includes(section) ? "text-amber-700" : "text-slate-500")}>{message}</span>
               </span>
               <FaChevronDown aria-hidden="true" className={"shrink-0 " + (open ? "rotate-180" : "")} />
             </button>
