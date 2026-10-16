@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -83,20 +84,29 @@ test('cropped image remains selected after changing steps on a phone viewport', 
   await expect(page.locator('form:visible img')).toHaveAttribute('src',/^blob:/);
 });
 
-test('PDF blocks overflowing text and portfolios over ten pages', async ({page}) => {
+test('PDF still blocks overflowing text', async ({page}) => {
   await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:'a',content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
   await expect(page.getByText('เนื้อหาล้นหน้า',{exact:false})).toBeVisible();
-  await page.unroute('**/rest/v1/prefaces?**');
+});
+
+test('PDF exports all pages in portfolios over ten pages', async ({page}, testInfo) => {
   await page.route('**/rest/v1/user_library_activities?**',route=>route.fulfill({json:Array.from({length:20},(_,i)=>({id:`a-${i}`,title:`Activity ${i}`,description:'Description '.repeat(90),activity_date:'2026-01-01',organization:'School'}))}));
   await page.route('**/rest/v1/portfolio_activities?**',route=>route.fulfill({json:Array.from({length:20},(_,i)=>({activity_id:`a-${i}`,sort_order:i}))}));
-  await page.reload();
+  await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect.poll(() => page.locator('[data-portfolio-page]').count()).toBeGreaterThan(10);
-  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeDisabled();
-  expect(await page.locator('[data-portfolio-page]').count()).toBeGreaterThan(10);
+  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeEnabled();
+  const previewCount = await page.locator('[data-portfolio-page]').count();
+  expect(previewCount).toBeGreaterThan(10);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
+  const path = testInfo.outputPath('over-ten-pages.pdf');
+  await (await download).saveAs(path);
+  const info = execFileSync('pdfinfo', [path], { encoding: 'utf8' });
+  expect(Number(info.match(/^Pages:\s+(\d+)/m)?.[1])).toBe(previewCount);
 });
 
 test('a late response from the previous portfolio cannot overwrite the current one', async ({page}) => {

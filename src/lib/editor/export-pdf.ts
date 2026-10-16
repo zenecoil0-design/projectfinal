@@ -1,4 +1,3 @@
-export const MAX_PAGES = 10;
 export const MAX_PDF_BYTES = 10_000_000;
 
 export function inspectPages(container: HTMLElement) {
@@ -42,7 +41,6 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
   await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
   const { pages, overflow } = inspectPages(container);
   if (!pages.length) throw new Error("ยังไม่มีหน้าสำหรับส่งออก");
-  if (pages.length > MAX_PAGES) throw new Error(`พอร์ตมี ${pages.length} หน้า กรุณาลดให้เหลือไม่เกิน ${MAX_PAGES} หน้า`);
   if (overflow.length) throw new Error(`เนื้อหาล้นหน้า ${overflow.join(", ")} กรุณาลดข้อความหรือจำนวนรูปในรายการนั้น`);
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
 
