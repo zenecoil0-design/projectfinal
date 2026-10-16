@@ -244,6 +244,8 @@ test('cover frames use the cover image independently of the profile in both temp
   await page.locator('form:visible input[type="file"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: await sample.body() });
   await page.getByLabel('สัดส่วนรูป').selectOption('1');
   await page.getByRole('button', { name: 'ตัดรูปและใช้รูปนี้', exact: true }).click();
+  // Canvas.toBlob completes asynchronously; wait for the confirmed crop before reading its URL.
+  await expect(page.locator('form:visible img')).toHaveAttribute('src', /^blob:/);
   const croppedUrl = await page.locator('form:visible img').getAttribute('src');
   expect(croppedUrl).toMatch(/^blob:/);
   await expect(framedImage).toHaveAttribute('src', croppedUrl!);

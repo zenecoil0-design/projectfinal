@@ -41,7 +41,7 @@ Commit A ที่ push และตรวจ remote แล้ว: `703ae3b62e56
 
 ### ปัญหาเดิม/ข้อจำกัดแยกจากงาน Accordion
 
-- Editor บางฟอร์มยังไม่ได้รายงาน Tags/ความสัมพันธ์ Tags ที่โหลดไม่ครบเป็น loadError; ไม่แก้ในงานนี้
+- สถานะเดิมเมื่อจบรอบ Accordion: Editor บางฟอร์มยังไม่รายงาน Tags ที่โหลดไม่ครบ; รอบถัดมาแก้ครบสามหมวดแล้ว ดู [Editor Tags loading review](EDITOR_TAG_LOADING_REVIEW.md) สำหรับ error/retry, dependency ของ save และผลตรวจล่าสุด
 - เป้าหมายเกียรติบัตร 2 รูป, autosave, visibility, snapshot/รับอัปเดตจากคลัง และงาน Editor อื่นยังเป็นงานแยก
 - เพดาน PDF 10 หน้าที่มีอยู่เดิมยังคงอยู่ตามขอบเขตห้ามแก้ PDF ในรอบนี้; ไม่ถือว่าตรงข้อกำหนดเป้าหมายที่ยกเลิกเพดานแล้ว
 - browser Back/Forward guard ของคลังและ type errors ใน database tests ไม่ได้ตรวจหรือแก้ในรอบนี้

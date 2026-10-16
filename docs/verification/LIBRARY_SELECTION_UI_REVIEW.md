@@ -54,3 +54,7 @@
 - source ที่แก้คือ EducationForm.tsx, ActivityForm.tsx, CertificateForm.tsx; regression เพิ่มเฉพาะเส้นทางเลือกข้อมูลใน tests/e2e/library-selection.spec.ts
 - ไม่เพิ่ม dependency ใน repository; เบราว์เซอร์ทดสอบเป็นเครื่องมือแยกนอก repository
 - งาน UI รอบนี้ครบแล้ว ให้ตรวจ HEAD จริงก่อนเริ่มงานใหม่ ไม่อ้างว่าติดตั้ง/เปลี่ยนระบบจริงจากผล mock
+
+## อัปเดตรอบ Editor Tags load/retry
+
+หลังงาน UI นี้ แก้กรณี Tags/ความสัมพันธ์ Tags โหลดไม่ครบของทั้งสามฟอร์มแล้ว โดยแยก metadata retry จาก selection baseline ไม่เปลี่ยน payload บันทึก ดู [รายงาน Editor Tags](EDITOR_TAG_LOADING_REVIEW.md) สำหรับขอบเขตและผลตรวจรอบล่าสุด ไม่ถือว่า Editor ทั้งระบบเสร็จ

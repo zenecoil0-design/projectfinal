@@ -69,7 +69,7 @@
 | /my-data draft warning / cancel / close / category / Dashboard Link | ทำแล้ว รวมข้อความ Tags และรูป |
 | Native refresh/close warning | beforeunload เฉพาะ dirty; native refresh ตรวจจริงใน mock browser แล้ว |
 | Browser Back/Forward แบบ App Router | ยังไม่กัน; ตรวจแล้วออกได้โดยไม่ผ่าน dialog จึงยังอาจเสีย draft |
-| Editor Tags loadError | งานเดิมนอกขอบเขต ยังไม่แก้ |
+| Editor Tags loadError | รอบนี้เดิมยังไม่แก้; รอบถัดมาแก้สามหมวดใน [Editor Tags loading review](EDITOR_TAG_LOADING_REVIEW.md) แล้ว |
 | เกียรติบัตรเป้าหมาย 2 รูป | งานเดิมแยก ยังรักษา 4 รูปตามโค้ด |
 | Storage cleanup / atomic multi-request save | พฤติกรรมเดิม ไม่เปลี่ยน/ไม่ทดสอบกับข้อมูลจริง |
 

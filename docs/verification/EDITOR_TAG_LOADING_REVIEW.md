@@ -31,8 +31,55 @@ EducationForm, ActivityForm, CertificateForm เดิม log tagError/relationE
 - Scoped eslint 0 errors, warnings img เดิม 3 จุด; git diff --check ผ่าน
 - Runtime browser ที่ค้างจากรอบก่อนเปิดไม่ได้ จัด Chromium 153 + matching SwiftShader สำหรับทดสอบชั่วคราวนอก repo ไม่เพิ่ม dependency ในโปรเจกต์; ผลข้างต้นได้จาก browser ที่เปิดสำเร็จจริง
 
-## ส่วน B — รอดำเนินการหลัง push A
+Commit A ที่ push/fetch ตรวจ remote และเนื้อหาเท่ากับ local แล้ว: `fe26af0f8f44dfbc09b7b27ff0c233f15e0e8179`
 
-ยังต้องเพิ่ม async/Accordion/mobile regression, ตรวจภาพ 1440/390, build และ production Editor regression รวม แล้วสรุป commit/remote
+## ส่วน B — regression และ production
+
+- เพิ่ม browser regression 9 ข้อ: ครบสามหมวด × mobile/Accordion/save ขณะ metadata ไม่ครบ, pending retry หลังเปลี่ยนพอร์ต, pending retry หลังเปลี่ยนบัญชี
+- เปลี่ยนพอร์ตผ่าน Dashboard Link จริงโดยไม่ reload เพื่อให้คำขอเก่าตอบกลับได้; เปลี่ยนบัญชีจำลองผ่าน BroadcastChannel ที่ Supabase client ติดตั้งใช้อยู่ ไม่เปลี่ยนบัญชีจริงหรือ auth settings
+- ตรวจแล้ว retry ที่ตอบกลับขณะเปิดหมวดอื่น/Preview ไม่แย่งเปิดหมวด, ไม่เขียน selection/dirty และไม่ยิง save; save fail เก็บ draft/เตือนก่อนออก และ save success ส่ง ID ตามลำดับแม้ Tags ยัง error พร้อมเปิดถัดไป/อยู่หมวดสุดท้ายตามเดิม
+- ตรวจ export control: main ready และไม่มี dirty ยังส่งออกได้เมื่อ metadata fail เพราะ Tags ไม่อยู่ในเนื้อหา; เมื่อแก้ selection แล้ว dirty จะปิด export ตามกฎเดิม ไม่มีการแก้ ExportButton/PDF
+- Dev browser เฉพาะ B 9/9 ผ่าน (34.2s); ตรวจภาพ 1440/390 ของทั้งสามหมวด พร้อม assertions ไม่มีแนวนอนล้น
+- Production build ผ่านหนึ่งครั้ง compile/TypeScript/static generation มี warning middleware convention เดิม
+
+ผล production regression รวมที่รันจริง:
+
+- ชุด Editor รวม 44 ข้อ: **43 ผ่าน / 1 ไม่ผ่าน (51.9s)** ในรอบแรก โดย editor-tags 21, Accordion 6, library-selection 6 และ Editor เดิม 10 ข้อผ่าน
+- ข้อที่ไม่ผ่านคือ test เดิม cover frames อ่าน src ทันทีหลังคลิก crop ก่อน canvas.toBlob ตอบกลับ จึงยังได้ URL เดิม; เพิ่ม auto-retrying assertion รอ src เป็น blob ก่อนอ่านค่า โดยรักษา assertions เดิมทั้งหมด ไม่แก้ source ระบบรูปหรือ PDF
+- รันทดสอบเฉพาะข้อดังกล่าวซ้ำบน production build เดิม **1/1 ผ่าน (6.6s)** จึงครบ 44 กรณีหลังปรับการรอใน test ไม่อ้างว่าเป็น 44/44 จากการรันครั้งเดียว
+- ไม่มี application source เปลี่ยนหลัง build/test จึงไม่ rebuild หรือรันทั้งชุดซ้ำโดยไม่มีเหตุผล; ส่วน B เปลี่ยน tests และเอกสารเท่านั้น
+- Scoped lint ส่วน A 0 errors/3 warnings img เดิม; tests ส่วน B ที่แก้ lint ผ่าน 0 errors/0 warnings และ git diff --check ผ่าน
+- Unit loader 3/3 ผ่านในส่วน A; ไม่รัน database tests หรือ /my-data ทั้งชุด
+
+คำสั่งหลัก:
+
+- `node --import tsx --test tests/editor-tag-loader.test.ts`
+- `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key npm run build`
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/tmp/editor-browser/chromium npx playwright test tests/e2e/editor-tags.spec.ts tests/e2e/editor.spec.ts tests/e2e/library-selection.spec.ts tests/e2e/editor-accordion.spec.ts --reporter=line`
+- `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/tmp/editor-browser/chromium npx playwright test tests/e2e/editor.spec.ts --grep 'cover frames use' --reporter=line`
+
+## ไฟล์และผลต่อ caller
+
+- EducationForm.tsx, ActivityForm.tsx, CertificateForm.tsx: ย้ายเฉพาะอ่าน Tags/relations ไป hook และใช้ Notice/การกรองจาก snapshot; main queries, image/store mapping และ save handlers เดิม
+- useEditorTags.ts, tag-loader.ts: metadata request/state/lifetime เท่านั้น ไม่เขียน Zustand store หรือ saved baseline
+- EditorTagNotice.tsx: ข้อความและ retry ของ Tags; filter control ปิดเมื่อ metadata ยังไม่ครบ ส่วน checkbox/save ยึด main readiness เดิม
+- EditorSession.tsx: เพิ่ม reportTags/tagStatus แยก state เดิม ไม่เปลี่ยน reportLoaded/markSaved หรือ leave guard; FormContainer อ่านสถานะนี้เพื่อแจ้งบนหัวข้อ
+- caller อื่น เช่น Cover/Preface/Profile/ReadyPreview/ExportButton ยังคงใช้ status ของเนื้อหาเดิม ไม่ถูก metadata retry markSaved หรือปิด Preview โดยไม่จำเป็น
+- tests/editor-tag-loader.test.ts, tests/e2e/editor-tags.spec.ts, tests/e2e/editor.spec.ts (รอผลครอปใน test เดิม) และ verification reports ที่อ้างสถานะ Tags เดิม
+
+## ข้อจำกัดและงานค้าง
+
+- ไม่มีปุ่ม refresh metadata หลังโหลดสำเร็จและไม่มีระบบรับอัปเดตจากคลังในรอบนี้ จึงสร้างกรณี refresh ล้มเหลวหลัง snapshot สำเร็จ/คำขอ owner ใหม่แซงเก่าภายในฟอร์มเดียวผ่าน UI ปกติไม่ได้: ตรวจ snapshot retention, rejected query, same-owner dedup, owner supersession และ cleanup/reuse ที่ pure loader unit แทน ไม่เพิ่ม UI เพื่อสร้างเคสทดสอบ
+- hook เก็บ filter choice ระหว่าง retry และมี fallback พร้อมข้อความหาก Tag ไม่มีใน snapshot สำเร็จแล้ว แต่ไม่เพิ่ม live updates เพื่อจำลอง Tag ที่ถูกลบขณะเปิด Editor
+- ข้อความ error ของรายการหลัก/การบันทึกที่ใช้ getErrorMessage เป็นพฤติกรรมเดิม ไม่ได้ปรับระบบ error ทั้ง Editor; ข้อผิดพลาดจาก Tags ในรอบนี้แสดงข้อความไทยคงที่ไม่เผยรายละเอียดภายใน
+- ไม่ตรวจบนโทรศัพท์จริงหรือทุก browser; cross-account case เป็น mock auth event + unit lifetime ไม่ใช่การพิสูจน์ RLS จริง
+- งาน autosave, visibility/A4, snapshot, จำนวนรูปเกียรติบัตรเป้าหมาย 2 รูป, PDF 10 หน้าเดิม, Back/Forward guard คลัง และ type errors ของ database tests ยังเป็นงานแยก ไม่ถือว่า Editor ทั้งระบบเสร็จ
+
+## HEAD และการส่งงาน
+
+- HEAD เริ่มต้น: `062f03758c76b6b6c4e435257d94179ff1e5d1d3`
+- HEAD ของ application source ที่ build/test: `fe26af0f8f44dfbc09b7b27ff0c233f15e0e8179`; ส่วน B เพิ่มเฉพาะ tests และรายงาน ไม่มี application source fix
+- HEAD ส่งท้ายคือ commit B ที่บรรจุรายงานนี้ ตรวจด้วย `git log -1 --format=%H -- docs/verification/EDITOR_TAG_LOADING_REVIEW.md`; SHA และผล fetch ยืนยันหลัง push อยู่ในข้อความส่งต่อ Astra (ไม่ใส่ SHA ตัวเองลงในเนื้อหา commit)
+- ก่อนเริ่มงานถัดไปตรวจ HEAD จริงและรักษางานที่ใหม่กว่าเสมอ
 
 การทดสอบทั้งหมดใช้ mock ไม่ใช่ Supabase/Storage จริง ไม่มี migration/reset หรือทดสอบลบจริง ไม่รัน database หรือ /my-data ทั้งชุด

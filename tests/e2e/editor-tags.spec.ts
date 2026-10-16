@@ -95,3 +95,121 @@ for (const config of configs) {
     await expect(form.locator('button[type=submit]')).toBeEnabled();
   });
 }
+
+for (const config of configs) {
+  test(`${config.section}: error survives Accordion/mobile; retry never saves; incomplete tags cannot damage a manual save`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    const state = await fixtures(page, config, 'relations');
+    await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+    const form = page.locator('form:visible');
+    await expect(form.getByRole('alert')).toContainText('โหลดความสัมพันธ์ Tags ไม่สำเร็จ');
+    await expect(form.getByRole('checkbox').first()).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
+    await form.getByRole('checkbox').nth(0).uncheck(); await form.getByRole('checkbox').nth(1).check(); await form.getByRole('checkbox').nth(2).check();
+    await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();
+    let writes = 0;
+    page.on('request', request => { if (request.url().includes('/rest/v1/') && request.method() !== 'GET') writes++; });
+    const reads = [state.mainReads, state.relationReads, state.tagReads];
+    await page.locator(`#editor-heading-${config.section}`).click();
+    await expect(page.locator('aside [aria-expanded=true]')).toHaveCount(0);
+    await openEditorSection(page, config.section);
+    expect([state.mainReads, state.relationReads, state.tagReads]).toEqual(reads); expect(writes).toBe(0);
+    await expect(form.getByRole('alert')).toContainText('โหลดความสัมพันธ์ Tags ไม่สำเร็จ');
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await form.getByRole('button', { name: 'ลองใหม่', exact: true }).scrollIntoViewIfNeeded();
+      expect(await form.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`${config.section}-tag-error-${width}.png`) });
+    }
+    const count = await page.locator('[data-portfolio-page]').count();
+    await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
+    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('[data-portfolio-page]')).toHaveCount(count);
+    await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
+    await expect(page.locator(`#editor-heading-${config.section}`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(form.getByRole('checkbox').nth(1)).toBeChecked(); await expect(form.getByRole('checkbox').nth(2)).toBeChecked();
+    const submit = form.locator('button[type=submit]');
+    await page.route('**/rest/v1/rpc/replace_portfolio_selection', route => route.fulfill({ status: 500, json: { message: 'SAVE FAIL TEST' } }));
+    await submit.click();
+    await expect(form.getByRole('alert').filter({ hasText: 'SAVE FAIL TEST' })).toBeVisible();
+    await expect(page.locator(`#editor-heading-${config.section}`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await expect(page).toHaveURL(/editor/);
+    const writesBeforeRetry = writes;
+    state.hold = true;
+    const before = state.relationReads;
+    await form.getByRole('button', { name: 'ลองใหม่', exact: true }).click();
+    await expect.poll(() => state.relationReads).toBe(before + 1);
+    await openEditorSection(page, 'cover');
+    await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
+    state.release();
+    await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
+    await expect(page.locator('#editor-heading-cover')).toHaveAttribute('aria-expanded', 'true');
+    await openEditorSection(page, config.section);
+    await expect(form.getByRole('alert').filter({ hasText: 'โหลดความสัมพันธ์ Tags ไม่สำเร็จ' })).toBeVisible();
+    await expect(form.getByRole('checkbox').nth(1)).toBeChecked(); await expect(form.getByRole('checkbox').nth(2)).toBeChecked();
+    expect(writes).toBe(writesBeforeRetry); expect(state.mainReads).toBe(reads[0]);
+    await page.unroute('**/rest/v1/rpc/replace_portfolio_selection');
+    const save = page.waitForRequest(request => request.url().endsWith('/rpc/replace_portfolio_selection') && request.method() === 'POST');
+    await submit.click();
+    expect((await save).postDataJSON()).toEqual({ p_portfolio_id: 'a', p_section: config.section, p_item_ids: [`${config.section}-b`, `${config.section}-c`] });
+    const next = config.section === 'education' ? 'activity' : 'certificate';
+    await expect(page.locator(`#editor-heading-${next}`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toHaveCount(0);
+    await openEditorSection(page, config.section);
+    await expect(form.getByRole('alert').filter({ hasText: 'โหลดความสัมพันธ์ Tags ไม่สำเร็จ' })).toBeVisible();
+    await expect(form.getByRole('checkbox').nth(0)).not.toBeChecked();
+    await expect(form.getByRole('checkbox').nth(1)).toBeChecked(); await expect(form.getByRole('checkbox').nth(2)).toBeChecked();
+  });
+
+  for (const navigation of ['portfolio', 'account'] as const) {
+    test(`${config.section}: a pending tag retry cannot publish after ${navigation} changes`, async ({ page }) => {
+      const state = await fixtures(page, config, 'relations');
+      await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+      const form = page.locator('form:visible');
+      await expect(form.getByRole('alert')).toContainText('โหลดความสัมพันธ์ Tags ไม่สำเร็จ');
+      let release = () => {}; let held = false;
+      await page.route(`**/rest/v1/user_library_${config.section}_tags?**`, async route => {
+        if (held) return route.fallback();
+        held = true;
+        await new Promise<void>(resolve => { release = resolve; });
+        await route.fulfill({ json: [{ [`${config.section}_id`]: `${config.section}-a`, tag_id: 'tag-1' }] });
+      });
+      const request = page.waitForRequest(request => request.url().includes(`/user_library_${config.section}_tags?`));
+      await form.getByRole('button', { name: 'ลองใหม่', exact: true }).click(); await request;
+      if (navigation === 'portfolio') {
+        await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard/);
+        state.fail = false;
+        await page.locator('a[href="/editor?portfolio=b"]').click();
+        await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+        await openEditorSection(page, config.section);
+        await form.getByRole('button', { name: 'TAG MATCH', exact: true }).click();
+        await expect(form.getByRole('checkbox')).toHaveCount(1);
+        await expect(form.getByRole('checkbox').first()).toHaveAccessibleName('ITEM b');
+      } else {
+        // Simulate the existing Supabase cross-tab auth event, without changing real accounts.
+        await page.evaluate(user => {
+          const channel = new BroadcastChannel('sb-127-auth-token');
+          channel.postMessage({ event: 'SIGNED_IN', session: { user: { ...user, id: 'account-b' } } }); channel.close();
+        }, user);
+        await expect(page.getByText('บัญชีผู้ใช้เปลี่ยนแล้ว', { exact: false })).toBeVisible();
+      }
+      const response = page.waitForResponse(response => response.url().includes(`/user_library_${config.section}_tags?`));
+      release(); await (await response).finished();
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      if (navigation === 'portfolio') {
+        await expect(form.getByRole('checkbox')).toHaveCount(1);
+        await expect(form.getByRole('checkbox').first()).toHaveAccessibleName('ITEM b');
+        await expect(form.getByRole('checkbox').first()).not.toBeChecked();
+        await expect(page.locator(`#editor-heading-${config.section}`)).toHaveAttribute('aria-expanded', 'true');
+        await expect(form.getByRole('alert')).toHaveCount(0);
+      } else {
+        await expect(page.locator('aside form')).toHaveCount(0);
+        await expect(page.getByText('บัญชีผู้ใช้เปลี่ยนแล้ว', { exact: false })).toBeVisible();
+        await expect(page.getByText('TAG MATCH', { exact: true })).toHaveCount(0);
+      }
+    });
+  }
+}
