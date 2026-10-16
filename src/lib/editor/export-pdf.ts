@@ -1,5 +1,17 @@
 export const MAX_PDF_BYTES = 10_000_000;
 
+export function pdfResult(blob: Blob) {
+  return { blob, exceedsTarget: blob.size > MAX_PDF_BYTES };
+}
+
+/** Do not round a just-over-target file down to the displayed target. MB is decimal. */
+export function formatPdfMegabytes(bytes: number) {
+  const megabytes = bytes / 1_000_000;
+  const rounded = megabytes.toFixed(2);
+  return bytes > MAX_PDF_BYTES && Number(rounded) <= MAX_PDF_BYTES / 1_000_000
+    ? megabytes.toFixed(6) : rounded;
+}
+
 export function inspectPages(container: HTMLElement) {
   const pages = Array.from(container.querySelectorAll<HTMLElement>("[data-portfolio-page]"));
   const overflow = pages.flatMap((page, index) => {
@@ -45,7 +57,8 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
   const [{ toCanvas }, { jsPDF }] = await Promise.all([import("html-to-image"), import("jspdf")]);
 
   // Keep one page canvas in memory at a time; retry at a lower resolution if needed.
-  for (const [pixelRatio, quality] of [[2, 0.9], [1.5, 0.8], [1, 0.7]]) {
+  const levels = [[2, 0.9], [1.5, 0.8], [1, 0.7]];
+  for (const [level, [pixelRatio, quality]] of levels.entries()) {
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
     for (let index = 0; index < pages.length; index++) {
       onProgress(`กำลังสร้าง PDF หน้า ${index + 1} / ${pages.length}`);
@@ -83,7 +96,7 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
       }
     }
     const blob = pdf.output("blob");
-    if (blob.size <= MAX_PDF_BYTES) return blob;
+    if (blob.size <= MAX_PDF_BYTES || level === levels.length - 1) return pdfResult(blob);
   }
-  throw new Error("ไฟล์ยังเกิน 10 MB กรุณาลดจำนวนหรือขนาดรูปภาพแล้วลองใหม่");
+  throw new Error("ไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่");
 }

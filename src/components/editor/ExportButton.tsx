@@ -1,14 +1,35 @@
 "use client";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { useEditorSession } from "./EditorSession";
-import { createPortfolioPdf, inspectPages } from "@/lib/editor/export-pdf";
+import { createPortfolioPdf, formatPdfMegabytes, inspectPages } from "@/lib/editor/export-pdf";
 import { errorMessage } from "@/lib/errors";
+import LargePdfDialog from "./LargePdfDialog";
+
+type PendingPdf = { blob: Blob; filename: string };
 
 export default function ExportButton({ container, title, busy = false }: { container: RefObject<HTMLElement | null>; title: string; busy?: boolean }) {
   const { status, dirty, exporting, setExporting } = useEditorSession();
   const [message, setMessage] = useState("");
   const [count, setCount] = useState(0);
   const inFlight = useRef(false);
+  const lifetime = useRef({ revision: 0 });
+  const mounted = useRef(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const pending = useRef<PendingPdf | null>(null);
+  const [confirmation, setConfirmation] = useState<PendingPdf | null>(null);
+  const objectUrl = useRef<{ url: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  useLayoutEffect(() => {
+    const session = lifetime.current;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      session.revision++;
+      pending.current = null;
+      if (inFlight.current) setExporting(false);
+      inFlight.current = false;
+      if (objectUrl.current) { clearTimeout(objectUrl.current.timer); URL.revokeObjectURL(objectUrl.current.url); objectUrl.current = null; }
+    };
+  }, [setExporting]);
   const ready = Object.values(status).every(value => value === "ready");
   useEffect(() => {
     const element = container.current;
@@ -19,31 +40,59 @@ export default function ExportButton({ container, title, busy = false }: { conta
     update();
     return () => observer.disconnect();
   }, [container, ready]);
+  const finish = () => {
+    pending.current = null;
+    inFlight.current = false;
+    if (mounted.current) { setConfirmation(null); setExporting(false); }
+  };
+  const saveBlob = ({ blob, filename }: PendingPdf) => {
+    if (objectUrl.current) { clearTimeout(objectUrl.current.timer); URL.revokeObjectURL(objectUrl.current.url); }
+    const url = URL.createObjectURL(blob);
+    // Retain through the browser's download handoff, not just the click handler.
+    const timer = setTimeout(() => { URL.revokeObjectURL(url); objectUrl.current = null; }, 60_000);
+    objectUrl.current = { url, timer };
+    const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = filename; anchor.click();
+    setMessage(`ดาวน์โหลดแล้ว (${formatPdfMegabytes(blob.size)} MB)`);
+  };
+  const decide = (download: boolean) => {
+    const file = pending.current;
+    if (!file || !mounted.current) return;
+    pending.current = null; // Claim exactly once, even before React commits the closed dialog.
+    try {
+      if (download) saveBlob(file);
+      else setMessage("ยกเลิกการดาวน์โหลดแล้ว");
+    } catch (error) { setMessage(errorMessage(error) || "ไม่สามารถดาวน์โหลด PDF ได้ กรุณาลองใหม่"); }
+    finally { finish(); }
+  };
   const download = async () => {
     if (!container.current || inFlight.current || exporting || busy || !ready || dirty.length > 0) return;
     inFlight.current = true;
+    const ticket = ++lifetime.current.revision;
+    const current = () => mounted.current && lifetime.current.revision === ticket;
+    const filename = `${title.replace(/[\\/:*?"<>|]/g, "-").slice(0, 80) || "Portfolio"}.pdf`;
     setExporting(true);
     setMessage("กำลังเตรียม PDF…");
     try {
-      const blob = await createPortfolioPdf(container.current, setMessage);
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `${title.replace(/[\\/:*?"<>|]/g, "-").slice(0, 80) || "Portfolio"}.pdf`;
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      setMessage(`ดาวน์โหลดแล้ว (${(blob.size / 1_000_000).toFixed(2)} MB)`);
+      const result = await createPortfolioPdf(container.current, value => { if (current()) setMessage(value); });
+      if (!current()) return;
+      const file = { blob: result.blob, filename };
+      if (result.exceedsTarget) {
+        pending.current = file;
+        setConfirmation(file);
+        setMessage("รอยืนยันการดาวน์โหลดไฟล์ขนาดใหญ่");
+      } else saveBlob(file);
     } catch (error) {
-      setMessage(errorMessage(error) || "ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่");
+      if (current()) setMessage(errorMessage(error) || "ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่");
     } finally {
-      inFlight.current = false;
-      setExporting(false);
+      if (current() && !pending.current) finish();
     }
   };
   return <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
     <span className="text-slate-500">{count} หน้า</span>
-    <button type="button" onClick={download} disabled={busy || !ready || exporting || dirty.length > 0} className="rounded-lg bg-blue-600 px-3 py-2 font-bold text-white disabled:opacity-40">{exporting ? "กำลังส่งออก…" : "ดาวน์โหลด PDF"}</button>
+    <button ref={trigger} type="button" onClick={download} disabled={busy || !ready || exporting || dirty.length > 0} className="rounded-lg bg-blue-600 px-3 py-2 font-bold text-white disabled:opacity-40">{exporting ? "กำลังส่งออก…" : "ดาวน์โหลด PDF"}</button>
     {dirty.length > 0 && <span>บันทึกทุกหมวดก่อนส่งออก</span>}
     {message && <p role="status" className="max-w-md">{message}</p>}
+    {confirmation && <LargePdfDialog bytes={confirmation.blob.size} onCancel={() => decide(false)} onConfirm={() => decide(true)} trigger={trigger} />}
   </div>;
 }
