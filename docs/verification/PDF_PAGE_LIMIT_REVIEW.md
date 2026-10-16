@@ -70,11 +70,11 @@ Browser ใช้ Chromium 153 + matching SwiftShader ชั่วคราว�
 - A: export-pdf.ts, ExportButton.tsx, tests/e2e/editor.spec.ts และรายงานนี้
 - B: export-pdf.ts, ExportButton.tsx, PaginatedSection.tsx, tests/e2e/pdf-export.spec.ts, tests/pdf-inspect.py และเอกสารสถานะที่อ้างถึงเพดานเดิม
 - ไม่มีการแก้ packPages, ขนาด A4/ฟอนต์/เทมเพลต/สี, MAX_PDF_BYTES, compression levels, query/save/RPC/auth/Storage หรือ /my-data
-- **10 MB ยังบังคับเหมือนเดิม**: ลอง resolution/quality เดิมแล้วถ้าไฟล์ยังเกินจะปฏิเสธ ยังไม่มี dialog ยืนยันไฟล์ใหญ่ ไม่ถือว่าตรงข้อกำหนด PDF ทั้งหมดแล้ว
+- **ประวัติเมื่อจบรอบ page-limit:** 10 MB ยังเป็น hard error; รอบถัดมา [เพิ่มยืนยันไฟล์ใหญ่แล้ว](PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) โดยรักษา quality levels เดิมและขอบ <= เดิม ไม่ถือว่าตรงข้อกำหนด PDF ทั้งหมดแล้ว
 - การ์ดใหญ่เกินหน้ายังไม่ split และยังถูก overflow guard บล็อก; สารบัญ/เลขหน้ารวม/page model และการประเมินขีดจำกัดอุปกรณ์จริงยังเป็นงานแยก
 - mock desktop/mobile viewport ไม่ใช่การทดสอบโทรศัพท์จริงหรือจำนวนหน้าไม่สิ้นสุด; ไม่ได้ stress-test จนเครื่องหมดหน่วยความจำ
 - HEAD เริ่มต้นอยู่ด้านบน; HEAD ส่งท้ายคือ commit B ที่บรรจุรายงานนี้ ตรวจด้วย git log -1 --format=%H -- docs/verification/PDF_PAGE_LIMIT_REVIEW.md และ SHA/ผล remote ยืนยันหลัง push อยู่ในข้อความส่งต่อ Astra
 
 ข้อมูลจาก mock ไม่ใช่ Supabase/Storage จริง ไม่เพิ่ม dependency ในแอปเพื่ออ่าน PDF ไม่รัน database หรือ /my-data ทั้งชุด ไม่มี migration/reset หรือทดสอบลบจริง
 
-เพดานจำนวนหน้าที่ถอดออกไม่ใช่การรับประกันจำนวนหน้าไม่สิ้นสุดในทุกอุปกรณ์ และข้อจำกัดไฟล์ 10 MB เดิมยังอยู่ งานยืนยันไฟล์ใหญ่/pagination split/สารบัญและ PDF ส่วนอื่นยังไม่เสร็จ
+เพดานจำนวนหน้าที่ถอดออกไม่ใช่การรับประกันจำนวนหน้าไม่สิ้นสุดในทุกอุปกรณ์ งานยืนยันไฟล์ใหญ่ถูกทำในรายงานรอบถัดมาที่อ้างด้านบน ส่วน pagination split/สารบัญและ PDF ส่วนอื่นยังไม่เสร็จ

@@ -18,6 +18,14 @@ export default function LargePdfDialog({ bytes, onCancel, onConfirm, trigger }: 
   }, [trigger]);
   return <dialog ref={dialog} aria-labelledby="large-pdf-title" aria-describedby="large-pdf-description"
     onCancel={event => { event.preventDefault(); onCancel(); }}
+    onKeyDown={event => {
+      if (event.key !== "Tab") return;
+      const buttons = dialog.current?.querySelectorAll<HTMLButtonElement>("button");
+      if (!buttons?.length) return;
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }}
     className="fixed inset-0 m-auto max-h-[calc(100dvh-32px)] w-[min(480px,calc(100vw-32px))] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl backdrop:bg-slate-950/60 sm:p-6">
     <h2 id="large-pdf-title" className="text-lg font-bold">ดาวน์โหลดไฟล์ PDF ขนาดใหญ่</h2>
     <p id="large-pdf-description" className="mt-3 text-sm leading-7 wrap-anywhere">
