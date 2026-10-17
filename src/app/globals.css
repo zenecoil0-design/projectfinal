@@ -22,6 +22,16 @@ body { font-family: "Noto Sans Thai", Arial, sans-serif; }
 .paper-frame { position: relative; flex-shrink: 0; margin-bottom: 24px; }
 .paper-frame > .portfolio-page { margin: 0; }
 
+/* Out of flow inside the existing footer: no content/packing budget changes. */
+.portfolio-page .document-page-number {
+  position: absolute; right: 64px; bottom: 20px;
+  min-width: 24px; text-align: right;
+  font-size: 12px; line-height: 20px; font-weight: 500;
+  color: #475569; font-variant-numeric: tabular-nums;
+}
+.portfolio-page[data-template="modern"] .document-page-number { color: #456253; }
+.portfolio-page[data-template="minimal"] .document-page-number { color: var(--minimal-muted); }
+
 /* Emerald Editorial. Keep selectors on the page itself so detached PDF clones
    and the offscreen pagination measurement receive exactly the same styles. */
 .portfolio-page[data-template="modern"] {

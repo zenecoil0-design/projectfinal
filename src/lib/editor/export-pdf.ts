@@ -1,3 +1,5 @@
+import { preparePageLayout } from "./page-layout";
+
 export const MAX_PDF_BYTES = 10_000_000;
 
 export function pdfResult(blob: Blob) {
@@ -49,8 +51,7 @@ export async function createPortfolioPdf(container: HTMLElement, onProgress: (me
       throw new Error("ไม่สามารถนำรูปภาพบางรูปใส่ PDF ได้ กรุณาตรวจสอบสิทธิ์เข้าถึงรูปหรืออัปโหลดรูปใหม่");
     }
   }));
-  // Let image-dependent pagination finish its ResizeObserver and React updates.
-  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  preparePageLayout(container);
   const { pages, overflow } = inspectPages(container);
   if (!pages.length) throw new Error("ยังไม่มีหน้าสำหรับส่งออก");
   if (overflow.length) throw new Error(`เนื้อหาล้นหน้า ${overflow.join(", ")} กรุณาลดข้อความหรือจำนวนรูปในรายการนั้น`);

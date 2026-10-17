@@ -8,7 +8,7 @@ export default function CoverPreview() {
 
   const fullName = [coverStore.firstName.trim(), coverStore.lastName.trim()].filter(Boolean).join(" ");
   const template = useTemplate();
-  if (template === "minimal") return <Paper data-section="หน้าปก" className="portfolio-page minimal-cover">
+  if (template === "minimal") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page minimal-cover">
     <div className="minimal-cover-heading"><p>แฟ้มสะสมผลงาน</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
     {coverStore.coverImage && <div className="minimal-cover-portrait"><img src={coverStore.coverImage} alt="รูปหน้าปก" /></div>}
     <div className="minimal-cover-author">
@@ -17,7 +17,7 @@ export default function CoverPreview() {
     </div>
     <div className="minimal-cover-footer">PORTFOLIO / แฟ้มสะสมผลงาน</div>
   </Paper>;
-  if (template === "modern") return <Paper data-section="หน้าปก" className="portfolio-page editorial-cover">
+  if (template === "modern") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page editorial-cover">
     <div className="editorial-cover-top"><span>แฟ้มสะสมผลงาน</span><span>SELECTED WORKS</span></div>
     <div className="editorial-cover-title"><p>INTRODUCING</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
     <div className="editorial-cover-art">
@@ -30,7 +30,7 @@ export default function CoverPreview() {
   </Paper>;
 
   return (
-    <Paper data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
+    <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
       
       {/* 1. รูปภาพพื้นหลังหน้าปก */}
       {coverStore.coverImage && (

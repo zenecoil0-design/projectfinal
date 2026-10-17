@@ -9,7 +9,7 @@ export default function PrefacePreview() {
 
   return (
     // โครงสร้างกระดาษ A4 สีขาวจำลอง
-    <Paper data-section="คำนำ" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
+    <Paper sectionId="preface" data-section="คำนำ" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">
       
       {/*ด้านบน: หัวข้อหน้าคำนำ*/}
       <div className="flex flex-col items-center">

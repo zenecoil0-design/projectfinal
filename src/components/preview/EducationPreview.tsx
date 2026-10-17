@@ -4,7 +4,7 @@ import { useEducationStore } from "@/store/useEducationStore";
 import PaginatedSection from "./PaginatedSection";
 export default function EducationPreview() {
   const educations = useEducationStore(state => state.educations);
-  return <PaginatedSection title="ประวัติการศึกษา" cards={educations.map((education, index) => (
+  return <PaginatedSection sectionId="education" title="ประวัติการศึกษา" cards={educations.map((education, index) => (
               <div
                 key={
                   education.id

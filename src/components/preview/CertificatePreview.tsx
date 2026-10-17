@@ -4,7 +4,7 @@ import { useCertificateStore } from "@/store/useCertificateStore";
 import PaginatedSection from "./PaginatedSection";
 export default function CertificatePreview() {
   const certificates = useCertificateStore(state => state.certificates);
-  return <PaginatedSection title="เกียรติบัตร" cards={certificates.map((certificate, index) => (
+  return <PaginatedSection sectionId="certificate" title="เกียรติบัตร" cards={certificates.map((certificate, index) => (
                       <article
                         key={
                           certificate.id

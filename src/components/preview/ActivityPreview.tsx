@@ -4,7 +4,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import PaginatedSection from "./PaginatedSection";
 export default function ActivityPreview() {
   const activities = useActivityStore(state => state.activities);
-  return <PaginatedSection title="ผลงานและกิจกรรม" cards={activities.map((activity, index) => (
+  return <PaginatedSection sectionId="activity" title="ผลงานและกิจกรรม" cards={activities.map((activity, index) => (
                       <article
                         key={
                           activity.id
