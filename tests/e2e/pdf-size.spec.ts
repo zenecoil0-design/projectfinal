@@ -120,7 +120,7 @@ for (const navigation of ['portfolio', 'account'] as const) {
     test(`${navigation} change during ${phase} cancels old PDF results and dialog`, async ({ page }) => {
       await sizeMock(page, 12_340_000);
       await page.addInitScript(() => {
-        const state = { armed: false, releases: [] as (() => void)[] };
+        const state = { armed: false, releases: [] as (() => void)[], staleLayouts: 0 };
         (window as unknown as { pdfDelay: typeof state }).pdfDelay = state;
         const decode = HTMLImageElement.prototype.decode;
         HTMLImageElement.prototype.decode = async function () {
@@ -129,7 +129,14 @@ for (const navigation of ['portfolio', 'account'] as const) {
         };
       });
       await ready(page);
-      if (phase === 'generating') await page.evaluate(() => { (window as unknown as { pdfDelay: { armed: boolean } }).pdfDelay.armed = true; });
+      if (phase === 'generating') await page.evaluate(() => {
+        const state = (window as unknown as { pdfDelay: { armed: boolean; staleLayouts: number } }).pdfDelay;
+        const main = document.querySelector('main')!;
+        const connected = Object.getOwnPropertyDescriptor(Node.prototype, 'isConnected')!.get!;
+        // Observe the real detached-layout rejection without changing its result.
+        Object.defineProperty(main, 'isConnected', { get() { const value = connected.call(main); if (!value) state.staleLayouts++; return value; } });
+        state.armed = true;
+      });
       await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
       if (phase === 'confirming') await expect(page.getByRole('dialog')).toBeVisible();
       else await expect.poll(() => page.evaluate(() => (window as unknown as { pdfDelay: { releases: (() => void)[] } }).pdfDelay.releases.length)).toBeGreaterThan(0);
@@ -144,8 +151,9 @@ for (const navigation of ['portfolio', 'account'] as const) {
       }
       if (phase === 'generating') {
         await page.evaluate(() => { const s = (window as unknown as { pdfDelay: { armed: boolean; releases: (() => void)[] } }).pdfDelay; s.armed = false; s.releases.splice(0).forEach(done => done()); });
-        // Wait for the old real renderer to finish; its mocked size still exceeds target.
-        await expect.poll(() => page.evaluate(() => (window as unknown as { pdfSize: { builds: number } }).pdfSize.builds)).toBe(3);
+        // Layout preparation now rejects the detached session before rendering.
+        await expect.poll(() => page.evaluate(() => (window as unknown as { pdfDelay: { staleLayouts: number } }).pdfDelay.staleLayouts)).toBe(1);
+        expect(await page.evaluate(() => (window as unknown as { pdfSize: { builds: number } }).pdfSize.builds)).toBe(0);
       }
       await expect(page.getByRole('dialog')).toHaveCount(0); expect(downloads).toBe(0);
       expect(await page.evaluate(() => (window as unknown as { pdfSize: { urls: number } }).pdfSize.urls)).toBe(0);

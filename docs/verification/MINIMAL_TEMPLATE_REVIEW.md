@@ -1,5 +1,7 @@
 # Minimal template review
 
+Follow-up: continuous content page numbering has now been implemented for all three templates; see [numbering review](CONTINUOUS_PAGE_NUMBERING_REVIEW.md). References to numbering being pending below describe the Minimal round's historical scope, not current status. TOC/two-color settings/other requirements remain separate.
+
 ## Scope and starting point
 
 - Start HEAD local/remote: `63217b520a2b9f4ea1ad295c8582f40416831f1e`, clean working tree, branch `codex/portfolio-next-phase`.

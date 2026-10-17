@@ -26,7 +26,7 @@ export default function CoverPreview() {
       <span className="editorial-art-caption">LEARNING · CREATIVITY · GROWTH</span>
     </div>
     <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{fullName || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
-    <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>01 / PORTFOLIO</span></div>
+    <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>PORTFOLIO</span></div>
   </Paper>;
 
   return (
