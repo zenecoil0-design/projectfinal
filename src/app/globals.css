@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./minimal-template.css";
 
 body { font-family: "Noto Sans Thai", Arial, sans-serif; }
 

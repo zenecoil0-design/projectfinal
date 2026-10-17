@@ -1,0 +1,71 @@
+/* Fixed Minimal defaults, not per-portfolio color customization.
+   Scope on data-template also reaches measurement portals and PDF clones. */
+[data-template="minimal"] {
+  --minimal-ink: #202a2d;
+  --minimal-muted: #58676b;
+  --minimal-accent: #466b73;
+  --minimal-rule: #d5dfe1;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.portfolio-page[data-template="minimal"] {
+  background: #fff;
+  color: var(--minimal-ink);
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 6px 24px #202a2d12;
+}
+.portfolio-page[data-template="minimal"] h2 {
+  color: var(--minimal-ink);
+  letter-spacing: 0;
+}
+.portfolio-page[data-template="minimal"]:not(.minimal-cover) > div:first-child {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--minimal-ink);
+  padding-bottom: 20px;
+}
+.portfolio-page[data-template="minimal"]:not(.minimal-cover) > div:first-child h2 {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.portfolio-page[data-template="minimal"] > div:last-child:not(.minimal-cover-footer) {
+  border-color: var(--minimal-rule);
+  color: var(--minimal-muted);
+  text-align: left;
+}
+.portfolio-page[data-template="minimal"][data-section="คำนำ"] > div:first-child { margin-bottom: 32px; }
+.portfolio-page[data-template="minimal"][data-section="คำนำ"] h2 { margin-bottom: 0; }
+.portfolio-page[data-template="minimal"][data-section="คำนำ"] > div:nth-child(2) { padding: 0; }
+.portfolio-page[data-template="minimal"][data-section="คำนำ"] > div:nth-child(2) p { line-height: 1.9; color: var(--minimal-ink); }
+.portfolio-page[data-template="minimal"][data-section="คำนำ"] > div:last-child { padding-right: 0; }
+.portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] > div:first-child > div { border-radius: 16px; border: 0; }
+.portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] > div:nth-child(2) { line-height: 1.7; }
+.portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] .grid > div { min-width: 0; }
+.portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] .grid > div > span { display: block; font-size: 12px; color: var(--minimal-muted); font-weight: 400; }
+.portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] h3 { color: var(--minimal-accent); font-size: 14px; letter-spacing: 0; }
+.portfolio-page.minimal-cover { display: flex; flex-direction: column; align-items: flex-start; padding: 64px; gap: 40px; }
+.minimal-cover-heading { width: 100%; padding-top: 24px; border-top: 2px solid var(--minimal-ink); }
+.minimal-cover-heading p, .minimal-cover-author > p { color: var(--minimal-muted); font-size: 13px; margin-bottom: 12px; }
+.minimal-cover-heading h1 { font-size: 58px; font-weight: 600; line-height: 1.3; letter-spacing: -1px; }
+.minimal-cover-portrait { align-self: flex-end; width: 310px; height: 360px; border-radius: 24px; overflow: hidden; flex-shrink: 0; background: #f2f5f5; }
+.minimal-cover-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.minimal-cover-author { width: 100%; margin-top: auto; }
+.minimal-cover-author h2 { font-size: 32px; font-weight: 600; line-height: 1.5; }
+.minimal-cover-author h3 { font-size: 18px; color: var(--minimal-muted); margin-top: 10px; }
+.minimal-cover-footer { width: 100%; border-top: 1px solid var(--minimal-rule); padding-top: 16px; color: var(--minimal-muted); font-size: 10px; letter-spacing: 1px; }
+/* Identical card geometry in body measurement and inside each physical page.
+   Keep p-16 page margins, gap-6 and the existing 840px packing budget. */
+[data-template="minimal"] .document-card { border: 0; border-top: 1px solid var(--minimal-rule); border-radius: 0; padding: 20px 0; background: transparent; color: var(--minimal-ink); }
+[data-template="minimal"] .document-card h3 { font-size: 20px; line-height: 1.5; font-weight: 600; color: var(--minimal-ink); }
+[data-template="minimal"] .document-card p { color: var(--minimal-muted); }
+[data-template="minimal"] .document-card-heading > div { min-width: 0; }
+[data-template="minimal"] .document-card-heading { flex-wrap: wrap; }
+[data-template="minimal"] .document-card-heading > div > span,
+[data-template="minimal"] .education-card > div > span { border: 0; border-radius: 0; background: transparent; padding: 0; color: var(--minimal-accent); font-weight: 500; }
+[data-template="minimal"] .education-logo { width: 64px; height: 64px; border: 0; border-radius: 0; box-shadow: none; }
+[data-template="minimal"] .without-logo .education-logo { display: none; }
+[data-template="minimal"] .document-images > div { border: 0; border-radius: 0; background: #f5f7f7; }
+[data-template="minimal"] .document-images img { object-fit: contain; }
+[data-template="minimal"] .document-no-image { display: none; }

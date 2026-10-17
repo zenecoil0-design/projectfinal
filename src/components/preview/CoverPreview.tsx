@@ -8,6 +8,15 @@ export default function CoverPreview() {
 
   const fullName = [coverStore.firstName.trim(), coverStore.lastName.trim()].filter(Boolean).join(" ");
   const template = useTemplate();
+  if (template === "minimal") return <Paper data-section="หน้าปก" className="portfolio-page minimal-cover">
+    <div className="minimal-cover-heading"><p>แฟ้มสะสมผลงาน</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
+    {coverStore.coverImage && <div className="minimal-cover-portrait"><img src={coverStore.coverImage} alt="รูปหน้าปก" /></div>}
+    <div className="minimal-cover-author">
+      {fullName && <><p>จัดทำโดย</p><h2>{fullName}</h2></>}
+      {coverStore.schoolName && <h3>{coverStore.schoolName}</h3>}
+    </div>
+    <div className="minimal-cover-footer">PORTFOLIO / แฟ้มสะสมผลงาน</div>
+  </Paper>;
   if (template === "modern") return <Paper data-section="หน้าปก" className="portfolio-page editorial-cover">
     <div className="editorial-cover-top"><span>แฟ้มสะสมผลงาน</span><span>SELECTED WORKS</span></div>
     <div className="editorial-cover-title"><p>INTRODUCING</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>

@@ -36,7 +36,7 @@ export default function TemplatePicker({ portfolioId, value, onSaved, onBusy }: 
     <select id="portfolio-template" value={value} disabled={busy || exporting} onChange={event => void change(event.target.value)} className="max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
       <option value="classic">Classic</option>
       <option value="modern">Emerald Editorial · เขียว–ครีม</option>
-      <option value="minimal">Minimal (รูปแบบพื้นฐาน)</option>
+      <option value="minimal">Minimal</option>
       {!["classic", "modern", "minimal"].includes(value) && <option value={value}>รูปแบบเดิม</option>}
     </select>
     <span role="status" className="text-slate-600">{busy ? "กำลังบันทึกเทมเพลต…" : message}</span>

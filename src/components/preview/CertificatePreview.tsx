@@ -9,9 +9,9 @@ export default function CertificatePreview() {
                         key={
                           certificate.id
                         }
-                        className="rounded-xl border border-slate-200 bg-slate-50 p-5"
+                        className="document-card certificate-card rounded-xl border border-slate-200 bg-slate-50 p-5"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="document-card-heading flex items-start justify-between gap-4">
                           <div>
                             <span className="rounded-md border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600">
                               เกียรติบัตรที่{" "}
@@ -56,7 +56,7 @@ export default function CertificatePreview() {
                         {certificate.images.length >
                           0 ? (
                           <div
-                            className={`mt-4 grid gap-3 ${
+                            className={`document-images mt-4 grid gap-3 ${
                               certificate.images.length ===
                               1
                                 ? "grid-cols-1"
@@ -87,7 +87,7 @@ export default function CertificatePreview() {
                               )}
                           </div>
                         ) : (
-                          <div className="mt-4 flex h-28 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-slate-300">
+                          <div className="document-no-image mt-4 flex h-28 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-slate-300">
                             <div className="text-center">
                               <FaImage className="mx-auto" />
 

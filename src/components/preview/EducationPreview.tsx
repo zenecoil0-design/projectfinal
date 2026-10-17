@@ -9,11 +9,11 @@ export default function EducationPreview() {
                 key={
                   education.id
                 }
-                className="flex gap-5 rounded-xl border border-slate-200 bg-slate-50 p-5"
+                className={`document-card education-card flex gap-5 rounded-xl border border-slate-200 bg-slate-50 p-5${education.logoUrl ? "" : " without-logo"}`}
               >
                 {/* LOGO */}
 
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="education-logo flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                   {education.logoUrl ? (
                     <img
                       src={
