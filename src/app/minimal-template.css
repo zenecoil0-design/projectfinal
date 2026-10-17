@@ -45,6 +45,9 @@
 .portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] .grid > div { min-width: 0; }
 .portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] .grid > div > span { display: block; font-size: 12px; color: var(--minimal-muted); font-weight: 400; }
 .portfolio-page[data-template="minimal"][data-section="ประวัติส่วนตัว"] h3 { color: var(--minimal-accent); font-size: 14px; letter-spacing: 0; }
+.portfolio-page[data-template="minimal"] .profile-social-row { align-items: flex-start; }
+.portfolio-page[data-template="minimal"] .profile-social-row > span:not(:last-child) { flex-shrink: 0; }
+.portfolio-page[data-template="minimal"] .profile-social-row > span:last-child { min-width: 0; }
 .portfolio-page.minimal-cover { display: flex; flex-direction: column; align-items: flex-start; padding: 64px; gap: 40px; }
 .minimal-cover-heading { width: 100%; padding-top: 24px; border-top: 2px solid var(--minimal-ink); }
 .minimal-cover-heading p, .minimal-cover-author > p { color: var(--minimal-muted); font-size: 13px; margin-bottom: 12px; }

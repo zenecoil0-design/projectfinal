@@ -54,10 +54,16 @@ for (const bytes of [9_999_999, 10_000_000]) {
 
 test('oversize mock waits, cancel/Escape do not download, confirm uses same Blob without rendering again', async ({ page }, testInfo) => {
   await sizeMock(page, 10_000_001); await ready(page);
+  const picker = page.getByLabel('เทมเพลต', { exact: true });
+  await picker.selectOption('minimal');
+  await expect(page.locator('.minimal-cover')).toBeVisible();
   let downloads = 0; page.on('download', () => downloads++);
   const start = page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true });
   const dialog = page.getByRole('dialog', { name: 'ดาวน์โหลดไฟล์ PDF ขนาดใหญ่' });
-  await start.click(); await expect(dialog).toBeVisible();
+  await start.click();
+  await expect(picker).toBeDisabled();
+  await expect(dialog).toBeVisible();
+  await expect(picker).toBeDisabled();
   await expect(dialog).toContainText('10.000001 MB'); await expect(dialog).toContainText('10,000,001 bytes');
   await expect(dialog.getByRole('button', { name: 'ยกเลิก', exact: true })).toBeFocused();
   expect(downloads).toBe(0);
@@ -65,6 +71,7 @@ test('oversize mock waits, cancel/Escape do not download, confirm uses same Blob
   await expect(page.getByRole('button', { name: 'กำลังส่งออก…', exact: true })).toBeDisabled();
   await dialog.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
   await expect(dialog).toHaveCount(0); await expect(start).toBeEnabled(); await expect(start).toBeFocused();
+  await expect(picker).toBeEnabled(); await expect(picker).toHaveValue('minimal');
   expect(downloads).toBe(0);
   await start.click(); await expect(dialog).toBeVisible(); await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0); await expect(start).toBeFocused(); expect(downloads).toBe(0);

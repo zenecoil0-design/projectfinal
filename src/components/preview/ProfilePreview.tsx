@@ -75,7 +75,7 @@ export default function ProfilePreview() {
               <span className="font-semibold text-slate-600">ช่องทางอื่นๆ :</span>
               <div className="flex flex-col gap-1 pl-2">
                 {profileStore.socials.map((s) => (
-                  <div key={s.id} className="flex items-center gap-2 text-xs">
+                  <div key={s.id} className="profile-social-row flex items-center gap-2 text-xs">
                     <span>{renderSocialIcon(s.platform)}</span>
                     <span className="capitalize font-medium">{s.platform}:</span>
                     <span className="text-slate-600">{s.link}</span>
