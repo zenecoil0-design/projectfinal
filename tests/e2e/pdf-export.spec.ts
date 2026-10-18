@@ -15,9 +15,9 @@ async function ready(page: Page) {
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
 }
 
-for (const total of [12, 20]) {
+for (const total of [13, 21]) {
   test(`actual ${total}-page PDF matches Preview, all page markers and A4; hidden mobile Preview exports too`, async ({ page }, testInfo) => {
-    const cards = total - 5;
+    const cards = total - 6;
     const pictures = await page.evaluate(count => Array.from({ length: count }, (_, index) => {
       const canvas = document.createElement('canvas'); canvas.width = 320; canvas.height = 160;
       const ctx = canvas.getContext('2d')!;
@@ -30,14 +30,14 @@ for (const total of [12, 20]) {
     await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: pictures.map((_, index) => ({ id: `long-${index}`, title: `ORDER ${String(index).padStart(2, '0')} ผลงานทดสอบภาษาไทย`, description: 'ข้อความภาษาไทยสำหรับตรวจความชัดเจนและลำดับหน้า\n'.repeat(14), organization: '', activity_date: null })) }));
     await page.route('**/rest/v1/user_library_activity_images?**', route => route.fulfill({ json: pictures.map((image_url, index) => ({ id: `image-${index}`, activity_id: `long-${index}`, image_url, sort_order: 0 })) }));
     await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: pictures.map((_, index) => ({ activity_id: `long-${index}`, sort_order: index })) }));
-    await page.setViewportSize({ width: total === 12 ? 390 : 1440, height: 1000 }); await ready(page);
+    await page.setViewportSize({ width: total === 13 ? 390 : 1440, height: 1000 }); await ready(page);
     await expect(page.locator('[data-portfolio-page]')).toHaveCount(total);
     await expect(page.getByText(`${total} หน้า`, { exact: true })).toBeVisible();
     const sections = await page.locator('[data-portfolio-page]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-section')));
-    expect(sections.slice(4, -1)).toEqual(Array(cards).fill('ผลงานและกิจกรรม'));
+    expect(sections.slice(5, -1)).toEqual(Array(cards).fill('ผลงานและกิจกรรม'));
     await page.locator('#editor-heading-cover').click();
     await expect(page.locator('aside [aria-expanded=true]')).toHaveCount(0);
-    if (total === 12) {
+    if (total === 13) {
       await page.setViewportSize({ width: 390, height: 1000 });
       await expect(page.locator('main')).toBeHidden();
     }
@@ -57,7 +57,7 @@ for (const total of [12, 20]) {
     await (await download).saveAs(path);
     const audit = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python', ['tests/pdf-inspect.py', path], { encoding: 'utf8' }));
     expect(audit.pages).toBe(total); expect(audit.bytes).toBeLessThanOrEqual(10_000_000);
-    expect(audit.markers).toEqual([null, null, null, null, ...pictures.map((_, index) => index), null]);
+    expect(audit.markers).toEqual([null, null, null, null, null, ...pictures.map((_, index) => index), null]);
     expect(audit.uniqueRasters).toBe(total);
     for (const [width, height] of audit.boxes) { expect(width).toBeCloseTo(595.28, 1); expect(height).toBeCloseTo(841.89, 1); }
     expect(progress.some(value => value.includes(`หน้า 11 / ${total}`))).toBe(true);

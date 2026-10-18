@@ -128,7 +128,7 @@ test('a late response from the previous portfolio cannot overwrite the current o
   await expect(page.locator('main')).not.toContainText('Saved Activity');
 });
 
-test('A4 scales uniformly on desktop and phone; persisted editorial template exports six pages', async ({page}) => {
+test('A4 scales uniformly on desktop and phone; persisted editorial template exports seven pages', async ({page}) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
@@ -136,7 +136,7 @@ test('A4 scales uniformly on desktop and phone; persisted editorial template exp
   await page.reload();
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('เทมเพลต',{exact:true})).toHaveValue('modern');
-  await expect(page.locator('[data-portfolio-page][data-template="modern"]')).toHaveCount(6);
+  await expect(page.locator('[data-portfolio-page][data-template="modern"]')).toHaveCount(7);
   for (const width of [1440, 1024, 390]) {
     await page.setViewportSize({width,height:900});
     if (width === 390) await page.getByRole('button',{name:'ดูตัวอย่าง',exact:true}).click();
@@ -166,7 +166,7 @@ test('failed template save preserves prior design and keeps PDF usable', async (
   await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
   await expect(page.getByText('Template save denied')).toBeVisible();
   await expect(page.getByLabel('เทมเพลต',{exact:true})).toHaveValue('classic');
-  await expect(page.locator('[data-portfolio-page][data-template="classic"]')).toHaveCount(6);
+  await expect(page.locator('[data-portfolio-page][data-template="classic"]')).toHaveCount(7);
   const download=page.waitForEvent('download');
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
   await (await download).saveAs('/tmp/empty-classic.pdf');

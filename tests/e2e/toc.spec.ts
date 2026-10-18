@@ -29,6 +29,13 @@ test('TOC uses current footer starts across all templates and inserting it prese
     await openEditorSection(page, section);
     await expect.poll(() => page.locator(`main [data-page-section=${section}]`).first().evaluate(el => Math.round(el.getBoundingClientRect().top - document.querySelector('main')!.getBoundingClientRect().top))).toBe(24);
   }
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await openEditorSection(page, 'profile');
+  await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
+  await expect.poll(() => page.locator('main [data-page-section=profile]').evaluate(el => Math.round(el.getBoundingClientRect().top - document.querySelector('main')!.getBoundingClientRect().top))).toBe(24);
+  await expectCurrentContents(page);
+  await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
+  await expect(page.locator('#editor-heading-profile')).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('multi-page TOC updates after deselection, re-selection and template changes without resetting baseline', async ({ page }) => {

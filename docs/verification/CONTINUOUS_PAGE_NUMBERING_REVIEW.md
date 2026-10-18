@@ -1,5 +1,7 @@
 # Continuous page numbering review
 
+Follow-up: [automatic section-level TOC](AUTOMATIC_TOC_REVIEW.md) now adds one unnumbered front-matter page using this numbering source. TOC references below remain historical scope/status for the numbering round and Astra review; their results are preserved.
+
 ## Starting point and scope
 
 - Repository zenecoil0-design/projectfinal; branch codex/portfolio-next-phase.

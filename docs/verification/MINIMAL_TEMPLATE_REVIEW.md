@@ -1,6 +1,6 @@
 # Minimal template review
 
-Follow-up: continuous content page numbering has now been implemented for all three templates; see [numbering review](CONTINUOUS_PAGE_NUMBERING_REVIEW.md). References to numbering being pending below describe the Minimal round's historical scope, not current status. TOC/two-color settings/other requirements remain separate.
+Follow-up: continuous content page numbering has now been implemented for all three templates; see [numbering review](CONTINUOUS_PAGE_NUMBERING_REVIEW.md). A single automatic section-level TOC now uses those same numbers; see [TOC review](AUTOMATIC_TOC_REVIEW.md). References to numbering/TOC being pending below describe the Minimal round's historical scope, not current status. Multi-page/per-item TOC, two-color settings and other requirements remain separate.
 
 ## Scope and starting point
 

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { expectCurrentContents } from './helpers/toc';
 import { execFileSync } from 'node:child_process';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -11,22 +12,24 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 async function assertNumbering(page: Page) {
+  await expectCurrentContents(page);
   await expect.poll(() => page.locator('main [data-page-number]').allTextContents()).toEqual(
-    Array.from({ length: await page.locator('main [data-portfolio-page]').count() - 2 }, (_, index) => String(index + 1)));
+    Array.from({ length: await page.locator('main [data-portfolio-page]').count() - 3 }, (_, index) => String(index + 1)));
   const pages = page.locator('main [data-portfolio-page]');
   const total = await pages.count();
   await expect(pages.nth(0).locator('[data-page-number]')).toHaveCount(0);
   await expect(pages.nth(1).locator('[data-page-number]')).toHaveCount(0);
+  await expect(pages.nth(2).locator('[data-page-number]')).toHaveCount(0);
   await expect(page.getByText(`${total} หน้า`, { exact: true })).toBeVisible();
   expect(await pages.evaluateAll(nodes => nodes.map(node => Number((node as HTMLElement).dataset.physicalPage)))).toEqual(Array.from({ length: total }, (_, i) => i + 1));
 }
 
-test('all templates number six physical pages as unnumbered, unnumbered, 1–4 without changing footer structure', async ({ page }) => {
+test('all templates number seven physical pages as unnumbered, unnumbered, unnumbered, 1–4 without changing footer structure', async ({ page }) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
-    await expect(page.locator(`[data-portfolio-page][data-template=${template}]`)).toHaveCount(6);
+    await expect(page.locator(`[data-portfolio-page][data-template=${template}]`)).toHaveCount(7);
     await assertNumbering(page);
     if (template === 'modern') await expect(page.locator('.editorial-cover-bottom')).not.toContainText('01 /');
     const firstChildren = await page.locator('[data-page-section=profile]').evaluate(el => Array.from(el.children).map(node => node.tagName));
@@ -56,9 +59,10 @@ for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
     await expect(page.locator(`[data-portfolio-page][data-template=${template}]`).first()).toBeAttached();
     if (many) await expect.poll(() => page.locator('[data-portfolio-page]').count()).toBeGreaterThan(10);
-    else await expect(page.locator('[data-portfolio-page]')).toHaveCount(6);
+    else await expect(page.locator('[data-portfolio-page]')).toHaveCount(7);
     await assertNumbering(page);
     const mapping = await page.locator('main [data-portfolio-page]').evaluateAll(nodes => nodes.map(node => ({ section: (node as HTMLElement).dataset.pageSection, printed: node.querySelector('[data-page-number]')?.textContent ?? null })));
+    await expect(page.locator('[data-toc-page]')).toHaveText(many ? ['1', '2', '5', '15'] : ['1', '2', '3', '4']);
     await page.locator('#editor-heading-cover').click();
     await expect(page.locator('aside [aria-expanded=true]')).toHaveCount(0);
     if (many) await expect(page.locator('main')).toBeHidden();
@@ -72,6 +76,7 @@ for (const template of ['classic', 'modern', 'minimal']) {
     await assertNumbering(page);
     await testInfo.attach('numbering-audit', { body: JSON.stringify({ ...audit, mapping }), contentType: 'application/json' });
     if (many) await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
+    await page.locator('.paper-frame:has([data-page-section=toc])').screenshot({ path: testInfo.outputPath(`toc-${template}.png`) });
     // Each real footer marker is outside content and within the physical A4 box.
     expect(await page.locator('main [data-page-number]').evaluateAll(markers => markers.every(marker => {
       const number = marker.getBoundingClientRect(); const paper = marker.closest('[data-portfolio-page]')!.getBoundingClientRect();
@@ -108,6 +113,7 @@ test('late image sizing is flushed before export even when ResizeObserver delive
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('[data-page-section=activity]')).toHaveCount(1);
   await assertNumbering(page);
+  await expect(page.locator('[data-toc-section=certificate] [data-toc-page]')).toHaveText('4');
   await page.evaluate(() => { (window as unknown as { numberingResize: { hold: boolean } }).numberingResize.hold = true; });
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
@@ -117,9 +123,10 @@ test('late image sizing is flushed before export even when ResizeObserver delive
   await expect(page.locator('[data-page-section=activity]')).toHaveCount(2);
   await assertNumbering(page);
   await expect(page.locator('[data-page-section=certificate] [data-page-number]')).toHaveText('5');
+  await expect(page.locator('[data-toc-section=certificate] [data-toc-page]')).toHaveText('5');
   await expect.poll(() => page.evaluate(() => (window as unknown as { numberingResize: { suppressed: number } }).numberingResize.suppressed)).toBeGreaterThan(0);
   const audit = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python', ['tests/pdf-inspect.py', testInfo.outputPath('numbered-late-image.pdf')], { encoding: 'utf8' }));
-  expect(audit.pages).toBe(7);
+  expect(audit.pages).toBe(8);
 });
 
 test('SPA portfolio/account changes clean up the old numbering observer and measurement scope', async ({ page }) => {
@@ -146,7 +153,7 @@ test('SPA portfolio/account changes clean up the old numbering observer and meas
   expect(await page.evaluate(() => (window as unknown as { numberingObservers: { active: number } }).numberingObservers.active)).toBe(1);
   await page.evaluate(user => { const channel = new BroadcastChannel('sb-127-auth-token'); channel.postMessage({ event: 'SIGNED_IN', session: { user: { ...user, id: 'account-b' } } }); channel.close(); }, user);
   await expect(page.getByText('บัญชีผู้ใช้เปลี่ยนแล้ว', { exact: false })).toBeVisible();
-  await expect(page.locator('[data-page-layout], [data-page-number]')).toHaveCount(0);
+  await expect(page.locator('[data-page-layout], [data-page-number], [data-toc-section]')).toHaveCount(0);
   expect(await page.evaluate(() => (window as unknown as { numberingObservers: { active: number; disconnected: number } }).numberingObservers)).toMatchObject({ active: 0 });
 });
 
@@ -176,6 +183,6 @@ test('multi-page education and activities update later offsets when selections c
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();
   await page.goto('/editor?portfolio=b');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
-  await expect(page.locator('[data-portfolio-page]')).toHaveCount(6);
+  await expect(page.locator('[data-portfolio-page]')).toHaveCount(7);
   await assertNumbering(page);
 });

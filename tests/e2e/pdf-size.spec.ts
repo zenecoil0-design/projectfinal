@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
-// Size mocks still rasterize six pages at all three quality levels. Allow the
+// Size mocks still rasterize seven pages at all three quality levels. Allow the
 // real renderer to finish on slower workers; keep ordinary UI waits unchanged.
 const PDF_CONFIRMATION_TIMEOUT = 30_000;
 

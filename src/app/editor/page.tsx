@@ -194,46 +194,8 @@ function EditorContent() {
   // PREVIEW SCROLL
   // =====================================================
 
-  const scrollPreviewToStep = (
-    step: number
-  ) => {
-    const container =
-      previewContainerRef.current;
-
-    const sectionId = sections[step - 1];
-    const target = container?.querySelector<HTMLElement>(`[data-page-section="${sectionId}"]`);
-
-    if (
-      !container ||
-      !target
-    ) {
-      return;
-    }
-
-    const containerRect =
-      container.getBoundingClientRect();
-
-    const targetRect =
-      target.getBoundingClientRect();
-
-    const nextTop =
-      container.scrollTop +
-      targetRect.top -
-      containerRect.top -
-      24;
-
-    container.scrollTo({
-      top: Math.max(
-        0,
-        nextTop
-      ),
-      behavior: "smooth",
-    });
-  };
-
   const handleStepChange = (step: number | null) => {
     setCurrentStep(step);
-    if (step !== null) requestAnimationFrame(() => scrollPreviewToStep(step));
   };
 
   const handleNext = (fromStep: number) => {
@@ -345,7 +307,7 @@ function EditorContent() {
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">
         <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
-        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => { setMobilePanel("preview"); if (currentStep !== null) requestAnimationFrame(() => scrollPreviewToStep(currentStep)); }} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
+        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => setMobilePanel("preview")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
       </div>
 
       {/* BODY */}
@@ -379,7 +341,7 @@ function EditorContent() {
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
           <ReadyPreview>
-          <TemplateContext.Provider value={portfolio.template_key}><PreviewViewport>
+          <TemplateContext.Provider value={portfolio.template_key}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
             {/* PAGE 1 */}
 
             <div

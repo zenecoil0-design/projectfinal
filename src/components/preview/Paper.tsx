@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { PageLayout } from "./PageLayout";
 import { numberedSections } from "@/lib/editor/page-numbers";
 import type { Section } from "@/lib/editor/section-state";
@@ -11,7 +11,7 @@ export const useTemplate = () => useContext(TemplateContext);
 const ScaleContext = createContext(1);
 
 /** Scale the whole physical page, never its type or individual elements. */
-export function PreviewViewport({ children }: { children: ReactNode }) {
+export function PreviewViewport({ children, activeSection, visible = true }: { children: ReactNode; activeSection?: Section | null; visible?: boolean }) {
   const viewport = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useEffect(() => {
@@ -23,6 +23,16 @@ export function PreviewViewport({ children }: { children: ReactNode }) {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  useLayoutEffect(() => {
+    const container = viewport.current?.closest("main");
+    const target = activeSection && viewport.current?.querySelector<HTMLElement>(`[data-page-section="${activeSection}"]`);
+    if (!visible || !container || !target || !viewport.current?.clientWidth) return;
+    // A newly visible viewport may still have the previous width's scale.
+    // ResizeObserver commits the new scale; only then is the scroll offset valid.
+    const expectedScale = Math.min(1, viewport.current.clientWidth / 794);
+    if (Math.abs(scale - expectedScale) > 0.001) return;
+    container.scrollTo({ top: Math.max(0, container.scrollTop + target.getBoundingClientRect().top - container.getBoundingClientRect().top - 24), behavior: "smooth" });
+  }, [activeSection, visible, scale]);
   return <div ref={viewport} className="mx-4 py-6">
     <p className="mb-4 text-center text-xs text-slate-600">A4 · 210 × 297 มม. · พอดีหน้าจอ {Math.round(scale * 100)}%</p>
     <ScaleContext.Provider value={scale}><PageLayout>{children}</PageLayout></ScaleContext.Provider>

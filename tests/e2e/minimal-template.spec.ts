@@ -40,13 +40,13 @@ for (const mobile of [false, true]) {
     await expect(page.locator('.minimal-cover')).toBeAttached();
     const pages = page.locator('[data-portfolio-page]');
     if (mobile) await expect.poll(() => pages.count()).toBeGreaterThan(10);
-    else await expect(pages).toHaveCount(6);
+    else await expect(pages).toHaveCount(7);
     await page.locator('#editor-heading-cover').click();
     await expect(page.locator('aside [aria-expanded=true]')).toHaveCount(0);
     if (mobile) await expect(page.locator('main')).toBeHidden();
     const total = await pages.count();
     const sections = await pages.evaluateAll(nodes => nodes.map(el => el.getAttribute('data-section')));
-    expect(sections.slice(0, 4)).toEqual(['หน้าปก', 'คำนำ', 'ประวัติส่วนตัว', 'ประวัติการศึกษา']);
+    expect(sections.slice(0, 5)).toEqual(['หน้าปก', 'คำนำ', 'สารบัญ', 'ประวัติส่วนตัว', 'ประวัติการศึกษา']);
     expect(sections.at(-1)).toBe('เกียรติบัตร');
     await expect(page.locator('main .activity-card h3')).toHaveText(Array.from({ length: count }, (_, index) => `ORDER ${String(index).padStart(2, '0')} ผลงานภาษาไทยที่มีชื่อยาวสำหรับตรวจการตัดบรรทัด`));
     const download = page.waitForEvent('download');
@@ -113,7 +113,7 @@ test('Minimal has six distinct section styles; switching preserves drafts, selec
   const picker = page.getByLabel('เทมเพลต', { exact: true });
   for (const key of ['minimal', 'modern', 'classic', 'minimal']) {
     await picker.selectOption(key);
-    await expect(page.locator(`[data-portfolio-page][data-template="${key}"]`)).toHaveCount(6);
+    await expect(page.locator(`[data-portfolio-page][data-template="${key}"]`)).toHaveCount(7);
     await expect(checkbox).not.toBeChecked();
     await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
     await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();
@@ -136,7 +136,7 @@ test('Minimal persists on reload, failed changes preserve saved design, portfoli
   await expect(page.locator('.minimal-cover')).toBeVisible();
   await page.reload();
   await expect(picker).toHaveValue('minimal');
-  await expect(page.locator('[data-portfolio-page][data-template=minimal]')).toHaveCount(6);
+  await expect(page.locator('[data-portfolio-page][data-template=minimal]')).toHaveCount(7);
   await page.route('**/rest/v1/portfolios?**', route => route.request().method() === 'PATCH' ? route.fulfill({ status: 500, json: { message: 'template save failed' } }) : route.continue());
   await picker.selectOption('modern');
   await expect(page.getByText('template save failed')).toBeVisible();
@@ -151,6 +151,6 @@ test('Minimal persists on reload, failed changes preserve saved design, portfoli
   await page.route('**/rest/v1/portfolios?**', route => route.fulfill({ json: { id: 'b', title: 'Legacy portfolio', template_key: 'legacy-key', user_id: user.id } }));
   await page.reload();
   await expect(picker).toHaveValue('legacy-key');
-  await expect(page.locator('[data-portfolio-page][data-template=legacy-key]')).toHaveCount(6);
+  await expect(page.locator('[data-portfolio-page][data-template=legacy-key]')).toHaveCount(7);
   await expect(page.locator('.minimal-cover, .editorial-cover')).toHaveCount(0);
 });
