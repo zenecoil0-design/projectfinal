@@ -9,3 +9,13 @@ export function documentPageNumbers(pages: readonly { sectionId: string; numbere
     printed: page.numbered ? ++printed : null,
   }));
 }
+
+/** Section-level TOC reuses the printed numbers, never physical offsets. */
+export function documentContents(pages: readonly { sectionId: string; printed: number | null }[], titles: Readonly<Record<string, string>>) {
+  const seen = new Set<string>();
+  return pages.flatMap(page => {
+    if (page.printed === null || seen.has(page.sectionId)) return [];
+    seen.add(page.sectionId);
+    return [{ sectionId: page.sectionId, title: titles[page.sectionId] ?? page.sectionId, page: page.printed }];
+  });
+}

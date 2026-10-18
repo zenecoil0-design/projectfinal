@@ -29,7 +29,7 @@ export function PreviewViewport({ children }: { children: ReactNode }) {
   </div>;
 }
 
-export default function Paper({ sectionId, children, style, ...props }: HTMLAttributes<HTMLDivElement> & { sectionId: Section }) {
+export default function Paper({ sectionId, children, style, ...props }: HTMLAttributes<HTMLDivElement> & { sectionId: Section | "toc" }) {
   const scale = useContext(ScaleContext);
   const template = useTemplate();
   return <div className="paper-frame" style={{ width: 794 * scale, height: 1123 * scale }}>

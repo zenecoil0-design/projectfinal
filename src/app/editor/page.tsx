@@ -20,6 +20,7 @@ import FormContainer from "@/components/layout/FormContainer";
 import { PreviewViewport, TemplateContext } from "@/components/preview/Paper";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
+import ContentsPreview from "@/components/preview/ContentsPreview";
 import ProfilePreview from "@/components/preview/ProfilePreview";
 import EducationPreview from "@/components/preview/EducationPreview";
 import ActivityPreview from "@/components/preview/ActivityPreview";
@@ -30,7 +31,7 @@ import { createClient } from "@/lib/supabase/client";
 import { EditorSession, EditorStatus, ReadyPreview } from "@/components/editor/EditorSession";
 import TemplatePicker from "@/components/editor/TemplatePicker";
 import ExportButton from "@/components/editor/ExportButton";
-import { resetEditorStores } from "@/lib/editor/section-state";
+import { resetEditorStores, sections } from "@/lib/editor/section-state";
 
 interface PortfolioInfo {
   id: string;
@@ -75,11 +76,6 @@ function EditorContent() {
 
   const previewContainerRef =
     useRef<HTMLElement | null>(null);
-
-  const previewRefs =
-    useRef<Array<HTMLDivElement | null>>(
-      []
-    );
 
   // =====================================================
   // LOAD PORTFOLIO
@@ -204,10 +200,8 @@ function EditorContent() {
     const container =
       previewContainerRef.current;
 
-    const target =
-      previewRefs.current[
-        step - 1
-      ];
+    const sectionId = sections[step - 1];
+    const target = container?.querySelector<HTMLElement>(`[data-page-section="${sectionId}"]`);
 
     if (
       !container ||
@@ -389,10 +383,6 @@ function EditorContent() {
             {/* PAGE 1 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[0] =
-                  element;
-              }}
               className="shrink-0"
             >
               <CoverPreview />
@@ -401,22 +391,16 @@ function EditorContent() {
             {/* PAGE 2 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[1] =
-                  element;
-              }}
               className="shrink-0"
             >
               <PrefacePreview />
             </div>
 
+            <div className="shrink-0"><ContentsPreview /></div>
+
             {/* PAGE 3 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[2] =
-                  element;
-              }}
               className="shrink-0"
             >
               <ProfilePreview />
@@ -425,10 +409,6 @@ function EditorContent() {
             {/* PAGE 4 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[3] =
-                  element;
-              }}
               className="shrink-0"
             >
               <EducationPreview />
@@ -437,10 +417,6 @@ function EditorContent() {
             {/* PAGE 5 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[4] =
-                  element;
-              }}
               className="shrink-0"
             >
               <ActivityPreview />
@@ -449,10 +425,6 @@ function EditorContent() {
             {/* PAGE 6 */}
 
             <div
-              ref={(element) => {
-                previewRefs.current[5] =
-                  element;
-              }}
               className="shrink-0"
             >
               <CertificatePreview />
