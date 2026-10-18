@@ -3,6 +3,10 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
+// Size mocks still rasterize six pages at all three quality levels. Allow the
+// real renderer to finish on slower workers; keep ordinary UI waits unchanged.
+const PDF_CONFIRMATION_TIMEOUT = 30_000;
+
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
   await request.get('http://127.0.0.1:54321/__reset');
@@ -62,7 +66,7 @@ test('oversize mock waits, cancel/Escape do not download, confirm uses same Blob
   const dialog = page.getByRole('dialog', { name: 'ดาวน์โหลดไฟล์ PDF ขนาดใหญ่' });
   await start.click();
   await expect(picker).toBeDisabled();
-  await expect(dialog).toBeVisible();
+  await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
   await expect(picker).toBeDisabled();
   await expect(dialog).toContainText('10.000001 MB'); await expect(dialog).toContainText('10,000,001 bytes');
   await expect(dialog.getByRole('button', { name: 'ยกเลิก', exact: true })).toBeFocused();
@@ -73,9 +77,9 @@ test('oversize mock waits, cancel/Escape do not download, confirm uses same Blob
   await expect(dialog).toHaveCount(0); await expect(start).toBeEnabled(); await expect(start).toBeFocused();
   await expect(picker).toBeEnabled(); await expect(picker).toHaveValue('minimal');
   expect(downloads).toBe(0);
-  await start.click(); await expect(dialog).toBeVisible(); await page.keyboard.press('Escape');
+  await start.click(); await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT }); await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0); await expect(start).toBeFocused(); expect(downloads).toBe(0);
-  await start.click(); await expect(dialog).toBeVisible();
+  await start.click(); await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
   const builds = await page.evaluate(() => (window as unknown as { pdfSize: { builds: number } }).pdfSize.builds);
   const download = page.waitForEvent('download');
   await dialog.getByRole('button', { name: 'ดาวน์โหลดต่อ', exact: true }).evaluate(button => { (button as HTMLButtonElement).click(); (button as HTMLButtonElement).click(); });
@@ -92,7 +96,7 @@ test('confirmation keyboard/mobile layout, awaiting lock and URL cleanup after a
   await sizeMock(page, 12_340_000); await ready(page);
   const start = page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true });
   const dialog = page.getByRole('dialog', { name: 'ดาวน์โหลดไฟล์ PDF ขนาดใหญ่' });
-  await start.click(); await expect(dialog).toBeVisible();
+  await start.click(); await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
   const builds = await page.evaluate(() => (window as unknown as { pdfSize: { builds: number } }).pdfSize.builds);
   await page.getByRole('button', { name: 'กำลังส่งออก…', exact: true }).evaluate(button => { (button as HTMLButtonElement).click(); });
   expect(await page.evaluate(() => (window as unknown as { pdfSize: { builds: number } }).pdfSize.builds)).toBe(builds);
@@ -108,7 +112,7 @@ test('confirmation keyboard/mobile layout, awaiting lock and URL cleanup after a
     await page.screenshot({ path: testInfo.outputPath(`large-dialog-${width}.png`) });
   }
   await page.keyboard.press('Enter'); await expect(dialog).toHaveCount(0); await expect(start).toBeFocused();
-  await start.click(); await expect(dialog).toBeVisible();
+  await start.click(); await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
   const download = page.waitForEvent('download'); await dialog.getByRole('button', { name: 'ดาวน์โหลดต่อ', exact: true }).click();
   await (await download).saveAs(testInfo.outputPath('cleanup.pdf'));
   await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard/);
@@ -138,7 +142,7 @@ for (const navigation of ['portfolio', 'account'] as const) {
         state.armed = true;
       });
       await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
-      if (phase === 'confirming') await expect(page.getByRole('dialog')).toBeVisible();
+      if (phase === 'confirming') await expect(page.getByRole('dialog')).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
       else await expect.poll(() => page.evaluate(() => (window as unknown as { pdfDelay: { releases: (() => void)[] } }).pdfDelay.releases.length)).toBeGreaterThan(0);
       let downloads = 0; page.on('download', () => downloads++);
       if (navigation === 'portfolio') {
@@ -159,7 +163,7 @@ for (const navigation of ['portfolio', 'account'] as const) {
       expect(await page.evaluate(() => (window as unknown as { pdfSize: { urls: number } }).pdfSize.urls)).toBe(0);
       if (navigation === 'portfolio') {
         const start = page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }); await expect(start).toBeEnabled();
-        await start.click(); await expect(page.getByRole('dialog')).toBeVisible();
+        await start.click(); await expect(page.getByRole('dialog')).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
         const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'ดาวน์โหลดต่อ', exact: true }).click();
         expect((await download).suggestedFilename()).toBe('Portfolio B.pdf');
       }

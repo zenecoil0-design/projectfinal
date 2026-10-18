@@ -119,3 +119,24 @@ Browser runtime is temporary Chromium 153 with matching SwiftShader outside the 
 TOC, visibility, overall page model, card splitting, two-color customization and remaining PDF/Editor features are not completed by this task. Existing overflow/image-error guards and large-file same-Blob confirmation remain in place and covered by regression. Empty sections still count according to the actual existing renderer; no new hiding rule. No guarantee for infinite pages/all physical devices. The actual 14 MB fixture was not regenerated; focused size mocks covered the unaffected confirmation lifecycle.
 
 All browser data is mocked, not live Supabase/Storage. No database or /my-data suite, migration/reset or real deletion. Final HEAD is the Part B commit containing this report (`git log -1 --format=%H -- docs/verification/CONTINUOUS_PAGE_NUMBERING_REVIEW.md`); exact B SHA/post-publication remote verification are in the handoff. A report cannot embed its own containing commit SHA without changing that SHA. Publication uses the tested full tree and the verified A parent with no force update.
+
+## Independent Astra review — 18 October 2026
+
+- Starting checkout and remote both verified at `75e7fc658560f39f7d6c8017582ce39e331ad531`, with a clean working tree. Reviewed numbering, measurement registration/cleanup, export preparation, template changes and regression assertions against the previous `72d1164` baseline.
+- Fresh unit run: **5/5 passed** (numbering and PDF result/format). Scoped source/test lint: **0 errors, 9 existing img warnings**; diff whitespace check passed.
+- Ran numbering plus size/lifecycle tests against the existing production build, excluding only `real oversized A4 PDF`. Initial result: **11/15 passed**, with four size-confirmation cases timing out waiting for a dialog after 5 seconds while real PDF rendering was still in progress. An unchanged isolated rerun of the cancel/confirm case reproduced the timeout.
+- The size mock changes only Blob size; six real pages are still rendered at three quality levels before confirmation. Corrected the seven post-render dialog waits in `tests/e2e/pdf-size.spec.ts` to use an explicit **30-second maximum**, leaving normal UI waits, all assertions and the existing 150-second real-large-file wait unchanged. This is condition-based waiting, not a fixed sleep; no retries, skipped tests, renderer stubs or application changes were added.
+- Reran the complete focused selection after the correction: **15/15 passed in one run (1.5 minutes)**. It includes numbering 7 and size/lifecycle 8, preserving cancel/Escape/focus/keyboard/mobile/Blob identity/export lock/URL cleanup and old-session rejection checks. Final changed-test lint has **0 errors and 0 warnings**.
+- Independently regenerated real Classic/Modern/Minimal/late-image PDFs through the tests. Their page counts were **6/6/17/7**, with A4 checks passing. Opened a contact sheet cropped from all four actual PDFs: front matter has no printed numbers; content runs **1–4 / 1–4 / 1–15 / 1–5** without gaps. Also rendered and opened Minimal's final full page: printed **15** is within the lower-right A4 margin and clear of the footer/content.
+- No application source changed, so no new production build was required. This review does **not** claim a fresh 69-test full-suite run, regeneration of the 14 MB fixture, live Supabase/Storage verification or testing on physical phones. The test timeout correction is the only code change from this review; no product defect was found in the reviewed numbering scope.
+
+Review commands (temporary browser executable/output paths are environment-specific):
+
+```sh
+node --import tsx --test tests/page-numbers.test.ts tests/pdf-result.test.ts
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<chromium> npx playwright test tests/e2e/page-numbering.spec.ts tests/e2e/pdf-size.spec.ts --grep-invert 'real oversized A4 PDF' --output=<review-output>
+npx eslint tests/e2e/pdf-size.spec.ts
+git diff --check
+python tests/pdf-numbering-contact-sheet.py <review-sheet.png> <classic.pdf> <modern.pdf> <minimal.pdf> <late-image.pdf>
+pdftoppm -f 17 -l 17 -singlefile -scale-to 1100 -png <minimal.pdf> <review-final-page>
+```
