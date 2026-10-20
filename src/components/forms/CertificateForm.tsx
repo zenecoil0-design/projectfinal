@@ -4,7 +4,7 @@ import { useEditorTags } from "@/components/editor/useEditorTags";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { formLoadError, formSaveError } from "@/lib/editor/form-errors";
 
 import {
   useEffect,
@@ -399,8 +399,7 @@ export default function CertificateForm({
           );
 
           setLoadError(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลดเกียรติบัตรได้"
+            formLoadError("certificate")
           );
         } finally {
           if (!cancelled) {
@@ -510,8 +509,7 @@ export default function CertificateForm({
       );
 
       setSaveError(
-        getErrorMessage(error) ||
-          "ไม่สามารถบันทึกเกียรติบัตรได้"
+        formSaveError("certificate", error)
       );
     } finally {
       setIsSaving(false);

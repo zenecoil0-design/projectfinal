@@ -2,7 +2,7 @@
 import CropInput from "@/components/images/CropInput";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { EditorFormIssue, formLoadError, formSaveError } from "@/lib/editor/form-errors";
 
 import {
   useEffect,
@@ -527,8 +527,7 @@ export default function ProfileForm({
           );
 
           setErrorMessage(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลดข้อมูลประวัติส่วนตัวได้"
+            formLoadError("profile")
           );
         } finally {
           if (!cancelled) {
@@ -863,9 +862,7 @@ export default function ProfileForm({
             gpaxValue
           )
         ) {
-          throw new Error(
-            "GPAX ไม่ถูกต้อง"
-          );
+          throw new EditorFormIssue("invalidGpax");
         }
 
         const payload = {
@@ -1017,8 +1014,7 @@ export default function ProfileForm({
         );
 
         setErrorMessage(
-          getErrorMessage(error) ||
-            "ไม่สามารถบันทึกข้อมูลประวัติส่วนตัวได้"
+          formSaveError("profile", error)
         );
       } finally {
         setIsSaving(

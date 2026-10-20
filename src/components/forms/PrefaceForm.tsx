@@ -1,7 +1,7 @@
 "use client";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { formLoadError, formSaveError } from "@/lib/editor/form-errors";
 
 import {
   useEffect,
@@ -162,8 +162,7 @@ export default function PrefaceForm({
           );
 
           setErrorMessage(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลดข้อมูลคำนำได้"
+            formLoadError("preface")
           );
         } finally {
           if (!cancelled) {
@@ -303,8 +302,7 @@ export default function PrefaceForm({
       );
 
       setErrorMessage(
-        getErrorMessage(error) ||
-          "ไม่สามารถบันทึกข้อมูลคำนำได้"
+        formSaveError("preface", error)
       );
     } finally {
       setIsSaving(false);

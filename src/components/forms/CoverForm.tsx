@@ -2,7 +2,7 @@
 import CropInput from "@/components/images/CropInput";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { formLoadError, formSaveError } from "@/lib/editor/form-errors";
 
 import {
   useEffect,
@@ -184,8 +184,7 @@ export default function CoverForm({
           );
 
           setErrorMessage(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลดข้อมูลหน้าปกได้"
+            formLoadError("cover")
           );
         } finally {
           if (!cancelled) {
@@ -427,8 +426,7 @@ export default function CoverForm({
       );
 
       setErrorMessage(
-        getErrorMessage(error) ||
-          "ไม่สามารถบันทึกข้อมูลหน้าปกได้"
+        formSaveError("cover", error)
       );
     } finally {
       setIsSaving(false);

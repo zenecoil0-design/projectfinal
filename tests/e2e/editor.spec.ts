@@ -57,7 +57,8 @@ test('failed atomic save retains selection and warns before leaving', async ({pa
   await page.getByText('Saved Activity',{exact:true}).first().click();
   await page.route('**/rest/v1/rpc/replace_portfolio_selection',route=>route.fulfill({status:500,json:{message:'simulated save failure'}}));
   await page.locator('form:visible button[type="submit"]').click();
-  await expect(page.getByText('simulated save failure')).toBeVisible();
+  await expect(page.getByText('ยืนยันการบันทึกผลงานและกิจกรรมไม่สำเร็จ', { exact: false })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('simulated save failure');
   page.once('dialog',dialog=>dialog.dismiss());
   await page.getByRole('link',{name:'กลับ Dashboard'}).click();
   await expect(page).toHaveURL(/editor/);

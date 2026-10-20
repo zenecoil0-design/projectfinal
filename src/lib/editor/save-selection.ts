@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { EditorFormIssue } from "./form-errors";
 
 export async function saveSelection(
   supabase: SupabaseClient,
@@ -12,7 +13,7 @@ export async function saveSelection(
     p_item_ids: ids,
   });
   if (error?.code === "PGRST202") {
-    throw new Error("ระบบบันทึกยังไม่พร้อม กรุณาแจ้งผู้ดูแลระบบ ข้อมูลเดิมยังอยู่ครบ");
+    throw new EditorFormIssue("selectionUnavailable");
   }
   if (error) throw error;
 }

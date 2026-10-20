@@ -80,7 +80,8 @@ for (const config of sections) {
     });
     const submit = form.locator('button[type=submit]');
     await submit.click(); await expect(submit).toBeDisabled();
-    await expect(form.getByRole('alert')).toContainText('ทดสอบบันทึกคลังล้มเหลว');
+    await expect(form.getByRole('alert')).toContainText(`ยืนยันการบันทึก${config.label}ไม่สำเร็จ`);
+    await expect(page.locator('body')).not.toContainText('ทดสอบบันทึกคลังล้มเหลว');
     for (const index of [0, 1, 2]) await expect(checkbox(index)).toBeChecked();
     page.once('dialog', dialog => dialog.dismiss());
     await form.getByRole('link', { name: `จัดการ${config.label}ในคลัง`, exact: true }).click();
@@ -112,7 +113,8 @@ for (const config of sections) {
     await expect(form.getByText('Tag นี้', { exact: false })).toBeVisible();
     await expect(form.getByText(`ยังไม่มี${config.label}ในคลัง`, { exact: true })).toHaveCount(0);
     state.mode = 'error'; await page.reload(); await open();
-    await expect(form.getByRole('alert')).toContainText('ทดสอบโหลดคลังล้มเหลว');
+    await expect(form.getByRole('alert')).toContainText(`โหลดข้อมูล${config.label}ไม่สำเร็จ`);
+    await expect(page.locator('body')).not.toContainText('ทดสอบโหลดคลังล้มเหลว');
     await expect(form.getByText(`ยังไม่มี${config.label}ในคลัง`, { exact: true })).toHaveCount(0);
     await expect(form.locator('button[type=submit]')).toBeDisabled();
     state.mode = 'empty'; await page.reload(); await open();

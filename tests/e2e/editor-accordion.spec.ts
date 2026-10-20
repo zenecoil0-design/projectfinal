@@ -53,7 +53,8 @@ test('save failure stays, success advances, last section never wraps, and a dela
   await page.getByLabel('ชื่อบนหน้าปก', { exact: true }).fill('รอบบันทึก');
   await page.route('**/rest/v1/covers?**', route => route.request().method() === 'POST' ? route.fulfill({ status: 500, json: { message: 'Mock accordion save failure' } }) : route.continue());
   await page.locator('form:visible button[type=submit]').click();
-  await expect(page.getByText('Mock accordion save failure')).toBeVisible();
+  await expect(page.getByText('ยืนยันการบันทึกหน้าปกไม่สำเร็จ', { exact: false })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('Mock accordion save failure');
   await expect(page.locator('#editor-heading-cover')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByLabel('ชื่อบนหน้าปก', { exact: true })).toHaveValue('รอบบันทึก');
   await page.unroute('**/rest/v1/covers?**');

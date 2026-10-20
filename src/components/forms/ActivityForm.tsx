@@ -4,7 +4,7 @@ import { useEditorTags } from "@/components/editor/useEditorTags";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { formLoadError, formSaveError } from "@/lib/editor/form-errors";
 
 import {
   useEffect,
@@ -399,8 +399,7 @@ export default function ActivityForm({
           );
 
           setLoadError(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลดผลงานและกิจกรรมได้"
+            formLoadError("activity")
           );
         } finally {
           if (!cancelled) {
@@ -508,8 +507,7 @@ export default function ActivityForm({
       );
 
       setSaveError(
-        getErrorMessage(error) ||
-          "ไม่สามารถบันทึกผลงานและกิจกรรมได้"
+        formSaveError("activity", error)
       );
     } finally {
       setIsSaving(false);
