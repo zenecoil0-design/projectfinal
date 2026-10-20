@@ -194,7 +194,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M05.01 สร้าง เปิด และเปลี่ยนชื่อ | TODO | มีสร้าง/เปิด ยังไม่มี rename | ต่อยอดหลายพอร์ตเดิม เพิ่ม rename และเปิดแก้ทุกหมวด แยกชื่อในรายการกับหัวปก | ชื่อใหม่คงอยู่และไม่ไปเปลี่ยนเนื้อหาปกโดยไม่ตั้งใจ |
+| M05.01 สร้าง เปิด และเปลี่ยนชื่อ | PARTIAL | มีสร้าง/เปิด และ [rename จาก Dashboard](verification/PORTFOLIO_RENAME_REVIEW.md): server-confirmed title-only, owner filters, safe error/retry, async guard; mock ตรวจ reload/Editor/ชื่อไฟล์และปกไม่เปลี่ยน | ยังต้องตรวจ integration/สิทธิ์กับระบบจริงและอุปกรณ์จริง; ไม่ถือว่าทั้งระบบจัดการพอร์ตเสร็จ | ชื่อจัดการแยกจากหัวปก; ผล mock ไม่แทน RLS จริง; ทำสำเนา/ลบและ Autosave ยังอยู่ .02/.03 |
 | M05.02 ทำสำเนาและลบพอร์ต | TODO | ยังไม่พบครบ | copy เนื้อหา snapshot รูป ลำดับ visibility สี template เป็นพอร์ตอิสระแต่คง source link; ลบเฉพาะฉบับ | สำเนาแก้ไม่กระทบต้นฉบับ; ลบพอร์ตไม่ลบคลัง/asset ที่ยังใช้ |
 | M05.03 Autosave draft และสถานะ | TODO | มี dirty/manual save | เริ่มหลังโหลดครบ debounce/queue ต่อพอร์ต เก็บ draft ไม่ครบได้; saving/saved/error/retry อิง revision | ไม่บันทึกค่าเริ่มต้นทับข้อมูลตอนโหลด; saved หลัง server ยืนยันค่าล่าสุด |
 | M05.04 ทนเน็ตและคำตอบล่าช้า | PARTIAL | [Accordion](verification/EDITOR_ACCORDION_REVIEW.md)/[Tags](verification/EDITOR_TAG_LOADING_REVIEW.md) กัน late save/crop/retry ของ session เก่าแล้ว | offline/Autosave queue/revision/conflict สองแท็บและข้ามเครื่องยังไม่ทำ | ไม่ใช้ lifecycle mock แทน conflict handling |
