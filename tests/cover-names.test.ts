@@ -21,12 +21,12 @@ test("cover name migration preserves displayed names, upserts only own cover and
     await save(PA,'ใหม่','บนปก');
     await save(PA,'ใหม่','บนปก');
     assert.equal((await db.query("TABLE covers")).rows.length,1);
-    assert.equal((await db.query("SELECT first_name FROM profiles")).rows[0].first_name,'เดิม');
+    assert.equal((await db.query<{ first_name: string | null }>("SELECT first_name FROM profiles")).rows[0].first_name,'เดิม');
     await assert.rejects(save(PB,'ข้าม','บัญชี'),/row-level security/);
     await save(PA,'','');
     await db.exec("RESET ROLE");
     await db.exec(migration);
     assert.deepEqual((await db.query("SELECT first_name,last_name FROM covers WHERE portfolio_id=$1",[PA])).rows,[{first_name:'',last_name:''}]);
-    assert.equal((await db.query("SELECT title FROM covers WHERE portfolio_id=$1",[PB])).rows[0].title,'Other');
+    assert.equal((await db.query<{ title: string | null }>("SELECT title FROM covers WHERE portfolio_id=$1",[PB])).rows[0].title,'Other');
   } finally { await db.close(); }
 });

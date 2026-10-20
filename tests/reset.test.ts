@@ -13,11 +13,11 @@ test("reset clears only application test data and preserves accounts, signup tri
     assert.deepEqual((await db.query("TABLE auth.users")).rows, authBefore);
     assert.deepEqual((await db.query("TABLE public.users")).rows, usersBefore);
     for (const table of (await db.query<{tablename:string}>("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'users'")).rows) {
-      assert.equal((await db.query(`SELECT count(*)::int AS n FROM public.${table.tablename}`)).rows[0].n, 0, table.tablename);
+      assert.equal((await db.query<{ n: number }>(`SELECT count(*)::int AS n FROM public.${table.tablename}`)).rows[0].n, 0, table.tablename);
     }
     assert.equal((await db.query("TABLE storage.objects")).rows.length, 1);
     await db.query("UPDATE auth.users SET email='changed@example.invalid' WHERE id=$1", [A]);
-    assert.equal((await db.query("SELECT email FROM public.users WHERE id=$1", [A])).rows[0].email, "changed@example.invalid");
+    assert.equal((await db.query<{ email: string }>("SELECT email FROM public.users WHERE id=$1", [A])).rows[0].email, "changed@example.invalid");
   } finally { await db.close(); }
 });
 test("reset rejects an expanded inventory and unknown external FK without losing data", async () => {

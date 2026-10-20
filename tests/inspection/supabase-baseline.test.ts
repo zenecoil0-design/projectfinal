@@ -48,7 +48,7 @@ test('metadata baseline: TRUNCATE privilege bypasses row filters when SQL execut
    grant select,truncate on records to authenticated;set role authenticated;`);
   assert.equal((await db.query('select * from records')).rows.length,0);
   await db.exec('truncate records;reset role;');
-  assert.equal((await db.query('select count(*)::int as n from records')).rows[0].n,0);
+  assert.equal((await db.query<{ n: number }>('select count(*)::int as n from records')).rows[0].n,0);
  } finally {await db.close();}
 });
 

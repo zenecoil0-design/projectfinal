@@ -48,7 +48,7 @@ test("foundation keeps one section per portfolio, rejects blank titles and grant
       await db.query(`INSERT INTO user_library_${plural}(user_id,title) VALUES($1,'ชื่อทดสอบ')`, [A]);
     }
     await db.query("INSERT INTO user_library_activity_images(activity_id,image_url) VALUES($1,'test.png')", [LA]);
-    assert.equal((await db.query("UPDATE user_library_activity_images SET sort_order=3 RETURNING sort_order")).rows[0].sort_order, 3);
+    assert.equal((await db.query<{ sort_order: number }>("UPDATE user_library_activity_images SET sort_order=3 RETURNING sort_order")).rows[0].sort_order, 3);
     await assert.rejects(db.query("UPDATE user_library_activity_images SET activity_id=$1", [LB]), /row-level security/);
     await db.exec("RESET ROLE");
     await asUser(db, B);
@@ -92,12 +92,12 @@ test("foundation reruns safely, limits grants, retains signup/email triggers and
     const C = "00000000-0000-0000-0000-000000000003";
     await db.query("INSERT INTO auth.users VALUES($1,'c@example.invalid')", [C]);
     await db.query("UPDATE auth.users SET email='updated@example.invalid' WHERE id=$1", [C]);
-    assert.equal((await db.query("SELECT email FROM public.users WHERE id=$1", [C])).rows[0].email,"updated@example.invalid");
+    assert.equal((await db.query<{ email: string }>("SELECT email FROM public.users WHERE id=$1", [C])).rows[0].email,"updated@example.invalid");
     const tables = (await db.query<{tablename:string}>("SELECT tablename FROM pg_tables WHERE schemaname='public'")).rows;
     for (const {tablename} of tables) {
       for (const role of ["anon","authenticated"]) {
         for (const privilege of role === "anon" ? ["SELECT","INSERT","UPDATE","DELETE","TRUNCATE","REFERENCES","TRIGGER"] : ["TRUNCATE","REFERENCES","TRIGGER"]) {
-          assert.equal((await db.query("SELECT has_table_privilege($1,$2,$3) AS allowed", [role,`public.${tablename}`,privilege])).rows[0].allowed,false,`${role}.${tablename}.${privilege}`);
+          assert.equal((await db.query<{ allowed: boolean }>("SELECT has_table_privilege($1,$2,$3) AS allowed", [role,`public.${tablename}`,privilege])).rows[0].allowed,false,`${role}.${tablename}.${privilege}`);
         }
       }
     }
@@ -118,7 +118,7 @@ test("invalid existing data aborts migration atomically without silently deletin
     assert.equal((await db.query("TABLE portfolio_activities")).rows.length,3);
     // Earlier NOT NULL and FK changes were rolled back too.
     await db.exec("INSERT INTO portfolios DEFAULT VALUES");
-    assert.equal((await db.query("SELECT confdeltype FROM pg_constraint WHERE conname='covers_portfolio_id_fkey'")).rows[0].confdeltype,"a");
+    assert.equal((await db.query<{ confdeltype: string }>("SELECT confdeltype FROM pg_constraint WHERE conname='covers_portfolio_id_fkey'")).rows[0].confdeltype,"a");
   } finally { await db.close(); }
 });
 
