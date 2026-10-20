@@ -1,14 +1,16 @@
-> สถานะล่าสุด 2026-10-15: เจ้าของอนุญาตล้างข้อมูลทดลองโดยเก็บบัญชี ไม่ต้อง backup ชุดนี้ก่อน reset; ได้ trigger function bodies ครบแล้ว อนุญาตเตรียม/ทดสอบ M01 ใน local ต่อได้ เจ้าของรัน reset/foundation แล้ว เก็บบัญชี 2 บัญชี; Storage เหลือ 15 placeholders และยืนยันบันทึกปก/รีเฟรชผ่าน; integration ส่วนอื่นยังรอตรวจ ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
+> สถานะตรวจเอกสารล่าสุด 2026-10-20: ทำ UI คลัง/ตัวเลือก, load/retry/draft guards, Accordion, Editor Tags, Minimal หกหมวด, PDF ไม่มีเพดานหน้า/ยืนยันไฟล์ใหญ่, เลขต่อเนื่องและสารบัญระดับหมวดแล้วตามขอบเขตแต่ละรอบ ไม่ใช่ครบทุกข้อกำหนด ดู [ผลตรวจชนิด tests และสถานะ](verification/TEST_TYPES_AND_STATUS_REVIEW.md) ผล browser/PDF ที่อ้างเป็นหลักฐานรอบก่อน; รอบนี้ตรวจ full-repo typecheck และ PGlite tests เท่านั้น
+>
+> หลักฐานเจ้าของ 2026-10-15: reset/foundation ทำแล้ว เก็บบัญชี 2 บัญชี Storage เหลือ 15 placeholders และยืนยันบันทึกปก/รีเฟรชผ่าน; การยกเว้น backup ใช้เฉพาะข้อมูลทดลองชุดนั้น ไม่ให้รันซ้ำหรือถือว่า integration ทั้งระบบผ่าน ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
 
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
-ฉบับ 1.4 • 15 ตุลาคม 2569 (Asia/Bangkok)
+ฉบับ 1.5 • 20 ตุลาคม 2569 (Asia/Bangkok)
 
 ## 1. เป้าหมายของเอกสาร
 
 เอกสารนี้เป็นแผนงานกลางสำหรับไค ผู้พัฒนา หรือ AI ที่มารับช่วงต่อ ใช้บอกว่าจะทำอะไร ทำก่อน–หลังอย่างไร ต้องได้ผลลัพธ์อะไร และมีหลักฐานแบบใดจึงนับว่าเสร็จ แบ่งเป็น **13 ส่วนใหญ่ (M00–M12) และ 65 งานย่อย** รวมช่วงเตรียมงานและทดสอบส่งมอบ
 
-ผู้ใช้มอบหมายให้เริ่มดำเนินงานแล้ว ปัจจุบันทำ M00 baseline และเตรียมเครื่องมือตรวจฐานข้อมูลจริง ผลตรวจอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) เริ่ม migration พื้นฐาน M01.03/.04 แล้ว เจ้าของรัน foundation บน Supabase และส่งผลแล้ว ยังไม่จบ snapshot/revision
+ฐานเริ่มแผนทำ M00 baseline และ M01 foundation แล้ว ต่อมามี checkpoint UI/ความทนทาน/Accordion/เทมเพลต/PDF ตามรายงาน verification ที่เชื่อมในตารางด้านล่าง รายงานฐานเดิมอยู่ใน [M00_BASELINE_REPORT.md](M00_BASELINE_REPORT.md) เจ้าของรัน foundation บน Supabase และส่งผลแล้ว แต่ snapshot/revision และ integration ทั้งระบบยังไม่จบ
 
 - Repository: `zenecoil0-design/projectfinal`
 - Branch งานปัจจุบัน: `codex/portfolio-next-phase`
@@ -32,13 +34,14 @@
 
 ## 3. สถานะ: แยกของเดิมออกจากงานใหม่
 
-คอลัมน์ “ฐานเดิม” อ้างสิ่งที่พบจาก audit ส่วน “สถานะงาน” บอกการดำเนินงานตามแผนนี้ การมีโค้ดแล้วไม่ทำให้เป็น DONE โดยอัตโนมัติ
+คอลัมน์ “ฐานเดิม” ใช้แยกฐาน audit เดิมจาก checkpoint/หลักฐานที่ทำต่อมา โดยบอกเวลาและลิงก์ ส่วน “สถานะงาน” ครอบคลุมผลส่งมอบทั้งหมดของแถวนั้น การมีโค้ดหรือจบรอบย่อยไม่ทำให้ทั้งแถวเป็น DONE โดยอัตโนมัติ ลิงก์รายงานเดิมเป็นผล ณ รอบนั้น ไม่ใช่ผลรันทดสอบใหม่วันที่ 20 ต.ค.
 
 | สถานะงาน | ความหมาย | เงื่อนไขการใช้ |
 | --- | --- | --- |
 | TODO | ยังไม่เริ่มงานตามแผน | อาจมีโค้ดเดิมอยู่แล้ว และอาจรอ dependency ตามปกติ |
 | READY | พร้อมหยิบมาทำ | prerequisites ของงานนั้นตรวจแล้ว ผู้รับงานยังไม่ลงมือ |
 | IN_PROGRESS | กำลังดำเนินการจริง | ต้องมีผู้รับผิดชอบ จุดเริ่ม/HEAD และสิ่งที่กำลังแก้ |
+| PARTIAL | มีผลส่งมอบบางส่วนพร้อมหลักฐาน แต่ยังไม่ครบขอบเขตแถวนั้น | ระบุส่วนที่ทำแล้ว หลักฐาน และส่วนที่เหลือ; ไม่เท่ากับ DONE หรือมีผู้กำลังแก้ส่วนที่เหลืออยู่ตอนนี้ |
 | BLOCKED | ติดอุปสรรคจริง | ระบุเหตุผล สิ่งที่ขาด คน/งานที่จะปลด และงานที่ยังทำต่อได้ |
 | VERIFY | ทำ implementation แล้ว รอตรวจ | ยังมี validation/test/visual review ที่ต้องทำ |
 | READY_TO_PUSH | ตรวจตามเกณฑ์ผ่านแล้ว รอขึ้น branch | ระบุผลตรวจและไฟล์ที่เปลี่ยน |
@@ -47,9 +50,9 @@
 
 **สถานะผลทดสอบแยกต่างหาก:** NOT_RUN, PASS, FAIL, BLOCKED ตาม SYSTEM_TEST_PLAN ห้ามนำ READY หรือมีโค้ดแล้วไปแทน PASS
 
-สถานะปัจจุบันหลัง checkpoint นี้ถูก push: M00.01–M00.03 เป็น DONE, M00.04–M00.05 เป็น BLOCKED โดย M00.05 มี fixture manifest แล้วแต่ยังไม่มี staging fixtures จริง M01.03/.04 เป็น IN_PROGRESS โดยมี checkpoint foundation ผ่าน local tests แล้ว ส่วนงานอื่นคง TODO รวม 3 DONE / 2 BLOCKED / 2 IN_PROGRESS / 58 TODO ไม่ใช้จำนวนนี้เป็นเปอร์เซ็นต์ความสมบูรณ์ของระบบ
+ประวัติ checkpoint 15 ต.ค. ฉบับ 1.4 เคยสรุป 3 DONE / 2 BLOCKED / 2 IN_PROGRESS / 58 TODO ตัวเลขนี้ไม่ใช่สถานะปัจจุบันและไม่ใช้คำนวณเปอร์เซ็นต์ความสมบูรณ์ หลังมีงานต่อเนื่อง ให้ใช้ตารางรายงานย่อยด้านล่างและ [ตารางก่อน/หลังพร้อมหลักฐาน](verification/TEST_TYPES_AND_STATUS_REVIEW.md) แทน ไม่รวมจำนวน test คนละรอบเป็นผลการรันครั้งเดียว
 
-สถานะส่วนใหญ่: READY เมื่อเริ่มงานย่อยแรกได้; IN_PROGRESS เมื่อมีงานย่อยเริ่มจริง; DONE เฉพาะเมื่องานย่อยทั้งหมด DONE และเกณฑ์จบส่วนผ่าน งานที่รอ prerequisite ตามแผนให้คง TODO ไม่ใช้ BLOCKED จนมีอุปสรรคจริง
+สถานะส่วนใหญ่: READY เมื่อเริ่มงานย่อยแรกได้; IN_PROGRESS เมื่อมีงานย่อยเริ่มจริงหรือมี checkpoint PARTIAL/DONE แต่ส่วนอื่นยังค้าง (ไม่ได้หมายความว่ากำลังเขียนฟีเจอร์เหล่านั้นในรอบนี้); DONE เฉพาะเมื่องานย่อยทั้งหมด DONE และเกณฑ์จบส่วนผ่าน งานที่รอ prerequisite ตามแผนให้คง TODO ไม่ใช้ BLOCKED จนมีอุปสรรคจริง
 
 ## 4. ลำดับทำงานและขอบเขต
 
@@ -71,26 +74,26 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M00 | ตั้งต้นงานและยืนยันสภาพแวดล้อม | เริ่มได้ทันที | BLOCKED | ได้ฐานโค้ดและข้อมูลจริงที่เชื่อถือได้ก่อนออกแบบ migration |
 | M01 | โครงสร้างข้อมูล สิทธิ์ และสัญญาการบันทึก | M00 (เตรียม local ต่อได้ตามคำสั่งล่าสุด) | IN_PROGRESS | มีฐานข้อมูลรองรับข้อกำหนดทั้งหมดโดยไม่ทำฟีเจอร์เดิมเสีย |
-| M02 | คลังข้อมูลและ Tags ตามข้อกำหนดใหม่ | M01 | TODO | คลังทั้งสามหมวดพร้อมเป็นแหล่งข้อมูลที่ถูกต้อง |
-| M03 | เลือกข้อมูลและรูปเข้าแต่ละพอร์ตแบบ B | M01, M02 | TODO | พอร์ตเก็บเนื้อหาของตนเองและเลือกภาพโดยไม่แก้คลัง |
+| M02 | คลังข้อมูลและ Tags ตามข้อกำหนดใหม่ | M01 | IN_PROGRESS | UI/load-retry/dirty guards ทำแล้วบางส่วน; validation/จำนวนรูป/version/integration ยังค้าง |
+| M03 | เลือกข้อมูลและรูปเข้าแต่ละพอร์ตแบบ B | M01, M02 | IN_PROGRESS | UI/ลำดับ/Editor Tags retry ทำแล้ว; snapshot/เลือกรูปรายพอร์ต/รับอัปเดตยังค้าง |
 | M04 | รับอัปเดต ลบคลัง และวงจรข้อมูล | M03 | TODO | ข้อมูลหลายพอร์ตสอดคล้องโดยผู้ใช้ควบคุมการรับอัปเดตได้ |
-| M05 | จัดการพอร์ตและ Autosave | M04 | TODO | พอร์ตแก้ได้ครบ บันทึกเอง และไม่สูญหายเมื่อสลับงาน |
-| M06 | ฟอร์มเนื้อหา อายุ และ Editor แบบพับขยาย | M05 | TODO | กรอกง่ายและรักษาข้อมูลตามฟอร์มเดิม พร้อม UI ใหม่ที่ตกลง |
-| M07 | Responsive หน้าหลักและ Preview | M06 | TODO | ใช้งานบนคอมและโทรศัพท์ได้โดย A4 คงสัดส่วน |
-| M08 | Document model การแบ่งหน้า สารบัญ และเลขหน้า | M06, M07 | TODO | มีรายการหน้ากลางที่ preview และ PDF ใช้ตรงกัน |
-| M09 | เทมเพลตสมบูรณ์สามแบบและสองสี | M08 | TODO | สามแบบต่างบุคลิกแต่รองรับกติกาเดียวกันทั้งหมด |
-| M10 | PDF พร้อมใช้งานและการยืนยันไฟล์ใหญ่ | M05, M08, M09 | TODO | ได้ PDF ครบหน้า อ่านชัด และจัดการเป้าหมายขนาดอย่างถูกต้อง |
+| M05 | จัดการพอร์ตและ Autosave | M04 | IN_PROGRESS | lifecycle/dirty/export guards บน manual save มีแล้ว; Autosave/conflict/จัดการพอร์ตยังค้าง |
+| M06 | ฟอร์มเนื้อหา อายุ และ Editor แบบพับขยาย | M05 | IN_PROGRESS | UI หกฟอร์ม/Accordion ทำแล้ว; อายุสองโหมด/visibility/กฎข้อมูลว่างยังค้าง |
+| M07 | Responsive หน้าหลักและ Preview | M06 | IN_PROGRESS | แผงมือถือ/fit/section-ID scroll มีหลักฐาน mock; zoom/อุปกรณ์จริง/หน้าแรกยังค้าง |
+| M08 | Document model การแบ่งหน้า สารบัญ และเลขหน้า | M06, M07 | IN_PROGRESS | เลขต่อเนื่อง/สารบัญระดับหมวด/ไม่มีเพดานหน้าแล้ว; page model เต็ม/split/visibility ยังค้าง |
+| M09 | เทมเพลตสมบูรณ์สามแบบและสองสี | M08 | IN_PROGRESS | Minimal หกหมวดและทั้งสามแบบมี TOC/เลขหน้า; สองสี/ขอบเขตเป้าหมายอื่นยังค้าง |
+| M10 | PDF พร้อมใช้งานและการยืนยันไฟล์ใหญ่ | M05, M08, M09 | IN_PROGRESS | PDF หลายหน้า/guards/ยืนยัน Blob เดิมมีหลักฐาน; revision/quality acceptance/อุปกรณ์จริงยังค้าง |
 | M11 | บัญชีและการกู้รหัสผ่าน | M00, M01 | TODO | เข้าสู่ระบบได้ตามเงื่อนไขพัฒนาและกู้บัญชีได้ครบวงจร |
-| M12 | ทดสอบรวม แก้ข้อผิดพลาด และส่งมอบ | M01–M11 ทุกส่วนผ่านเกณฑ์จบ | TODO | ยืนยันทั้งระบบตามข้อกำหนดด้วยหลักฐานจริงก่อนสรุปเสร็จ |
+| M12 | ทดสอบรวม แก้ข้อผิดพลาด และส่งมอบ | M01–M11 ทุกส่วนผ่านเกณฑ์จบ | IN_PROGRESS | focused regression/typecheck ทำแล้ว; staging/100 เคส/อุปกรณ์จริง/ส่งมอบยังไม่ครบ |
 
 ## 6. งานย่อยและเกณฑ์จบแต่ละส่วน
 
-ไครับผิดชอบ M00 ในรอบนี้ งานส่วนอื่นยังไม่มอบหมาย ให้ผู้ลงมือกรอกทะเบียนในข้อ 10 พร้อม Task ID ก่อนแก้ ตำแหน่งไฟล์ต่อไปนี้เป็นจุดเริ่มตรวจ ไม่ใช่ข้อจำกัดว่าห้ามแก้ไฟล์อื่น และไม่ใช่การยืนยันว่าชื่อไฟล์ใหม่ถูกสร้างแล้ว
+ข้อความผู้รับผิดชอบ M00 และ “ยังไม่มอบหมายส่วนอื่น” ในฐานฉบับ 1.4 เป็นประวัติเริ่มแผน ต่อมามีคำสั่งเฉพาะรอบและรายงาน verification แล้ว รอบ 20 ต.ค. Sol รับงานแก้ types/tests และปรับสถานะเท่านั้น ไม่ได้รับมอบหมายให้เริ่มฟีเจอร์ที่เหลือ ตำแหน่งไฟล์ต่อไปนี้เป็นจุดเริ่มตรวจ ไม่ใช่การยืนยันว่าผลส่งมอบเป้าหมายครบแล้ว
 
 ### M00 — ตั้งต้นงานและยืนยันสภาพแวดล้อม
 
 **เป้าหมาย:** ได้ฐานโค้ดและข้อมูลจริงที่เชื่อถือได้ก่อนออกแบบ migration  
-**สถานะส่วน:** BLOCKED • **Dependency:** ได้รับ metadata/Auth/inventory แล้ว; รอ backup/restore และ staging; ดู M00_INVENTORY_REVIEW.md
+**สถานะส่วน:** BLOCKED • **Dependency:** ได้ metadata/inventory และหลักฐาน reset/foundation จากเจ้าของแล้ว; ยังขาด staging fixtures/การยืนยันปิดทะเบียน M00.04 ตามข้อยกเว้นข้อมูลเดิม ดู M01_DATABASE_SETUP.md และรายงานสถานะรอบนี้ ไม่ขอรัน reset ซ้ำ
 **จุดเริ่มตรวจ:** `AGENTS.md, package.json, package-lock.json, playwright.config.ts, supabase/migrations`  
 **ผูกกับ audit:** F02,F12,F16,F39,F40  
 **เคสตรวจรับ:** REG-02, SEC-01, SEC-02
@@ -100,7 +103,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M00.01 ตรวจ baseline และกติกา | DONE | มีเอกสาร/รายงานแล้ว | ตรวจ remote/branch/working tree และ HEAD; อ่านเอกสารหลักกับคู่มือ Next.js ที่ติดตั้ง รักษางานค้างของผู้ใช้ | บันทึก HEAD และรายการเปลี่ยนหลัง audit; ไม่ reset ย้อนหลัง |
 | M00.02 ตั้งสภาพแวดล้อมทดสอบ | DONE | มี config/test เดิม | ติดตั้งตาม lockfile แยก mock และ staging ตรวจ build config ไม่ใส่ secret ในรายงาน | รัน baseline lint/build/tests และเก็บผลจริง; ปัญหาเดิมแยกจากปัญหาใหม่ |
 | M00.03 สำรวจ Supabase จริง | DONE | ได้ metadata และภาพ Auth จากเจ้าของแล้ว | อ่าน schema เต็ม constraints RPC RLS Storage policies และ Auth settings; ตรวจว่า migration เดิมติดตั้งแล้วหรือไม่ | มีรายการสิ่งที่ยืนยันได้/ยังเข้าถึงไม่ได้; ภาพ schema เก่าไม่ใช้แทนข้อมูลจริง |
-| M00.04 สำรวจข้อมูลทดลองและสำรอง | BLOCKED | ได้ยอดจริงแล้ว; ยังไม่มีหลักฐาน backup/restore | นับเกียรติบัตร 3–4 รูป ข้อมูลวันที่/หน่วยงาน พอร์ตและไฟล์อ้างอิง; เตรียม backup/restore ที่ตรวจได้ | ระบุผลกระทบและแนวทางเก็บ/ย้ายข้อมูลก่อนลบ ไม่มีการล้างข้อมูลเหมารวม |
+| M00.04 สำรวจข้อมูลทดลองและสำรอง | BLOCKED | ประวัติเดิมติด backup; เจ้าของยกเว้นเฉพาะชุดทดลองและรัน reset แล้วตาม [M01](M01_DATABASE_SETUP.md) | ต้องยืนยันปิดทะเบียน/เกณฑ์ backup-restore ที่ยังใช้กับข้อมูลใหม่ ไม่ถือว่าข้อขัดข้องทั้งหมดคลี่คลายจากบันทึกเก่า | ไม่เปลี่ยนเป็น PASS/DONE ในรอบเอกสาร ไม่รัน reset/backup กับฐานจริงหรือขอ reset ซ้ำ |
 | M00.05 เตรียม fixtures และข้อสรุปทางเทคนิค | BLOCKED | มีแผนทดสอบแล้ว | สร้างบัญชี A/B และข้อมูลทดสอบตาม SYSTEM_TEST_PLAN; ลงทะเบียนคำถามที่ยังเปิด | มี fixtures ที่ reset แยกเคสได้ และรายการคำถามพร้อมผู้รับผิดชอบ |
 
 **เกณฑ์จบ M00:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
@@ -108,7 +111,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M01 — โครงสร้างข้อมูล สิทธิ์ และสัญญาการบันทึก
 
 **เป้าหมาย:** มีฐานข้อมูลรองรับข้อกำหนดทั้งหมดโดยไม่ทำฟีเจอร์เดิมเสีย  
-**สถานะส่วน:** IN_PROGRESS • **Dependency:** M00 (live verification ยังรอ)
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M00; เจ้าของยืนยัน reset/foundation/ปกแล้ว แต่ staging/integration ของขอบเขต M01 ที่เหลือยังรอ ไม่ใช่รอให้ลง foundation เดิมซ้ำ
 **จุดเริ่มตรวจ:** `supabase/migrations, src/lib/supabase, src/lib/editor, src/store`  
 **ผูกกับ audit:** F11,F12,F13,F14,F16,F19,F23,F26,F31,F39  
 **เคสตรวจรับ:** SEC-01, SEC-02, SEC-03, SEC-04
@@ -126,36 +129,36 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M02 — คลังข้อมูลและ Tags ตามข้อกำหนดใหม่
 
 **เป้าหมาย:** คลังทั้งสามหมวดพร้อมเป็นแหล่งข้อมูลที่ถูกต้อง  
-**สถานะส่วน:** TODO • **Dependency:** M01  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M01; ส่วนที่เหลือยังต้องใช้ data contract ใหม่
 **จุดเริ่มตรวจ:** `src/components/my-data, src/components/images/CropInput.tsx, src/app/my-data`  
 **ผูกกับ audit:** F04,F05,F06,F07,F08,F09  
 **เคสตรวจรับ:** LIB-01, LIB-02, LIB-03, LIB-04, LIB-05, LIB-06, LIB-07, LIB-08, LIB-09, LIB-10, LIB-11
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M02.01 ปรับฟอร์มกิจกรรม/เกียรติบัตร | TODO | มี CRUD แต่ช่องเกิน | ชื่อบังคับ รายละเอียด/รูป/Tags ไม่บังคับ เอาวันที่/หน่วยงานออกจาก UI ตามแผนจัดการข้อมูลเก่า | ชื่ออย่างเดียวบันทึกได้ ชื่อช่องว่างล้วนถูกปฏิเสธทั้ง UI/API |
+| M02.01 ปรับฟอร์มกิจกรรม/เกียรติบัตร | PARTIAL | [UI คลัง](verification/MY_DATA_UI_REVIEW.md) จัดการ์ด/modal/input/รูปแล้ว | ยังมีวันที่/หน่วยงานและ validation เดิม; ปรับตามข้อกำหนดพร้อมแผนรักษาข้อมูลเก่า | ไม่ใช้ผล UI mock แทนการตรวจ title-only/validation/API ครบ |
 | M02.02 จัดข้อจำกัดภาพ | TODO | เกียรติบัตรเดิมยังเป็น 4 | กิจกรรม 4 เกียรติบัตร 2; ตรวจเพิ่มพร้อมกัน/แก้ไข/ไฟล์เสีย; รักษารูปเดิมเมื่อ error | UI และชั้นข้อมูลใช้ข้อจำกัดตรงกัน ไม่ตัดรูปส่วนเกินเงียบ ๆ |
-| M02.03 รักษาฟอร์มการศึกษาและรูป | TODO | มีฐานแล้ว | ใช้ช่องข้อมูลเดิม ระดับ/โรงเรียน และ optional logo; ปรับ crop/preview ให้ภาพไม่บิด | สร้างแก้เปิดใหม่ครบ; โลโก้ไม่บังคับและข้อความไทยยาวใช้ได้ |
-| M02.04 จัด Tags ส่วนตัว | TODO | มีฐานต้องตรวจสิทธิ์ | สร้าง/เลือก/กรอง Tags ของบัญชีตนเอง รองรับไม่ใช้ Tags และชื่อเหมือนอีกบัญชี | ไม่มีข้อมูล Tags ข้ามบัญชีทั้ง UI/API |
-| M02.05 ทำ manual save ของคลังให้ครบ | TODO | มีบันทึกเดิมต้องเสริม | เตือนเมื่อออกโดยมีข้อมูลค้าง; version เปลี่ยนเมื่อข้อมูลแก้สำเร็จ; upload/DB failure กู้คืนได้ | server ยืนยันก่อนแจ้งสำเร็จ และไม่มีข้อมูลครึ่งรายการ |
+| M02.03 รักษาฟอร์มการศึกษาและรูป | PARTIAL | [UI](verification/MY_DATA_UI_REVIEW.md) ปรับฟอร์ม/optional logo/ข้อความยาว; CRUD mock ผ่าน | ยังต้องตรวจ integration จริง/อุปกรณ์จริงและ validation ตามเกณฑ์ทั้งหมด | ผล mock ไม่แทนสิทธิ์/Storage จริง |
+| M02.04 จัด Tags ส่วนตัว | PARTIAL | [load/retry](verification/MY_DATA_RESILIENCE_REVIEW.md) แยก Tags failure และปิด save เมื่อ metadata ไม่ครบแล้ว | ยังต้องตรวจ Tags ข้ามบัญชีและการสร้าง/กรองผ่าน API จริงตาม M01 | ไม่อ้างว่า retry mock พิสูจน์ RLS แล้ว |
+| M02.05 ทำ manual save ของคลังให้ครบ | PARTIAL | [dirty guard](verification/MY_DATA_RESILIENCE_REVIEW.md) ครอบคลุม cancel/close/category/Link/beforeunload; fail เก็บ draft | Browser Back/Forward guard, version และ atomic upload/DB/cleanup ยังไม่ครบ | การเก็บ draft ไม่ได้ rollback คำขอที่สำเร็จไปแล้ว; ต้องตรวจ integration จริง |
 
 **เกณฑ์จบ M02:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
 ### M03 — เลือกข้อมูลและรูปเข้าแต่ละพอร์ตแบบ B
 
 **เป้าหมาย:** พอร์ตเก็บเนื้อหาของตนเองและเลือกภาพโดยไม่แก้คลัง  
-**สถานะส่วน:** TODO • **Dependency:** M01, M02  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M01, M02; snapshot/asset contract ยังไม่ทำ
 **จุดเริ่มตรวจ:** `src/components/forms/{EducationForm,ActivityForm,CertificateForm}.tsx, src/lib/editor/save-selection.ts, src/store`  
 **ผูกกับ audit:** F10,F11,F12,F13,F14  
 **เคสตรวจรับ:** SEL-01, SEL-02, SEL-03, SEL-04, SEL-05, SEL-06, SNP-01
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M03.01 โหลดข้อมูลล่าสุดก่อนเลือก | TODO | มี loader เดิม | refresh ต้นทางเมื่อเปิดตัวเลือกและกลับจากคลัง; แยก load failure ออกจากไม่มีรายการ | เลือกแล้วได้ version ล่าสุดที่ตรวจ ไม่ใช้ cache เก่าเงียบ ๆ |
-| M03.02 เลือกและจัดลำดับ | TODO | มีฐานลำดับแล้ว | รักษาลำดับตามการติ๊กทั้งสามหมวด แสดงอันดับที่เลือก ถอดแล้วเลือกใหม่ต่อท้าย | B ก่อน A คงอยู่หลัง reload และไม่กระทบคลัง |
+| M03.01 โหลดข้อมูลล่าสุดก่อนเลือก | PARTIAL | [UI selection](verification/LIBRARY_SELECTION_UI_REVIEW.md) และ [Editor Tags](verification/EDITOR_TAG_LOADING_REVIEW.md): main/metadata error แยก retry ไม่ทับ draft/baseline | ยังไม่มี source version/รับอัปเดตหลังแก้คลังตามแบบ B; พับ Accordion ไม่ fetch ใหม่ | Tags retry ไม่ส่ง Tags ใน save payload และไม่ markSaved; ยังต้องตรวจ integration |
+| M03.02 เลือกและจัดลำดับ | PARTIAL | [selection UI](verification/LIBRARY_SELECTION_UI_REVIEW.md) มี checkbox/ลำดับ/จำนวน/save fail/reload mock ครบสามหมวด | ยืนยันกับ integration จริงและ snapshot contract เมื่อทำ M03.04 | ไม่อ้างว่าลำดับ mock พิสูจน์แบบ B หรือเลือกรูปรายพอร์ตแล้ว |
 | M03.03 เลือกชุดรูปต่อพอร์ต | TODO | ยังไม่พบ | เลือก 0–4/0–2 รูปด้วย asset ID แยก checkbox รายการกับรูป | P1/P2 ใช้รูปต่างกันได้ คลังมีรูปครบและไม่มีกรอบเมื่อเลือกศูนย์รูป |
 | M03.04 บันทึก snapshot ถาวร | TODO | ยังไม่พบ B | คัดลอก payload/version/selected assets เข้าแต่ละพอร์ตแบบ atomic; โหลด preview จาก snapshot | การแก้คลังไม่ทับพอร์ตเงียบ ๆ และลำดับ/รูป persist |
-| M03.05 รองรับพอร์ตเดิมและข้อผิดพลาด | TODO | มี RPC atomic เป็นฐาน | ใช้ผล backfill และ version contract; กัน ID ต่างเจ้าของ/ซ้ำ/รูปไม่ใช่ของรายการและ rollback | เปิดพอร์ตเดิมได้และการบันทึกล้มเหลวไม่ล้าง selection เดิม |
+| M03.05 รองรับพอร์ตเดิมและข้อผิดพลาด | PARTIAL | RPC atomic เดิมและ [Tags retry](verification/EDITOR_TAG_LOADING_REVIEW.md) รักษา selection/order/dirty; local [foundation tests](verification/TEST_TYPES_AND_STATUS_REVIEW.md) ผ่าน | backfill/snapshot/version/selected assets และ live integration ยังไม่ครบ | ผล PGlite/Browser mock ไม่แทนระบบจริง |
 
 **เกณฑ์จบ M03:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
@@ -180,7 +183,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M05 — จัดการพอร์ตและ Autosave
 
 **เป้าหมาย:** พอร์ตแก้ได้ครบ บันทึกเอง และไม่สูญหายเมื่อสลับงาน  
-**สถานะส่วน:** TODO • **Dependency:** M04  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M04; guards ปัจจุบันยังเป็น manual save ไม่ใช่ Autosave
 **จุดเริ่มตรวจ:** `src/app/dashboard, src/components/home, src/components/portfolio, src/components/editor/EditorSession.tsx, src/store`  
 **ผูกกับ audit:** F17,F18,F19,F38  
 **เคสตรวจรับ:** PORT-01, PORT-02, PORT-03, PORT-04, PORT-05, PORT-06, SAVE-01, SAVE-02, SAVE-03, SAVE-04, SAVE-05, SAVE-06, SAVE-07, SAVE-08
@@ -190,33 +193,33 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M05.01 สร้าง เปิด และเปลี่ยนชื่อ | TODO | มีสร้าง/เปิด ยังไม่มี rename | ต่อยอดหลายพอร์ตเดิม เพิ่ม rename และเปิดแก้ทุกหมวด แยกชื่อในรายการกับหัวปก | ชื่อใหม่คงอยู่และไม่ไปเปลี่ยนเนื้อหาปกโดยไม่ตั้งใจ |
 | M05.02 ทำสำเนาและลบพอร์ต | TODO | ยังไม่พบครบ | copy เนื้อหา snapshot รูป ลำดับ visibility สี template เป็นพอร์ตอิสระแต่คง source link; ลบเฉพาะฉบับ | สำเนาแก้ไม่กระทบต้นฉบับ; ลบพอร์ตไม่ลบคลัง/asset ที่ยังใช้ |
 | M05.03 Autosave draft และสถานะ | TODO | มี dirty/manual save | เริ่มหลังโหลดครบ debounce/queue ต่อพอร์ต เก็บ draft ไม่ครบได้; saving/saved/error/retry อิง revision | ไม่บันทึกค่าเริ่มต้นทับข้อมูลตอนโหลด; saved หลัง server ยืนยันค่าล่าสุด |
-| M05.04 ทนเน็ตและคำตอบล่าช้า | TODO | มี reset/late-response บางส่วน | รักษาค่าค้างเมื่อ offline retry ไม่ซ้ำ; กัน stale response และสองแท็บชนกันตาม contract | ค่าล่าสุดไม่ถูกทับเงียบ ๆ; conflict มีวิธีกู้ข้อมูล; ข้ามเครื่องหลัง saved ได้ |
-| M05.05 เชื่อม lifecycle และ export | TODO | ต้องเชื่อมระบบใหม่ | สลับพอร์ต/บัญชี/ออกหน้าอย่างปลอดภัย export รอ revision ที่บันทึกแล้ว; ห้าม blob URL ถาวร | ข้อมูลไม่ข้ามบัญชี ไม่ export draft คนละฉบับ; รวมทดสอบลบแข่ง autosave |
+| M05.04 ทนเน็ตและคำตอบล่าช้า | PARTIAL | [Accordion](verification/EDITOR_ACCORDION_REVIEW.md)/[Tags](verification/EDITOR_TAG_LOADING_REVIEW.md) กัน late save/crop/retry ของ session เก่าแล้ว | offline/Autosave queue/revision/conflict สองแท็บและข้ามเครื่องยังไม่ทำ | ไม่ใช้ lifecycle mock แทน conflict handling |
+| M05.05 เชื่อม lifecycle และ export | PARTIAL | EditorSession dirty/main readiness และ [export lock/late result](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) มีแล้ว | ยังต้องเชื่อม saved revision/Autosave และลบแข่ง save ตามเป้าหมาย | Blob ชั่วคราวมี cleanup ไม่ใช่ asset ถาวร; integration ยังรอ |
 
 **เกณฑ์จบ M05:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
 ### M06 — ฟอร์มเนื้อหา อายุ และ Editor แบบพับขยาย
 
 **เป้าหมาย:** กรอกง่ายและรักษาข้อมูลตามฟอร์มเดิม พร้อม UI ใหม่ที่ตกลง  
-**สถานะส่วน:** TODO • **Dependency:** M05  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M05; UI checkpoint ไม่ต้องรอ Autosave แต่ไม่ปิดเป้าหมายทั้งส่วน
 **จุดเริ่มตรวจ:** `src/components/forms, src/components/layout, src/app/editor/page.tsx, src/store/useProfileStore.ts`  
 **ผูกกับ audit:** F20,F21,F22,F23,F24,F25,F26  
 **เคสตรวจรับ:** FORM-01, FORM-02, FORM-03, FORM-04, FORM-05, FORM-06, FORM-07, AGE-01, AGE-02, AGE-03, AGE-04, UI-01, UI-02, UI-03, UI-04, UI-05, UI-08
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M06.01 ปรับปก/คำนำ/ประวัติเดิม | TODO | มีฐานแล้ว | รักษาช่องเดิม ชื่อหัวปกเริ่ม PORTFOLIO ชื่อ/นามสกุล/โรงเรียน crop รูป ตัวอย่างคำนำ และ custom fields | แก้บันทึกเปิดใหม่ได้ครบ; ไม่เพิ่มช่องบังคับโดยไม่มีข้อกำหนด |
+| M06.01 ปรับปก/คำนำ/ประวัติเดิม | PARTIAL | UI ปรับแล้ว ชื่อ/รูปปกแยกจาก profile; [Accordion draft/crop](verification/EDITOR_ACCORDION_REVIEW.md), [หลักฐาน cover](M01_DATABASE_SETUP.md) | ตรวจฟอร์มเป้าหมาย/ตัวอย่างคำนำ/custom fields และ integration ครบต่อไป | ปุ่ม save ยังอยู่ ไม่ใช่ Autosave; หลักฐานเจ้าของยืนยันเฉพาะ cover save/reload |
 | M06.02 วันเกิดและโหมดอายุ | TODO | มี auto อย่างเดียว | เก็บ auto/manual และค่า manual คำนวณปีเต็ม auto จากวันอ้างอิงเดียว; จัดกฎ invalid/29 ก.พ. | manual ไม่ถูกวันเกิดทับ โหมด persist และ preview/export ตรงกัน |
-| M06.03 แทนเมนูด้วย accordion | TODO | ยังเป็นเมนูแยก | หัวหมวดกับฟอร์มอยู่ด้วยกัน เปิดหนึ่งหมวด ถัดไปตามลำดับคงที่; มี TOC และสี/ดาวน์โหลด | พับแล้วไม่ล้างค่า keyboard/focus/aria ใช้ได้ |
+| M06.03 แทนเมนูด้วย accordion | PARTIAL | [Accordion](verification/EDITOR_ACCORDION_REVIEW.md) หกฟอร์มเปิดหนึ่ง/พับทั้งหมด keyboard/dirty/crop/mobile/late save ผ่าน mock | ส่วนหัว TOC/สี-ดาวน์โหลดตามดีไซน์เป้าหมายยังไม่ทำ; TOC บน A4 ไม่ใช่ฟอร์มที่เจ็ด | เก็บปุ่มบันทึก/ถัดไปหลัง save สำเร็จ; ไม่ซ่อนหมวด A4 เมื่อพับ |
 | M06.04 เปิด/ปิดหมวด | TODO | ยังไม่พบ | สวิตช์ภายในหมวด ปกปิดไม่ได้ เก็บ visibility ถาวรและข้อมูลเมื่อปิด | การพับไม่ปิด A4; เปิดกลับข้อมูลครบ; renderer จะใช้ visibility ใน M08 |
-| M06.05 กำหนดข้อมูลว่างและข้อผิดพลาด | TODO | preview เดิมมี label ว่าง | สร้างกฎ normalize/omit ช่องว่าง หัวข้อว่าง และรูป optional โดยแยก load error | ฟอร์มยังเก็บ draft ได้; แสดงผลว่างตามกฎเดียวกันทุก template |
+| M06.05 กำหนดข้อมูลว่างและข้อผิดพลาด | PARTIAL | [Tags error/retry](verification/EDITOR_TAG_LOADING_REVIEW.md) แยก main/metadata/empty และรักษา draft แล้ว | normalize/omit ช่องว่าง/หัวข้อ/หน้า และกฎเดียวกันทุก template ยังค้าง | ไม่เอา Tags failure ไปตีความว่าไม่มี Tags; ยังไม่ทำ visibility/กฎหมวดว่าง |
 
 **เกณฑ์จบ M06:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
 ### M07 — Responsive หน้าหลักและ Preview
 
 **เป้าหมาย:** ใช้งานบนคอมและโทรศัพท์ได้โดย A4 คงสัดส่วน  
-**สถานะส่วน:** TODO • **Dependency:** M06  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M06; ตรวจ viewport mock แล้ว ไม่ใช่อุปกรณ์จริงครบ matrix
 **จุดเริ่มตรวจ:** `src/components/home, src/components/preview/Paper.tsx, src/app/editor/page.tsx, src/app/globals.css`  
 **ผูกกับ audit:** F27,F28,F29  
 **เคสตรวจรับ:** UI-06, UI-07, UI-08, UI-09, LAY-09
@@ -224,9 +227,9 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
 | M07.01 ปรับหน้าแรกให้กะทัดรัด | TODO | มี responsive เดิม | ลดพื้นที่ hero/การ์ด/ช่องว่างบนคอมตามธีมเดิม ตรวจหลายความกว้างก่อนลดฟอนต์ | ภาพเปรียบเทียบก่อน/หลัง ไม่ล้นแนวนอน และคลังเข้าถึงง่าย |
-| M07.02 จัดแผง editor ตามพื้นที่ | TODO | มี mobilePanel เป็นฐาน | คอมซ้ายฟอร์มขวา preview; แท็บเล็ตแคบและมือถือสลับแผง พร้อม keyboard เปิด | ปุ่มไม่หลุดจอ ไม่บังคับสองคอลัมน์แคบจนใช้ไม่ได้ |
-| M07.03 ผูกหมวดกับ Preview | TODO | มี scroll บางส่วน | ใช้ section ID คงที่ เลื่อนไปหน้าแรกของหมวดเมื่อเปิด/สลับ preview ไม่กระโดดทุกตัวอักษร | หมวดปิด/ว่างมีข้อความ UI ไม่สร้าง A4 ว่าง; ตรวจซ้ำหลัง M08 |
-| M07.04 Fit และซูม | TODO | มี fit ยังไม่มี zoom | คง A4 layout 794×1123 px หรือค่ากลางเทียบ A4 ที่ตกลง ย่อ/ซูมเฉพาะ viewport | การซูมไม่เปลี่ยน line wrap จำนวนหน้า หรือ PDF |
+| M07.02 จัดแผง editor ตามพื้นที่ | PARTIAL | [Accordion mobile](verification/EDITOR_ACCORDION_REVIEW.md) และ [TOC regression](verification/AUTOMATIC_TOC_REVIEW.md) ที่ 390/1440 ผ่าน | แท็บเล็ต/keyboard/touch/ความสูงและ browser matrix จริงยังต้องตรวจ | ไม่อ้างว่า mock viewport เท่ากับโทรศัพท์จริง |
+| M07.03 ผูกหมวดกับ Preview | PARTIAL | [TOC รอบ B](verification/AUTOMATIC_TOC_REVIEW.md) ใช้ stable section ID และรอสเกลจริง แทรก TOC ไม่เลื่อนผิดหมวด | หมวดซ่อน/ไม่มีหน้าและ visibility UI ยังไม่ทำ | คงหน้าของหมวดว่างที่ renderer เดิมสร้าง ไม่เปลี่ยนกฎเอง |
+| M07.04 Fit และซูม | PARTIAL | [Paper/Minimal](verification/MINIMAL_TEMPLATE_REVIEW.md) scale A4 ทั้งหน้า; mobile hidden Preview export ผ่าน | ยังไม่มี UI ซูม ต้องตรวจการซูมไม่เปลี่ยน pagination/PDF เมื่อทำ | fit ที่มีแล้วไม่ใช่ zoom feature ครบ |
 | M07.05 ตรวจการใช้งานจริง | TODO | ยังไม่ยืนยันจริง | ตรวจ keyboard/focus modal crop/ลบ ปุ่มรูปบน touch และหมุนจอ | ข้อมูลคงอยู่ทั้งแท็บและอุปกรณ์; เก็บภาพจริงตาม DESIGN_SYSTEM |
 
 **เกณฑ์จบ M07:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
@@ -234,54 +237,54 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M08 — Document model การแบ่งหน้า สารบัญ และเลขหน้า
 
 **เป้าหมาย:** มีรายการหน้ากลางที่ preview และ PDF ใช้ตรงกัน  
-**สถานะส่วน:** TODO • **Dependency:** M06, M07  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M06, M07; แหล่งเลขหน้ากลางยังไม่ใช่ page model เต็มระบบ
 **จุดเริ่มตรวจ:** `src/lib/editor/pagination.ts, src/components/preview, src/app/editor/page.tsx`  
 **ผูกกับ audit:** F24,F32,F33,F34,F35  
 **เคสตรวจรับ:** LAY-01, LAY-02, LAY-03, LAY-04, LAY-05, LAY-06, LAY-07, LAY-08, LAY-09
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M08.01 ทำ page model กลาง | TODO | มี packPages เป็นฐาน | แปลงข้อมูล/visibility/selected images เป็น blocks และ pages; แยก physical page index กับเลขเนื้อหา | มีสัญญาที่ renderer/TOC/export ใช้ร่วม ไม่คำนวณแยกคนละชุด |
-| M08.02 จัด card และแบ่งต่อ | TODO | เดิมแบ่ง card ใหญ่ไม่ได้ | วัดหลัง fonts/images พร้อม card วางได้ทั้งชิ้นย้ายหน้า; ชิ้นใหญ่แบ่งข้อความ/รูปพร้อม (ต่อ) | ไม่มี clip หรือย่อจนอ่านไม่ได้ รวมคำนำ/profile/custom fields ยาว |
+| M08.01 ทำ page model กลาง | PARTIAL | [เลขหน้า](verification/CONTINUOUS_PAGE_NUMBERING_REVIEW.md)/[TOC](verification/AUTOMATIC_TOC_REVIEW.md) ใช้ผลหน้าจริงกลาง แยก physical/printed แล้ว | blocks/visibility/selected assets และ page model เต็มยังไม่ทำ | ไม่เรียก DOM numbering coordinator ว่า document model เป้าหมายเสร็จแล้ว |
+| M08.02 จัด card และแบ่งต่อ | PARTIAL | [measurement portal](verification/PDF_PAGE_LIMIT_REVIEW.md) และ [late image flush](verification/AUTOMATIC_TOC_REVIEW.md) วัดได้แม้ Preview ซ่อน | split ข้อความ/รูป/การ์ดใหญ่พร้อม (ต่อ) ยังไม่ทำ; overflow guard ยังบล็อก | ไม่ซ่อน overflow/ย่อเนื้อหาเพื่ออ้างว่าแบ่งต่อแล้ว |
 | M08.03 ซ่อนส่วนว่างและหน้าที่ไม่ใช้ | TODO | ต้องปรับ preview | ใช้กฎ M06 ไม่สร้าง label/กรอบ/หน้า placeholder; ส่วนปิดไม่ออกเอกสาร | load error ยังขวาง output ที่ขาดข้อมูล; ไม่มีหน้าเปล่าเกินจำเป็น |
-| M08.04 ทำสารบัญและเลขหน้า | PARTIAL | เลขต่อเนื่องและสารบัญระดับหมวดหน้าเดียวครบสามแบบแล้ว ดู [ผลตรวจสารบัญ](verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/รายรายการและ page model เต็มระบบยังไม่ทำ | ปก/คำนำ/สารบัญไม่มีเลข profile เริ่ม 1; counter รวมทุกกระดาษ; ไม่ปิด M08 ทั้งระบบ |
-| M08.05 ถอดเพดานและตรวจความคงที่ | PARTIAL | ถอดเพดาน UI/export แล้ว ตรวจ PDF จริง 12/20/25 หน้า ดู [รายงาน](verification/PDF_PAGE_LIMIT_REVIEW.md) | ยังต้องตรวจชุดเป้าหมาย/ทรัพยากรอุปกรณ์จริงและ dependency ของ page model; ไม่ถือว่าทั้ง M08 เสร็จ | ไม่มีเพดานจำนวนหน้า; overflow/10 MB เดิมยังอยู่ |
+| M08.04 ทำสารบัญและเลขหน้า | PARTIAL | เลขต่อเนื่องและสารบัญระดับหมวดหน้าเดียวครบสามแบบแล้ว ดู [ผลตรวจสารบัญ](verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/visibility และ page model เต็มยังไม่ทำ; รายรายการไม่ใช่ข้อกำหนดที่ยืนยันเพิ่มในรอบนี้ | ปก/คำนำ/สารบัญไม่มีเลข profile เริ่ม 1; counter รวมทุกกระดาษ; ไม่ปิด M08 ทั้งระบบ |
+| M08.05 ถอดเพดานและตรวจความคงที่ | PARTIAL | ถอดเพดาน UI/export แล้ว ตรวจ PDF จริง 12/20/25 หน้า ดู [รายงาน](verification/PDF_PAGE_LIMIT_REVIEW.md) | ยังต้องตรวจชุดเป้าหมาย/ทรัพยากรอุปกรณ์จริงและ dependency ของ page model; ไม่ถือว่าทั้ง M08 เสร็จ | ไม่มีเพดานหน้า; overflow ยังบล็อกจริง; เกิน 10 MB [ยืนยันดาวน์โหลด](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) ไม่ใช่ hard error |
 
 **เกณฑ์จบ M08:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
 ### M09 — เทมเพลตสมบูรณ์สามแบบและสองสี
 
 **เป้าหมาย:** สามแบบต่างบุคลิกแต่รองรับกติกาเดียวกันทั้งหมด  
-**สถานะส่วน:** TODO • **Dependency:** M08  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M08; presentation/TOC checkpoint ไม่ปิดสองสีหรือ page model
 **จุดเริ่มตรวจ:** `src/components/editor/TemplatePicker.tsx, src/components/preview, src/app/globals.css`  
 **ผูกกับ audit:** F30,F31  
 **เคสตรวจรับ:** TPL-01, TPL-02, TPL-03, TPL-04, TPL-05, LAY-09
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M09.01 กำหนด contract เทมเพลต | TODO | มี dropdown สาม key | ตรวจ key classic/modern/minimal เดิม วาง tokens/spacing/typography/การแสดงภาพตาม page model | ใช้ key เดิมโดยไม่ทำพอร์ตเก่าพังและไม่มี hardcoded สีปะปน |
-| M09.02 ทำแบบเรียบทางการ | TODO | มีฐานต้องทำให้ครบ | ต่อยอด classic ให้ครบทุกหมวด TOC รูปหลายจำนวน หน้าต่อ และสี | ข้อมูลเดียวกัน export ได้ครบ ไม่มีหมวดใช้รูปแบบ fallback ที่ยังไม่พร้อม |
-| M09.03 ทำแบบทันสมัย | TODO | มีฐานดีไซน์เดิม | ต่อยอด Emerald Editorial โดยรักษาความอ่านง่ายและรองรับสีเปลี่ยน/หน้าต่อ | ภาพ portrait/landscape และชื่อยาวไม่ตัด; ทุกหมวดทำงาน |
-| M09.04 ทำแบบมินิมอล | IN_PROGRESS | ฐานเดิมระบุรูปแบบพื้นฐาน; ทำ presentation ครบหกหมวด/Preview/PDF แล้ว ดู [รายงาน Minimal](verification/MINIMAL_TEMPLATE_REVIEW.md); เลขต่อเนื่องและสารบัญระดับหมวดเพิ่มแล้วใน M08.04 | สองสีรายพอร์ต สารบัญหลายหน้า split การ์ดและกติกาจำนวนรูปยังเป็นงานแยก | ยังไม่ปิด M09 หรือ Editor ทั้งระบบเป็น DONE |
-| M09.05 ขั้นตอนสีและการสลับแบบ | TODO | ยังไม่มีสองสีครบ | สีหลัก/รอง preset/custom/reset persist รายพอร์ต; เปลี่ยนแบบรักษา content/selection/สีที่ตั้งเองตามแนวทาง | สีเว็บไซต์ไม่เปลี่ยน ข้อความยังอ่านได้ preview/PDF ตรงกัน; failure ไม่ทำค่าเดิมเสีย |
+| M09.01 กำหนด contract เทมเพลต | PARTIAL | [Minimal](verification/MINIMAL_TEMPLATE_REVIEW.md) มี scoped tokens/key เดิม/measurement style ตรง A4; unknown key fallback เดิม | contract สองสี/blocks/page model เต็มยังไม่ทำ | ไม่เปลี่ยน template key หรือ schema; ไม่เรียกว่า contract เป้าหมายครบ |
+| M09.02 ทำแบบเรียบทางการ | PARTIAL | Classic หกหมวดและ [TOC/PDF จริง](verification/AUTOMATIC_TOC_REVIEW.md) มีหลักฐาน | สองสี/หน้าต่อ/จำนวนรูปเป้าหมายและ integration ยังค้าง | ยืนยันเฉพาะ fixtures ที่รายงาน ไม่ใช่ทุกข้อมูล |
+| M09.03 ทำแบบทันสมัย | PARTIAL | Emerald Editorial หกหมวดและ [TOC/PDF จริง](verification/AUTOMATIC_TOC_REVIEW.md) มีหลักฐาน | สีเปลี่ยน/หน้าต่อ/จำนวนรูปเป้าหมายและ integration ยังค้าง | presentation ปัจจุบันไม่ใช่สามเทมเพลตครบ PRD |
+| M09.04 ทำแบบมินิมอล | PARTIAL | [Minimal](verification/MINIMAL_TEMPLATE_REVIEW.md) presentation หกหมวด/Preview/PDF ผ่าน; เลขและสารบัญระดับหมวดเพิ่มแล้วใน M08.04 | สองสีรายพอร์ต สารบัญหลายหน้า split การ์ดและกติกาจำนวนรูปยังเป็นงานแยก | ไม่มีงาน implementation Minimal ใหม่ในรอบสถานะนี้; ไม่ปิด M09 หรือ Editor ทั้งระบบ |
+| M09.05 ขั้นตอนสีและการสลับแบบ | PARTIAL | [สลับ/save fail/reload/draft/unknown key](verification/MINIMAL_TEMPLATE_REVIEW.md) และ lock ตอน export มี mock evidence | ยังไม่มีขั้นตอนสองสี preset/custom/reset/persist ต้องทำต่อ | การสลับแบบที่ผ่านไม่ใช่ระบบสีแล้ว |
 
 **เกณฑ์จบ M09:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
 ### M10 — PDF พร้อมใช้งานและการยืนยันไฟล์ใหญ่
 
 **เป้าหมาย:** ได้ PDF ครบหน้า อ่านชัด และจัดการเป้าหมายขนาดอย่างถูกต้อง  
-**สถานะส่วน:** TODO • **Dependency:** M05, M08, M09  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M05, M08, M09; ยังไม่ครบ revision/page model/สี
 **จุดเริ่มตรวจ:** `src/lib/editor/export-pdf.ts, src/components/editor/ExportButton.tsx`  
 **ผูกกับ audit:** F33,F36,F37  
 **เคสตรวจรับ:** PDF-01, PDF-02, PDF-03, PDF-04, PDF-05, PDF-06, PDF-07, PDF-08
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M10.01 Export จาก revision เดียว | TODO | มี exporter เดิม | รอ autosave สำเร็จ freeze ข้อมูลฉบับที่ export ใช้ page model ไม่ผูกกับ preview tab ที่มองเห็น | เปลี่ยน UI ระหว่างงานไม่ทำเอกสารปะปนและไม่มีปุ่มติด PDF |
-| M10.02 ตรวจ asset/font และความครบ | TODO | มี guard เป็นฐาน | รักษาการตรวจโหลดรูป/CORS/font/overflow; แสดง error และ retry ไม่สร้าง PDF ที่ข้อมูลหาย | A4 210×297 มม. ทุกหน้าไทย/ภาพครบ และมือถือซ่อน preview ยัง export ได้ |
-| M10.03 บีบอัดโดยรักษาความอ่านได้ | TODO | มี retry แต่ยัง hard error | ลองลดขนาดตามคุณภาพที่กำหนดร่วมกัน ใช้ตัวอย่างเกียรติบัตรตัวเล็กตรวจด้วยคน | มี PDF ตัวอย่างก่อน/หลังและเหตุผล quality floor; ไม่บังคับลดจนภาพอ่านไม่ได้ |
-| M10.04 ยืนยันเมื่อเกิน 10 MB | DONE (mock) | <=10,000,000 ดาวน์โหลดทันที; > ถามโดยเก็บ Blob เดิม | [ผลตรวจ](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md): boundary, async/keyboard/mobile และ PDF จริง 14,446,304 bytes/hash ผ่าน | ไม่ render ซ้ำหลังยืนยัน ไม่ hard block เพราะขนาด; ไม่ถือว่าทั้ง M10 เสร็จ |
-| M10.05 Progress และงานยาว | TODO | ต้องขยายจาก exporter เดิม | หน้า n/รวม ป้องกันกดซ้ำ recover เมื่อ fail ตรวจ 11/25 หน้าและ reader อิสระ | ไม่ค้างถาวร ไม่ขาดหน้า บันทึกเวลา/หน่วยความจำโดยไม่ตั้ง SLA เอง |
+| M10.01 Export จาก revision เดียว | PARTIAL | [lock/session/blob](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) และ [รอ layout/TOC](verification/AUTOMATIC_TOC_REVIEW.md) ป้องกัน draft/late result แล้ว | saved revision/Autosave และ page model เต็มยังไม่ทำ | ปัจจุบันยึด manual-save baseline ไม่อ้างว่าเป็น revision contract |
+| M10.02 ตรวจ asset/font และความครบ | PARTIAL | [PDF guard/retry](verification/PDF_PAGE_LIMIT_REVIEW.md) และ [TOC late image](verification/AUTOMATIC_TOC_REVIEW.md) ตรวจไฟล์ A4 จริง/มือถือซ่อน Preview แล้ว | real Storage/CORS/browser matrix และเนื้อหาขอบเขตใหม่ยังต้องตรวจ | เป็น PDF จริงจาก mock data ไม่ใช่ Supabase/Storage integration |
+| M10.03 บีบอัดโดยรักษาความอ่านได้ | PARTIAL | [quality levels เดิม](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) คงไว้และเปลี่ยน size-only hard error เป็นยืนยันแล้ว | การรับรอง quality floor/เกียรติบัตรตัวอักษรเล็กโดยเจ้าของยังต้องยืนยัน | มีตัวอย่างจริงตามรายงาน แต่ไม่อ้างว่าประเมินความอ่านได้ทุกกรณีแล้ว |
+| M10.04 ยืนยันเมื่อเกิน 10 MB | DONE | <=10,000,000 ดาวน์โหลดทันที; > ถามโดยเก็บ Blob เดิม | [ผลตรวจ](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md): mock boundary/async/keyboard/mobile และ PDF จริง 14,446,304 bytes/hash ผ่าน ส่งครบที่ 63217b5 | DONE เฉพาะ flow นี้ตามหลักฐาน ไม่ใช่ integration/อุปกรณ์จริงหรือทั้ง M10; ไม่ render ซ้ำหลังยืนยัน |
+| M10.05 Progress และงานยาว | PARTIAL | [page-limit](verification/PDF_PAGE_LIMIT_REVIEW.md) มี progress/dedup/retry และไฟล์จริง 12/20/25 หน้า; [TOC](verification/AUTOMATIC_TOC_REVIEW.md) เพิ่มกระดาษรวมถูกต้อง | สำรวจเวลา/หน่วยความจำ/อุปกรณ์จริงและ regression เมื่อ page model เปลี่ยนยังค้าง | ไม่ตั้งเพดานหน้าใหม่หรือรับประกันหน้าจำนวนอนันต์ |
 
 **เกณฑ์จบ M10:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
 
@@ -306,14 +309,14 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 ### M12 — ทดสอบรวม แก้ข้อผิดพลาด และส่งมอบ
 
 **เป้าหมาย:** ยืนยันทั้งระบบตามข้อกำหนดด้วยหลักฐานจริงก่อนสรุปเสร็จ  
-**สถานะส่วน:** TODO • **Dependency:** M01–M11 ทุกส่วนผ่านเกณฑ์จบ  
+**สถานะส่วน:** IN_PROGRESS • **Dependency:** M01–M11 ทุกส่วนผ่านเกณฑ์จบก่อนส่งมอบ; focused checks ไม่เท่ากับผ่านทั้งหมด
 **จุดเริ่มตรวจ:** `tests, docs/SYSTEM_TEST_PLAN.md, docs/IMPLEMENTATION_AUDIT.md, docs/IMPLEMENTATION_PLAN.md`  
 **ผูกกับ audit:** F01–F40  
 **เคสตรวจรับ:** ทุกเคส 100 เคส, AC-01–AC-20, E2E-A–E2E-D
 
 | งาน | สถานะงาน | ฐานเดิม | สิ่งที่ต้องทำ | ผลส่งมอบ/เงื่อนไขผ่าน |
 | --- | --- | --- | --- | --- |
-| M12.01 ปรับ regression และรันเครื่องมือ | PARTIAL | รอบ PDF ปรับ test เพดานเดิมแล้ว production Editor/PDF 49 mock tests ผ่าน ดู [รายงาน](verification/PDF_PAGE_LIMIT_REVIEW.md) | ยังต้องตรวจระบบเป้าหมายส่วนอื่นและ database ตาม milestone; ไม่ใช้ผล mock นี้แทนทั้งระบบ | lint build และ E2E เส้นทางที่แก้มีผลจริง ไม่ลบ assertions เพื่อให้ผ่าน |
+| M12.01 ปรับ regression และรันเครื่องมือ | PARTIAL | ประวัติ [TOC regression](verification/AUTOMATIC_TOC_REVIEW.md) 71 ข้อก่อน scroll fix/23 ข้อหลัง fix; รอบนี้ [types/PGlite](verification/TEST_TYPES_AND_STATUS_REVIEW.md) ผ่าน | staging/100 เคส/browser matrix/อุปกรณ์จริงและระบบเป้าหมายส่วนที่ยังไม่ทำยังรอ | typecheck ทั้ง repo ไม่ใช้ build แทน; ผลรอบก่อนแยกจากรอบนี้ ไม่ลด assertions |
 | M12.02 ทดสอบ integration/สิทธิ์ | TODO | ยังไม่ยืนยันจริง | รัน staging จริง Auth email DB RLS RPC Storage และ migration/restore; ตรวจสองบัญชีผ่าน API | ไม่มีข้อมูลข้ามบัญชี ไม่มี partial delete หรือ stale save คืนข้อมูล |
 | M12.03 ทดสอบ 100 เคสและ E2E | TODO | แผนพร้อม ทุกเคส NOT_RUN | ใช้ fixture แยก บันทึก actual result/PASS/FAIL/BLOCKED หลักฐาน defect และ retest | AC ครบ 20 มีผลตรวจย้อนกลับได้ mock ไม่แทนระบบจริง |
 | M12.04 ตรวจภาพและอุปกรณ์จริง | TODO | ยังไม่ทดสอบจริง | สามแบบทุกหมวด คอม/มือถือ browser matrix PDF reader และคุณภาพภาพ; ให้เจ้าของดูจุด UX ที่ต้องรับรอง | preview/PDF ตรงกัน ไม่มี blocker งานหลัก; ข้อยกเว้นต้องระบุผู้รับรอง |
@@ -374,7 +377,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 
 ## 10. ทะเบียนงานและแบบส่งต่อ
 
-ตารางงานย่อยในข้อ 6 เป็นสถานะปัจจุบันหลัก ส่วนตารางนี้เก็บเจ้าของงานและหลักฐานละเอียด เพิ่มหนึ่งแถวต่อ Task ID เมื่อเริ่มทำ หากร่วมกันทำในอนาคตให้มีผู้รับผิดชอบหลักต่อหนึ่งงานและระบุขอบเขตไฟล์เพื่อลดการเขียนชนกัน ไม่ถือว่าแผนนี้สั่งให้เรียกหลาย agent โดยอัตโนมัติ
+ตารางงานย่อยในข้อ 6 เป็นสถานะปัจจุบันหลัก ส่วนตารางนี้เก็บเจ้าของงานและหลักฐานละเอียด แถววันที่ 15 ต.ค. เป็น checkpoint ประวัติ ไม่ใช่คำสั่งให้รัน reset/foundation ซ้ำ ดูข้อยกเว้น/จุดต้องยืนยันในข้อ 6 และ [M01](M01_DATABASE_SETUP.md) เพิ่มแถวพร้อม Task ID/ขอบเขตเมื่อเริ่มทำ ไม่ถือว่าแผนนี้สั่งให้เรียกหลาย agent โดยอัตโนมัติ
 
 | Task ID | ผู้รับผิดชอบ | สถานะ | เริ่มจาก HEAD | ไฟล์/ขอบเขต | ผลตรวจ/หลักฐาน | Commit ที่ push | อุปสรรค/งานถัดไป | อัปเดตเวลาไทย |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -384,6 +387,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M00.04 | ไค | BLOCKED | c1cca0a | inventory/backup guide | [รายงาน](M00_INVENTORY_REVIEW.md) | commit ที่เพิ่ม M00_INVENTORY_REVIEW.md บน branch ใหม่ | ได้ยอดจริงและ function bodies ครบ reset ขึ้น 4c870cc แล้ว รอ live reset/verify; backup ชุดทดลองถูกยกเว้นโดยเจ้าของ | 2026-10-15 |
 | M01.03/.04 | ไค | IN_PROGRESS | 4c870cc | foundation migration และ tests | ดู M01_DATABASE_SETUP.md; local suite 10/10 | checkpoint ที่เพิ่ม migration 202610150001 | รอ live verify และทำ snapshot/revision/image limits ต่อ | 2026-10-15 |
 | M00.05 | ไค | BLOCKED | 957e35d | fixture manifest | [รายงาน](M00_BASELINE_REPORT.md) | commit ที่เพิ่มรายงาน M00 นี้ | รอ staging accounts/assets/seed ตาม schema | 2026-10-15 |
+| M12.01 — types/status checkpoint | Sol | PARTIAL | e9c6c19 | tests 4 ไฟล์และเอกสารสถานะ ไม่ใช่ feature ใหม่ | [ผลตรวจรอบนี้/ตารางก่อนหลัง](verification/TEST_TYPES_AND_STATUS_REVIEW.md) | A: 80a4f4588fa0e459268f21d315e579af1cef80ff; B: commit ที่เพิ่ม checkpoint นี้ ตรวจ SHA จริงใน handoff | ไม่ปิด M12; integration/100 เคส/อุปกรณ์จริงยังค้าง | 2026-10-20 |
 
 แบบส่งต่อที่ต้องกรอกก่อนหยุดงาน:
 
@@ -418,13 +422,14 @@ Branch / HEAD ล่าสุด / Commit ที่ push:
 
 | วันที่ | ฉบับ | การเปลี่ยนแปลง |
 | --- | --- | --- |
+| 2026-10-20 | 1.5 | ปรับสถานะส่วนใหญ่/งานย่อยตามรายงาน UI/resilience/Accordion/Tags/Minimal/เลข/TOC/PDF; นิยาม PARTIAL และแยกประวัติ/ผลรอบนี้; ไม่เริ่ม feature ใหม่ |
 | 2026-10-15 | 1.4 | รับอนุญาตล้างข้อมูลทดลองเก็บบัญชี; reset ขึ้น 4c870cc; foundation migration ผ่าน local tests ยังรอ live execution |
 | 2026-10-15 | 1.3 | รับยอดจริง/trigger metadata แล้ว; main รับ snapshot เดิมตามคำสั่ง; ทำต่อบน codex/portfolio-next-phase และเตรียม backup |
 | 2026-10-15 | 1.2 | รับ metadata/Auth แล้ว ปิดงานสำรวจ M00.03; เพิ่ม probes และ SQL inventory; M00.04/.05 ยังรอฐานจริง |
 | 2026-10-15 | 1.1 | บันทึก baseline จริงและ checkpoint M00; รอข้อมูล Supabase; แก้จำนวน E2E เป็น 9 |
 | 2026-10-15 | 1.0 | สร้างแผน 13 ส่วน 65 งานย่อยจากเอกสารและ audit ที่เผยแพร่แล้ว แยกสถานะของเดิม/งานใหม่ พร้อม dependency เกณฑ์จบและทะเบียนส่งต่อ |
 
-**จุดทำต่อ:** รันขั้นตอนใน M01_DATABASE_SETUP.md แล้วตรวจผลฐานจริง; ทำ data contract snapshot/revision/asset และต่อยอด M01.01/.02/.05 ก่อนปิด M01 ทั้งส่วน ไม่ต้องขอ metadata หรือ function bodies เดิมซ้ำ
+**จุดทำต่อหลังมอบหมายรอบใหม่:** reset/foundation ใน M01_DATABASE_SETUP.md มีหลักฐานเจ้าของทำแล้ว ห้ามรันซ้ำจากข้อความแผนเก่า; ยืนยัน staging/ทะเบียน M00 ที่ยังค้าง แล้วออกแบบ data contract snapshot/revision/asset ตาม M01.01/.02/.05 ก่อนปิด M01 ทั้งส่วน ไม่ขอ metadata/function bodies เดิมซ้ำ รอบนี้หยุดหลัง types/status ส่งครบ ไม่ถือว่าอนุญาตเริ่มงานเหล่านี้เอง
 
 
 ### Checkpoint หน้าปก 2026-10-15

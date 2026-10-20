@@ -1,5 +1,7 @@
 # PDF page-count limit removal — 16 ตุลาคม 2026
 
+สถานะต่อมา: [ยืนยันไฟล์ใหญ่](PDF_LARGE_FILE_CONFIRMATION_REVIEW.md), [เลขต่อเนื่อง](CONTINUOUS_PAGE_NUMBERING_REVIEW.md) และ [สารบัญระดับหมวด](AUTOMATIC_TOC_REVIEW.md) ทำแล้วตามขอบเขต ผล PDF/จำนวนหน้าด้านล่างเป็นประวัติก่อนเพิ่มสารบัญ ไม่ใช่จำนวนปัจจุบันทุก fixture; [รอบ types/status](TEST_TYPES_AND_STATUS_REVIEW.md) ไม่รัน PDF ใหม่และไม่ปิด page model/split/อุปกรณ์จริง
+
 ## ฐานงาน
 
 เริ่ม local/remote `ffcbf781de4b313addd2784d797603e4c3a03cc4` บน `codex/portfolio-next-phase`, working tree สะอาด ตรวจ fetch จริง ไม่แก้ main หรือใช้ไฟล์แนบเก่าทับ

@@ -1,5 +1,7 @@
 # Editor Tags load/retry — 16 ตุลาคม 2026
 
+สถานะต่อมา: ข้อจำกัด 10 MB เปลี่ยนเป็น [ยืนยันดาวน์โหลด Blob เดิม](PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) แล้ว; [เลข/สารบัญระดับหมวด](AUTOMATIC_TOC_REVIEW.md) ทำแล้ว; TS2571 เดิมแก้ใน [types/status](TEST_TYPES_AND_STATUS_REVIEW.md) ผล/งานค้างด้านล่างเป็นประวัติรอบ Tags ไม่ใช่การรันใหม่รอบเอกสาร Autosave/visibility/snapshot/เกียรติบัตร 2 รูป/Back-Forward คลังยังไม่ครบ
+
 ## ฐานงานและขอบเขต
 
 - เริ่ม local/remote `062f03758c76b6b6c4e435257d94179ff1e5d1d3`, branch `codex/portfolio-next-phase`, working tree สะอาด ตรวจ fetch จริง ไม่มีงานใหม่กว่า

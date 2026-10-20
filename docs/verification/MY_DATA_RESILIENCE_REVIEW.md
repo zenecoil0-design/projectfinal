@@ -1,5 +1,7 @@
 # /my-data: load failures และ unsaved drafts
 
+อัปเดตสถานะ 20 ต.ค. 2026: TS2571 เก้าจุดที่บันทึกด้านล่างแก้แล้ว และ full-repo typecheck/PGlite tests ผ่านใน [รายงาน types/status](TEST_TYPES_AND_STATUS_REVIEW.md); [Editor Tags](EDITOR_TAG_LOADING_REVIEW.md) ทำแล้วในรอบถัดมา ผล/ข้อจำกัดด้านล่างเป็นประวัติ ไม่ใช่การรัน browser ใหม่รอบนี้ Back/Forward guard, เกียรติบัตร 2 รูปและ atomic save/Storage integration ยังไม่ครบ
+
 เริ่มจาก local/remote `14530925400fd65efb2620bdf0e49933319f1ec6` บน `codex/portfolio-next-phase`, working tree สะอาด อ่าน AGENTS/PRD/ARCHITECTURE/DESIGN_SYSTEM และคู่มือ Link ของ Next ที่ติดตั้ง ใช้ repository ปัจจุบัน ไม่ใช้ไฟล์แนบเก่าทับ ไม่แก้ main
 
 ## ส่วน 1 — โหลดและ retry

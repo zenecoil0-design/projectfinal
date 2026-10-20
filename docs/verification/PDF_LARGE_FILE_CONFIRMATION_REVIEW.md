@@ -1,5 +1,7 @@
 # PDF large-file confirmation — 17 ตุลาคม 2026
 
+สถานะต่อมา: [Minimal](MINIMAL_TEMPLATE_REVIEW.md), [เลขต่อเนื่อง](CONTINUOUS_PAGE_NUMBERING_REVIEW.md) และ [สารบัญระดับหมวด](AUTOMATIC_TOC_REVIEW.md) ทำแล้ว; ข้อความงานค้างด้านล่างเป็นประวัติรอบไฟล์ใหญ่ รอบ [types/status](TEST_TYPES_AND_STATUS_REVIEW.md) ไม่สร้างไฟล์ใหญ่ใหม่และไม่เปลี่ยน quality floor หรือ Blob lifecycle ไม่ถือว่า PDF ทั้งระบบครบ
+
 ## ปิดงานค้างและฐานรอบนี้
 
 - ก่อนเริ่มพบ local `7a97344d32297ab38df24fa26127ef1f989fd3dc`, remote `46ee0391b973d8b64ebab5c5df63086b18dc8e31`, working tree สะอาด

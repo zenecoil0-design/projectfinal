@@ -4,11 +4,11 @@
 
 ## 1. วิธีอ่านเอกสาร
 
-ส่วน “ปัจจุบัน” คือสิ่งที่อ่านพบใน repository ที่ commit `60f4d5686d6df01d5b8500aeaa0608938bda09ca` ของ branch `codex/portfolio-system-fixes` ไม่ใช่ผลทดสอบระบบที่ deploy อยู่ ส่วน “เป้าหมาย” อ้าง `PRD.md` ส่วน “ข้อเสนอทางเทคนิค” คือแนวทางให้ผู้พัฒนาตรวจและออกแบบรายละเอียดก่อนลงมือ
+ฐานสถาปัตยกรรมเดิมอ่านที่ commit `60f4d5686d6df01d5b8500aeaa0608938bda09ca` ของ branch `codex/portfolio-system-fixes` รอบสถานะ 20 ต.ค. 2026 ตรวจเส้นทางที่เกี่ยวข้องบน `codex/portfolio-next-phase` จาก `e9c6c19` และผลแก้ test types `80a4f45` แล้วปรับส่วน “ปัจจุบัน” ตาม checkpoint ที่มีหลักฐาน ไม่ใช่ผลทดสอบระบบ deploy ส่วน “เป้าหมาย” อ้าง PRD ส่วน “ข้อเสนอทางเทคนิค” ยังต้องออกแบบ/ยืนยันก่อนลงมือ ดู [ตารางสถานะและข้อจำกัด](docs/verification/TEST_TYPES_AND_STATUS_REVIEW.md)
 
 Repository: https://github.com/zenecoil0-design/projectfinal
 
-ภาพ schema ที่แนบมีบางส่วนถูกตัด และไม่ครอบคลุมตารางคลังที่โค้ดปัจจุบันใช้ จึงใช้ประกอบความเข้าใจเท่านั้น ยังไม่ได้อ่าน schema, RLS, Storage policies และการตั้งค่า Auth ของ Supabase จริง ห้ามใช้ภาพนี้เป็นฐานสร้าง migration โดยไม่ตรวจเพิ่มเติม
+ภาพ schema เก่ามีบางส่วนถูกตัดและไม่ครอบคลุมคลัง จึงใช้ยืนยันระบบจริงไม่ได้ ต่อมาได้รับ metadata/inventory และ [หลักฐานเจ้าของติดตั้ง foundation/บันทึกปก](docs/M01_DATABASE_SETUP.md) แล้ว แต่ยังไม่ใช่ live integration ครบระบบ รอบ types/status นี้ไม่เชื่อม Supabase จริง ไม่อ่านภาพเก่าทับ repository และไม่ให้รัน reset/migration เดิมซ้ำ
 
 ## 2. เทคโนโลยีที่พบใน package.json
 
@@ -33,15 +33,15 @@ Repository: https://github.com/zenecoil0-design/projectfinal
 | `src/app/my-data/page.tsx` | หน้าคลังข้อมูลส่วนตัว |
 | `src/app/editor/page.tsx` | โหลดพอร์ตตาม query `portfolio`, ประกอบแบบฟอร์ม/Preview/เทมเพลต/ส่งออก |
 | `src/components/forms` | แบบฟอร์มปก คำนำ ประวัติส่วนตัว และตัวเลือกรายการจากคลัง |
-| `src/components/my-data` | เพิ่ม/แก้/ลบข้อมูลคลังทั้ง 3 หมวด |
-| `src/components/layout` | `SidebarMenu` เมนูแยกด้านบน และ `FormContainer` ด้านล่าง |
+| `src/components/my-data` | คลังสามหมวด พร้อม useLibraryLoad/error-retry และ LibraryDraftGuard; save/Storage หลายคำขอยังไม่ใช่ transaction |
+| `src/components/layout` | `FormContainer` เป็น Accordion หกฟอร์มในหน้า Editor; `SidebarMenu` ยังมีไฟล์เดิมแต่ไม่ใช่เมนูที่ Editor ใช้อยู่ |
 | `src/components/editor` | สถานะ session, การเลือกเทมเพลต และปุ่มส่งออก |
-| `src/components/preview` | ตัวแสดงแต่ละหมวด, `Paper`, `PaginatedSection` |
+| `src/components/preview` | หกหมวดเนื้อหาเดิม + ContentsPreview, Paper, PaginatedSection, PageLayout; measurement portal แยกใต้ body |
 | `src/components/images/CropInput.tsx` | เลือกและครอปรูป ปรับซูมและตำแหน่ง |
 | `src/store` | สถานะแก้ไขแต่ละส่วนด้วย Zustand |
-| `src/lib/editor` | snapshot สำหรับตรวจ dirty, การเลือกข้อมูล, จัดหน้าและส่งออก |
+| `src/lib/editor` | snapshot ตรวจ dirty (ไม่ใช่แบบ B), selection, tag-loader, page-numbers/page-layout และ export-pdf |
 | `src/lib/supabase`, `src/middleware.ts` | client/server Supabase และ session/access routing |
-| `supabase/migrations` | migration RPC การบันทึกชุดรายการที่เลือกแบบ transaction |
+| `supabase/migrations` | RPC selection แบบ transaction, foundation และชื่อหน้าปกแยกจาก profile; ไม่ใช่ snapshot/revision schema เต็ม |
 | `tests` | unit/database-oriented tests และ E2E พร้อม mock Supabase |
 
 คำว่า snapshot ใน session ปัจจุบันใช้ตรวจว่ามีการแก้ค้าง ไม่ได้แปลว่าระบบมี snapshot เนื้อหาจากคลังแบบ B แล้ว
@@ -50,11 +50,11 @@ Repository: https://github.com/zenecoil0-design/projectfinal
 
 1. Editor รับ `portfolio` ID ตรวจผู้ใช้ และโหลด `portfolios` โดยกรองเจ้าของ
 2. `covers`, `prefaces`, `profiles` โหลดเข้าสู่ store ของแต่ละส่วน
-3. แบบฟอร์มการศึกษา/กิจกรรม/เกียรติบัตรโหลดรายการจากคลังและความสัมพันธ์ที่เลือกในพอร์ต
+3. แบบฟอร์มการศึกษา/กิจกรรม/เกียรติบัตรโหลดรายการจากคลังและความสัมพันธ์ที่เลือกในพอร์ต; Tags/relations โหลดผ่าน useEditorTags แยก metadata status/retry จาก main readiness และ dirty baseline
 4. นำข้อมูลล่าสุดของรายการในคลังมาสร้างข้อมูลสำหรับ Preview; กิจกรรม/เกียรติบัตรนำรูปทั้งหมดของรายการมาใช้
 5. บันทึกชุด ID ที่เลือกผ่าน `replace_portfolio_selection` พร้อมลำดับ
-6. Preview แสดง A4 ขนาด layout 794 × 1123 px และใช้ scale ย่อทั้งหน้าเพื่อพอดี viewport
-7. ส่งออก clone หน้า DOM ที่ไม่ถูก scale แล้วแปลงผ่าน canvas เป็นภาพ JPEG บน PDF A4
+6. Preview A4 layout 794 × 1123 px ย่อทั้งหน้า; มีสารบัญระดับหมวดหลังคำนำและเลขต่อเนื่องเริ่ม profile 1 จาก Paper ที่จัดจริง ผ่านแหล่งกลางเดียวกัน ตัวนับรวมกระดาษส่วนต้นด้วย
+7. Export รอ main readiness/no dirty และ fonts/images/measurement ก่อนจัดเลข-สารบัญ/clone DOM ที่ไม่ scale ใช้ canvas ทีละหน้าเป็น JPEG บน PDF A4 ไม่มีเพดานหน้า; เกิน 10,000,000 bytes หลังระดับคุณภาพเดิมให้ยืนยัน Blob/ชื่อไฟล์เดิม ไม่ render ซ้ำ
 
 ### ตารางที่โค้ดอ้างถึง
 
@@ -64,7 +64,7 @@ Repository: https://github.com/zenecoil0-design/projectfinal
 | คลัง | `user_library_educations`, `user_library_activities`, `user_library_certificates` |
 | รูปคลัง | `user_library_activity_images`, `user_library_certificate_images` |
 | รายการในพอร์ต | `portfolio_educations`, `portfolio_activities`, `portfolio_certificates` |
-| Tags | `user_tags`, `user_library_activity_tags`, `user_library_certificate_tags` |
+| Tags | `user_tags`, `user_library_education_tags`, `user_library_activity_tags`, `user_library_certificate_tags` |
 
 ชื่อเหล่านี้ยืนยันจากโค้ดที่อ่าน ไม่ใช่การยืนยันว่าตาราง นโยบาย หรือ migration ถูกติดตั้งในฐานข้อมูลที่ใช้งานจริงแล้ว
 
@@ -74,7 +74,7 @@ RPC ปัจจุบันตรวจ `auth.uid()`, เจ้าของพ�
 
 | เรื่อง | สิ่งที่ตรวจพบ | งานเป้าหมาย |
 | --- | --- | --- |
-| เมนูฝั่งซ้าย | 6 ปุ่มเหนือแบบฟอร์ม | หมวดพับ–ขยายรวมแบบฟอร์ม พร้อมสารบัญและขั้นตอนสี/ดาวน์โหลด |
+| เมนูฝั่งซ้าย | [Accordion หกฟอร์ม](docs/verification/EDITOR_ACCORDION_REVIEW.md) เปิดหนึ่ง/พับทั้งหมดรักษา draft; ยังใช้ปุ่มบันทึก | หัว TOC/สี-ดาวน์โหลดตามดีไซน์เป้าหมาย, visibility และ Autosave ยังแยกงาน |
 | มือถือ | มีสลับกรอก/Preview และเลื่อนไปหมวด | ใช้ต่อ เพิ่มซูมและตรวจหมวดซ่อน/ว่าง |
 | A4 | ขนาดคงที่และย่อทั้งหน้าแล้ว | รักษาหลักนี้ทุกเทมเพลตและตัวส่งออก |
 | เกียรติบัตร | คลังจำกัด 4 รูป | เปลี่ยนเป็น 2 รูป พร้อมแผนข้อมูลเก่า |
@@ -82,7 +82,7 @@ RPC ปัจจุบันตรวจ `auth.uid()`, เจ้าของพ�
 | เลือกรูป | เก็บรายการที่เลือกและนำรูปทั้งหมดมาใช้ | เก็บชุดรูปที่เลือกแยกในแต่ละพอร์ต |
 | แบบ B | โหลดเนื้อหาจากคลังเมื่อเปิดพอร์ต | เก็บ snapshot พร้อมต้นทางและ version และแจ้งรับข้อมูลใหม่ |
 | บันทึกพอร์ต | ปุ่มบันทึก, dirty state, เตือนก่อนออก | autosave ที่ป้องกัน race/ข้อมูลหาย |
-| สารบัญและเลขรวม | มีเลขเนื้อหาต่อเนื่องและสารบัญอัตโนมัติระดับหมวดหน้าเดียว ทั้งสามแบบ ใช้ข้อมูลหน้าชุดเดียวกัน ดู [ผลตรวจสารบัญ](docs/verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/รายรายการและ page model เต็มระบบยังเป็นงานแยก |
+| สารบัญและเลขรวม | มีเลขเนื้อหาต่อเนื่องและสารบัญอัตโนมัติระดับหมวดหน้าเดียว ทั้งสามแบบ ใช้ข้อมูลหน้าชุดเดียวกัน ดู [ผลตรวจสารบัญ](docs/verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/visibility และ page model เต็มยังค้าง; ไม่เพิ่มสารบัญรายรายการเป็นข้อกำหนดในรอบนี้ |
 | แบ่งหน้า | pack การ์ดทั้งใบ; การ์ดใหญ่เกินหน้าไม่แบ่ง | split รายการใหญ่พร้อม “(ต่อ)” |
 | จำนวนหน้า | ฐานเดิมมี MAX_PAGES=10; รอบ 16 ต.ค. 2026 ถอดเพดาน UI/export แล้ว ดู [ผลตรวจ PDF](docs/verification/PDF_PAGE_LIMIT_REVIEW.md) | ไม่มีเพดานเชิงผลิตภัณฑ์; ยังต้องประเมินทรัพยากรอุปกรณ์จริง |
 | ขนาด PDF | ใช้ MAX_PDF_BYTES=10,000,000; <= ดาวน์โหลดทันที > คืน Blob พร้อม exceedsTarget ให้ยืนยัน ดู [รายงาน](docs/verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) | รักษา Blob/ชื่อไฟล์ที่เสนอจนตัดสินใจ ไม่ render ซ้ำหรือเพิ่มระดับลดคุณภาพ |
@@ -90,6 +90,15 @@ RPC ปัจจุบันตรวจ `auth.uid()`, เจ้าของพ�
 | บัญชี | signUp รองรับกรณีไม่มี session/ต้องยืนยัน | ตรวจการตั้งค่า Auth จริง; เพิ่ม flow ลืมรหัสผ่านที่ครบ |
 
 ฐานก่อนรอบ Minimal มีตัวเลือก `classic`, `modern` (Emerald Editorial), `minimal` โดย Minimal ยังระบุรูปแบบพื้นฐาน รอบ 17 ต.ค. 2026 เพิ่มดีไซน์ Minimal เฉพาะครบหกหมวดด้วย key เดิมแล้ว: CSS scoped บน data-template ใช้กับ A4, measurement portal ใต้ body และ PDF clone เหมือนกัน ดู [รายงาน Minimal](docs/verification/MINIMAL_TEMPLATE_REVIEW.md) ต่อมาเพิ่มเลขหน้าเนื้อหาต่อเนื่องและสารบัญระดับหมวดทั้งสามแบบแล้ว ระบบสองสีรายพอร์ต สารบัญหลายหน้าและ split การ์ดใหญ่ยังไม่เสร็จ ไม่ถือว่าสามเทมเพลตครบทุกข้อกำหนดแล้ว
+
+### หลักฐาน checkpoint ที่ไม่ใช่การปิดทั้งระบบ
+
+- [UI ตัวเลือกจากคลัง](docs/verification/LIBRARY_SELECTION_UI_REVIEW.md) / [UI คลัง](docs/verification/MY_DATA_UI_REVIEW.md): ทำ presentation แล้ว ไม่เปลี่ยนช่อง/validation/จำนวนรูปเดิม; เกียรติบัตรยัง 4 รูปในโค้ด เป้าหมาย 2 รูปยังค้าง
+- [คลัง load/retry/dirty](docs/verification/MY_DATA_RESILIENCE_REVIEW.md): แยก failure/empty รักษาข้อมูลเดิมและ draft; Tags ไม่ครบป้องกัน save/edit; Back/Forward guard ยังไม่ครอบคลุมและ save/upload/cleanup ยังหลายคำขอ
+- [Editor Tags](docs/verification/EDITOR_TAG_LOADING_REVIEW.md): metadata retry ไม่โหลด selection เก่าทับ ไม่ markSaved; save ส่งเพียง ordered IDs ไม่มี Tags จึงยังใช้ได้เมื่อ main พร้อม และ Tags-only failure ไม่บล็อก PDF
+- [เลขหน้า](docs/verification/CONTINUOUS_PAGE_NUMBERING_REVIEW.md) / [สารบัญ](docs/verification/AUTOMATIC_TOC_REVIEW.md): coordinator เฉพาะ live Preview, cleanup ตาม session, ตรวจ layout ก่อน export; ไม่ใช่ระบบ visibility หรือ full document model
+- [PDF ไม่มีเพดานหน้า](docs/verification/PDF_PAGE_LIMIT_REVIEW.md) / [ยืนยันไฟล์ใหญ่](docs/verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md): มีไฟล์จริงจากข้อมูลจำลองและ guards/lifecycle regression ไม่รับประกันจำนวนหน้าอนันต์หรือทุกอุปกรณ์
+- [types/status 20 ต.ค.](docs/verification/TEST_TYPES_AND_STATUS_REVIEW.md): full-repo typecheck และ PGlite tests ผ่าน ไม่ใช้ Next build แทน typecheck; ผล browser/PDF ในลิงก์ก่อนหน้าเป็นประวัติ ไม่ได้รันใหม่ในรอบเอกสาร ไม่มีผล mock ใดยืนยัน RLS/Storage จริงหรือโทรศัพท์จริงครบระบบ
 
 ## 6. ข้อเสนอทางเทคนิค: การแบ่งความรับผิดชอบเป้าหมาย
 

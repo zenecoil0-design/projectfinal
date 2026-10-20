@@ -1,5 +1,7 @@
 # Editor Accordion — รอบปรับพื้นที่ฟอร์ม
 
+สถานะต่อมา: [Editor Tags](EDITOR_TAG_LOADING_REVIEW.md), [ถอดเพดานหน้า](PDF_PAGE_LIMIT_REVIEW.md), [ยืนยันไฟล์เกิน 10 MB](PDF_LARGE_FILE_CONFIRMATION_REVIEW.md), [เลขต่อเนื่อง](CONTINUOUS_PAGE_NUMBERING_REVIEW.md), [สารบัญ A4 ระดับหมวด](AUTOMATIC_TOC_REVIEW.md) และ [test types](TEST_TYPES_AND_STATUS_REVIEW.md) ทำแล้วตามขอบเขตแต่ละรายงาน ข้อความ “ยังค้าง/ไม่ได้แก้ในรอบนี้” ด้านล่างเป็นประวัติ Accordion ไม่ใช่สถานะปัจจุบันทุกเรื่อง Autosave/visibility/หัว TOC-สีในฟอร์ม/Back-Forward คลังและเป้าหมายรูปยังค้าง
+
 เริ่มจาก local/remote `fb8fa20589514ccf0f3b0b286eadae167a9b1a73` บน `codex/portfolio-next-phase`, working tree สะอาด ไม่แก้ main ไม่ใช้ไฟล์แนบเก่าทับ
 
 ## ส่วน A — โครงสร้างและการนำทาง
