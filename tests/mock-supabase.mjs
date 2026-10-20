@@ -4,6 +4,7 @@ const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: '
 let database;
 const reset = () => database = {
   portfolios: [ {id:'a', user_id:userId, title:'Portfolio A', template_key:'classic'}, {id:'b', user_id:userId, title:'Portfolio B', template_key:'classic'} ],
+  portfolio_section_visibility: [],
   covers: [{id:'cover-a',portfolio_id:'a', title:'ALPHA',first_name:'Alpha',last_name:'Student',school_name:'School A', cover_image_url:'http://127.0.0.1:54321/sample.png'}],
   prefaces:[{id:'preface-a',portfolio_id:'a',content:'คำนำที่บันทึกไว้ของพอร์ต A',signature_name:'Alpha Author'}],
   profiles:[{id:'profile-a',portfolio_id:'a',first_name:'Alpha',last_name:'Student',social_links:[],custom_fields:[],gpax:null}],
@@ -39,10 +40,14 @@ createServer(async (req,res) => {
   const rows=(database[table]??[]).filter(matches);
   if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body)); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
   if(req.method==='POST' && req.headers.prefer?.includes('resolution=merge-duplicates')) {
-    const key=url.searchParams.get('on_conflict');
-    const existing=(database[table]??[]).find(row=>row[key]===body[key]);
+    const keys=(url.searchParams.get('on_conflict')??'id').split(',');
+    const existing=(database[table]??[]).find(row=>keys.every(key=>row[key]===body[key]));
     if(existing) Object.assign(existing,body);
     else (database[table]??=[]).push({id:crypto.randomUUID(),...body});
+    if(req.headers.prefer?.includes('return=representation')) {
+      const row=(database[table]??[]).find(row=>keys.every(key=>row[key]===body[key]));
+      return res.end(JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json')?row:[row]));
+    }
     return res.end('null');
   }
   if(req.method==='POST') { (database[table]??=[]).push(...(Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}])); return res.end('null'); }

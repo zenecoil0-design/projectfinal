@@ -112,6 +112,11 @@ test('cover, preface and profile drafts persist across mobile preview; folded co
   for (const section of ['preface', 'profile', 'education', 'activity', 'certificate']) {
     await page.keyboard.press('Tab');
     await expect(page.locator(`#editor-heading-${section}`)).toBeFocused();
+    if (section === 'preface') {
+      // TOC has its own always-accessible control, not a folded form panel.
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#visibility-toc')).toBeFocused();
+    }
   }
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => Boolean(document.activeElement?.closest('[data-editor-panel]')))).toBe(false);

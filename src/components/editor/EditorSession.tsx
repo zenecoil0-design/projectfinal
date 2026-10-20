@@ -13,6 +13,7 @@ const SessionContext = createContext<{
   reportTags: (section: TagSection, status: Status) => void;
   dirty: Section[];
   exporting: boolean;
+  isExporting: () => boolean;
   setExporting: (value: boolean) => void;
   reportLoaded: (section: Section, success: boolean) => void;
   markSaved: (section: Section) => void;
@@ -25,7 +26,10 @@ export function EditorSession({ children }: { children: ReactNode }) {
   const reportTags = useCallback((section: TagSection, next: Status) => {
     setTagStatus(previous => previous[section] === next ? previous : { ...previous, [section]: next });
   }, []);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, updateExporting] = useState(false);
+  const exportingRef = useRef(false);
+  const setExporting = useCallback((next: boolean) => { exportingRef.current = next; updateExporting(next); }, []);
+  const isExporting = useCallback(() => exportingRef.current, []);
   const [dirty, setDirty] = useState<Section[]>([]);
   const baselines = useRef<Partial<Record<Section, string>>>({});
   const refreshDirty = useCallback(() => {
@@ -71,7 +75,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
     };
   }, [dirty, exporting]);
 
-  const value = useMemo(() => ({ status, tagStatus, reportTags, dirty, exporting, setExporting, reportLoaded, markSaved }), [status, tagStatus, reportTags, dirty, exporting, reportLoaded, markSaved]);
+  const value = useMemo(() => ({ status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved }), [status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

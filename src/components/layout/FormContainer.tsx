@@ -1,6 +1,7 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { Fragment, useLayoutEffect, useRef } from "react";
+import { VisibilityControl } from "@/components/editor/SectionVisibility";
 import { FaChevronDown } from "react-icons/fa";
 import { useEditorSession } from "@/components/editor/EditorSession";
 import { type Section } from "@/lib/editor/section-state";
@@ -58,7 +59,7 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
         const open = currentStep === step;
         const metadata = section === "education" || section === "activity" || section === "certificate" ? tagStatus[section] : "ready";
         const message = status[section] === "loading" ? "กำลังโหลด" : status[section] === "error" ? "โหลดไม่สำเร็จ" : metadata === "error" ? "Tags โหลดไม่ครบ" : metadata === "loading" ? "กำลังโหลด Tags" : dirty.includes(section) ? "ยังไม่บันทึก" : "พร้อมแก้ไข";
-        return <section key={section} className="min-w-0 rounded-xl border border-slate-200 bg-white">
+        return <Fragment key={section}><section className="min-w-0 rounded-xl border border-slate-200 bg-white">
           <h2>
             <button type="button" id={"editor-heading-" + section} aria-expanded={open} aria-controls={"editor-panel-" + section}
               onClick={() => onStepChange(open ? null : step)}
@@ -73,12 +74,15 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
           {/* Mount once per editor session: hiding never reloads, saves or clears a form. */}
           <div id={"editor-panel-" + section} role="region" aria-labelledby={"editor-heading-" + section} data-editor-panel={section} hidden={!open} inert={!open}
             onSubmitCapture={() => submissions.current.set(step, navigation.current.revision)} className="min-w-0 px-3 pb-1 pt-4 sm:px-4">
+            {section !== "cover" && <VisibilityControl section={section} />}
             <h3 className="mb-4 border-b border-slate-200 pb-2 text-base font-bold text-slate-800">{heading}</h3>
             <Form active={open && visible} onNext={() => {
               if (navigation.current.step === step && submissions.current.get(step) === navigation.current.revision) onNext(step);
             }} />
           </div>
-        </section>;
+        </section>{section === "preface" && <section aria-label="การแสดงสารบัญ" className="min-w-0 rounded-xl border border-slate-200 p-3">
+          <h2 className="mb-2 text-sm font-bold text-slate-800">สารบัญอัตโนมัติ</h2><VisibilityControl section="toc" />
+        </section>}</Fragment>;
       })}
     </div>
   </div>;

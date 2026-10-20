@@ -1,5 +1,7 @@
 # Test types and evidence-based status review
 
+Follow-up: [section visibility](SECTION_VISIBILITY_REVIEW.md) now has an additive migration/local tests and UI/Preview/PDF checkpoint; that migration is not installed on the live target. Visibility-pending statements below describe this types/status round's historical boundary. Automatic empty-section rules, Autosave and other outstanding work are not claimed complete.
+
 ## Baseline and scope
 
 - Date: 2026-10-20. Repository `zenecoil0-design/projectfinal`, branch `codex/portfolio-next-phase`.

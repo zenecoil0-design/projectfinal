@@ -1,5 +1,7 @@
 # Automatic section-level TOC review
 
+Follow-up: [user section visibility](SECTION_VISIBILITY_REVIEW.md) now filters actual Preview/PDF pages, retains TOC preference when all content is hidden, and uses this same numbering source. Its migration is prepared/local-tested but not installed live. Visibility-pending statements below are the original TOC round's historical scope, not a claim that the later checkpoint is absent; multi-page TOC/full model/automatic empty-data rules remain separate.
+
 ## Baseline and scope
 
 - Repository zenecoil0-design/projectfinal, branch codex/portfolio-next-phase.

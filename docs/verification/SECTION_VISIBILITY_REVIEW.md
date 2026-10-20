@@ -31,11 +31,104 @@ Migration: `supabase/migrations/20261020084510_section_visibility.sql` (generate
 - Tests cover valid/empty/malformed reads and empty-TOC preference, additive migration preserving existing rows/accounts/Storage metadata, defaults for existing portfolios, direct SQL validation/cover enforcement, cross-owner SELECT/INSERT/UPDATE/upsert/ownership reassignment rejection, anonymous/delete denial, per-key/stale-map writes and unrelated fields staying byte-for-byte equal in query results.
 - All SQL runs in new in-memory PGlite instances, closed in finally. Existing migration SQL is read only to initialize those synthetic fixtures. No hosted migration/reset, real content deletion or Storage write occurred. No live RLS/Data API integration result is claimed.
 
-## Part B — pending after A remote verification
+## Part B — UI, document and lifecycle
 
 Chosen UI behavior: server-confirmed preview, not optimistic. During save show the last confirmed document; disable export and other visibility changes. Failure leaves confirmed values and all content drafts untouched, with explicit retry of the intended single-section write. Loading failure is not interpreted as all-visible. Content dirty/readiness remains independent even for hidden sections; visibility success must never markSaved.
 
-Implementation/regression/PDF results will be completed in B after A publication.
+Part A was published/fetched and its complete tree verified before B: **`d5ac3cf01025dc732d3419ed9c2d1b0fc47755a0`**, local/remote equal and tree clean (equivalent to tested local checkpoint 1701852). Publication used the configured GitHub connector because shell push credentials are unavailable, exact-tree comparison and expected-parent/non-force update. No untested remote content was substituted.
+
+### UI and saved-state behavior
+
+- `SectionVisibilityProvider` is keyed by validated portfolio/owner, mounted only after the existing portfolio ownership read. It loads just the new table and is separate from EditorSession content baselines. Forms remain mounted/active even when their A4 is removed; no loader/store/selection/crop/save-handler reset is performed by a toggle.
+- Five optional form panels contain native checkbox switches with stable label/ID, checked state, focus style and disabled state. They sit outside the heading button and outside content forms. Cover has no switch. TOC has an independent control card after preface, not a new editable form or seventh readiness slot.
+- Loading status/error/retry lives above the form scroller so it is not lost offscreen. Before a successful visibility read there is no assumed all-on Preview. On first read failure the content forms can still be edited, but A4 waits and export is blocked. Errors are fixed Thai messages, not raw SQL/API diagnostics.
+- Save is server-confirmed: switch/Preview keep the last confirmed value while saving. The intended single-key write is retained for retry. A failed or malformed/unconfirmed response leaves the previous document intact, blocks export until retry confirms the intended state, and never marks a content section saved. The block is deliberate because a network failure might not prove whether the backend committed.
+- Synchronous pending ref prevents a second visibility request before React updates. ExportButton checks both rendered visibility phase and a synchronous canExport callback; the callback requires ready state to have committed to React's layout as well as no pending request. EditorSession now mirrors exporting in a ref via the existing setter, so visibility also refuses a save in the same JS turn that export starts. Content dirty/readiness calculations did not change. This is not an Autosave/revision framework.
+- Request revision/live guards ignore progress/results after unmount, Strict Mode cleanup or an old portfolio/account lifetime. Writes retain their original portfolio ID. No timer/listener was added by visibility. A request already accepted by the backend is not cancelled/rolled back by leaving the page; its old UI result is ignored and reload reads persisted state.
+- Different sections are isolated storage keys, demonstrated with two browser tabs and SQL tests. There is no realtime tab synchronization; the second tab can display stale settings until reload. Same-section concurrent saves are last-write-wins. These limitations are explicit, not silently described as conflict resolution.
+
+### Preview, TOC, footer and export
+
+- `VisibleSection` unmounts only the relevant Preview subtree and its outer spacing wrapper, not the form/store. Hidden sections produce no Paper nodes, not CSS-only hiding. Existing PaginatedSection unmount cleanup disconnects its ResizeObserver and unregisters measurement callbacks; body portals are removed with the subtree. Central PageLayout remains scoped to live Preview, outside clones/measurement.
+- The existing documentPageNumbers/documentContents pipeline sees only actual visible Papers in fixed document order. No new offset formula or PDF-specific numbering exists. Cover/preface/TOC stay unnumbered; if profile is hidden the next actual content starts 1. TOC preference remains stored, but no empty TOC Paper is mounted when all four content sections are off.
+- Stable section navigation already finds the first Paper by ID; no target for a closed section means no scroll command. The form shows that the section is excluded but editable. Folding Accordion, template switching or mobile panel switching does not change visibility.
+- Existing export awaits fonts/images and synchronously flushes current measurements/numbers/TOC before cloning. Visibility blocks export while loading/saving/error and while an intended value is unconfirmed, without hiding main load errors or dirty draft. Tags-only metadata failures remain non-blocking when main content is ready. Existing exporting lock covers generating and oversized-file confirmation, including all visibility switches. Renderer/quality/packing/A4/file-size threshold and Blob identity flow are unchanged.
+
+### Actual check chronology (mock/PGlite, not hosted integration)
+
+1. Dev targeted browser run first stopped at 3 failures: 1 passed, 3 failed, 8 not run. All were new-test setup/selectors: profile label was actually firstName/ชื่อจริง, role=alert also matched Next's route announcer, and a one-shot load failure was consumed by a dev duplicate mount. Corrected selectors/scoped alerts and made the initial error stable until explicit retry; assertions were retained. No application fix was needed for those failures.
+2. Dev visibility non-PDF cases after correction: **12/12 passed (45.8s)**, including each switch/reload/keyboard, confirmed crop/draft, error/retry/dedup, same-turn visibility/export, late load/save after portfolio/account change, selection/order/template/TOC/count changes and main-vs-Tags guards.
+3. Moved status above the form scroller before building. **One production build passed** using `npm run build -- --webpack`, an installed Next 16.2.9 CLI option, with the same dependencies/config and no package-script change. Compile, TypeScript and all nine static pages passed. Used webpack for the isolated checkout's linked existing dependencies; no failed/default build is claimed. Existing middleware deprecation, npm proxy-env and webpack cache-size warnings remain.
+4. Full-repo typecheck passed independently of build. Focused unit/PGlite suite **13/13 passed** (visibility 5, numbering 3, TOC 3, PDF result/format 2). Scoped lint 0 errors/0 warnings and diff check passed.
+5. Production selection: **86 passed / 1 failed (2.9m)** out of 87. The sole failure was an old Accordion test's fixed Tab sequence: the new independent TOC switch correctly receives focus between preface and profile. Added an assertion for that focus stop while retaining every original header/folded-control/draft assertion. Application source was not changed after build.
+6. On the same production build, reran that corrected test plus an added two-tab stale-map regression: **2/2 passed (5.9s)**. Across these runs, **88 distinct relevant browser cases are covered after correction**, not a claim of 88/88 in one run. New visibility cases total 17. Existing Editor/Tags/selection/Minimal/numbering/TOC/PDF-error/large-file lifecycle assertions remain, with no skip or weakened expected content.
+7. Final full-repo typecheck/scoped lint/diff/link checks run after test-only changes are recorded below. No new source fix after build, so no unnecessary second build or complete suite rerun. No /my-data/database full suite or live deletion run.
+
+The real 14 MB fixture is excluded by command selection as allowed, not skipped in test code. Size boundary/cancel/Escape/keyboard/mobile/URL cleanup/late session/Blob identity tests still run with the real renderer and a mocked reported size. Added an explicit all-visibility-switches-disabled assertion during confirmation; all original Blob identity assertions stay.
+
+### Actual downloaded PDFs
+
+| File fixture | Hidden content | Preview / PDF | Printed numbers | TOC starts | Bytes |
+| --- | --- | ---: | --- | --- | ---: |
+| Classic basic | profile | 6 / 6 | 1–3 | education 1, activity 2, certificate 3 | 383,749 |
+| Modern basic | profile | 6 / 6 | 1–3 | education 1, activity 2, certificate 3 | 424,119 |
+| Minimal, nine educations / ten activities, hidden mobile Preview and folded Accordion | profile + education | 14 / 14 | 1–11 | activity 1, certificate 11 | 2,066,920 |
+| Classic late activity images, withheld ResizeObserver, hidden mobile Preview | profile | 7 / 7 after image flush | 1–4 | education 1, activity 2, certificate 4 | 479,703 |
+
+All four use actual createPortfolioPdf/html-to-image/jsPDF and downloaded PDF bytes; only input data is mocked, not the renderer, size or page list. Existing pypdf inspector checks actual painted page rasters, counts/uniqueness and every MediaBox: **595.28 × 841.89 pt (A4)**. No closed profile pages or education pages in the Minimal file; no truncation at ten pages.
+
+Rendered/opened all three TOCs and content starts/final pages. Classic/Modern physical 4/5/6 are education/activity/certificate with printed 1/2/3. Minimal physical 4 starts ORDER 0/activity printed 1, physical 13 is ORDER 9 printed 10, physical 14 is certificate printed 11; TOC shows 1/11. The printed-footer contact sheet covers every physical page including front matter, physical 10/11 and the final page. Late-image TOC correctly advances certificate from 3 to 4. Thai headings/digits are legible and footers/TOC do not overlap or clip in these fixtures. These are visual/manual plus actual-PDF checks, not OCR or searchable-text claims.
+
+| Actual document configuration | Physical papers | Printed numbers | TOC behavior |
+| --- | ---: | --- | --- |
+| Basic all on | 7 | 1–4 | 1,2,3,4 |
+| Basic profile off | 6 | 1–3 | 1,2,3; no profile entry |
+| Minimal many-page all on | 18 | 1–15 | 1,2,5,15 |
+| Same Minimal profile + education off | 14 | 1–11 | 1,11 |
+| Same, TOC off | 13 | Still 1–11 | No TOC Paper |
+| All content + preface off, TOC preference on | 1 (cover) | None | No empty TOC, preference stays on |
+| Re-enable certificate in that last state | 3 (cover/TOC/certificate) | 1 | Certificate 1 |
+
+After actual exports, re-enabling profile/education restores original 7/18 counts and original profile/ordered library content. Browser tests preserve a dirty first name and confirmed cropped blob image while profile is off/on, valid image pixels after reopening, deselected education/order and dirty export guard through folding/mobile panels. No crop source was revoked merely because its Preview was removed.
+
+Desktop 1440px and mobile 390px screenshots were opened and checked: switches/status/error/retry are readable, controls are not nested in buttons, mobile has no horizontal page overflow, forms remain usable, and error/retry stays visible above the scroller. Persisted mock examples: [390px hidden profile](assets/visibility-mobile.png), [1440px write error](assets/visibility-error-desktop.png), [Minimal PDF TOC](assets/visibility-minimal-toc.png), [actual footer rasters](assets/visibility-printed-numbers.png).
+
+### Files / actual commands
+
+- A: new visibility contract helper, additive migration, five tests and this report.
+- B application: new `src/components/editor/SectionVisibility.tsx`; EditorSession synchronous exporting getter/setter only; ExportButton additional visibility guards; FormContainer switches/TOC card; Editor route/provider/conditional Preview. No changes to form loaders/save handlers/stores, TemplatePicker payload, section-state/readiness list, PageLayout/page-layout, packPages or PDF renderer.
+- Tests: `tests/e2e/section-visibility.spec.ts`, mock server supports composite-key upsert/representation, Accordion Tab expectation and PDF confirmation switch-lock assertion. Old assertions remain. Docs/status updates preserve historical results and keep M06.04/M08.03 PARTIAL because live migration/integration and automatic empty-data rules are outstanding.
+
+```sh
+npx tsc --noEmit --incremental false
+node --import tsx --test tests/section-visibility.test.ts
+node --import tsx --test tests/section-visibility.test.ts tests/page-numbers.test.ts tests/toc.test.ts tests/pdf-result.test.ts
+npx playwright test --config=/tmp/visibility-dev.config.cjs section-visibility.spec.ts --grep-invert 'real .*visibility PDF|late images with withheld' --reporter=line --max-failures=3
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key npm run build -- --webpack
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/tmp/visibility-browser/chromium npx playwright test tests/e2e/section-visibility.spec.ts tests/e2e/toc.spec.ts tests/e2e/page-numbering.spec.ts tests/e2e/editor.spec.ts tests/e2e/editor-tags.spec.ts tests/e2e/editor-accordion.spec.ts tests/e2e/library-selection.spec.ts tests/e2e/minimal-template.spec.ts tests/e2e/pdf-export.spec.ts tests/e2e/pdf-size.spec.ts --grep-invert 'real oversized A4 PDF' --reporter=line --max-failures=3
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/tmp/visibility-browser/chromium npx playwright test tests/e2e/editor-accordion.spec.ts tests/e2e/section-visibility.spec.ts --grep 'folded controls leave the Tab order|two tabs write different' --reporter=line --max-failures=2
+npx eslint src/lib/editor/section-visibility.ts src/components/editor/SectionVisibility.tsx src/components/editor/EditorSession.tsx src/components/editor/ExportButton.tsx src/components/layout/FormContainer.tsx src/app/editor/page.tsx tests/section-visibility.test.ts tests/e2e/section-visibility.spec.ts tests/e2e/editor-accordion.spec.ts tests/e2e/pdf-size.spec.ts tests/mock-supabase.mjs
+git diff --check
+python tests/pdf-inspect.py <downloaded.pdf>
+python tests/pdf-numbering-contact-sheet.py <output.png> <classic.pdf> <modern.pdf> <minimal.pdf> <late.pdf>
+pdftoppm -f <first> -l <last> -scale-to 1000 -png <downloaded.pdf> <output>
+```
+
+Browser tooling: old executable segfaulted and cached package extractor hit a /tmp fonts ownership error. Freshly unpacked Chromium 153 and matching SwiftShader from existing cached Brotli assets into a separate /tmp directory, verified version and used that runtime for successful runs. No new app dependency or network browser installation. Existing PDF inspector Pillow getdata deprecation is a tooling warning, not failed assertions.
+
+### Limitations / unchanged scope
+
+- Live schema/RLS/grants/Data API/migration/application integration unverified: both catalog reads timed out, migration not applied. Project inventory is not sufficient schema evidence. Staging/read-only preflight remains mandatory before installation.
+- Browser data/auth events are mocks; backend ownership proof is synthetic PGlite role/fixture behavior, not real JWT/Storage/physical-device validation. Device/browser matrix and real university upload quality acceptance are not claimed.
+- No realtime/tab conflict detection: different-key persistence safe, same-key last-write-wins, stale tab display until reload. Pending backend writes may complete after navigation to their original target; callbacks cannot enter the new UI lifetime.
+- Hidden content still participates in main readiness and dirty guards by requirement. TOC empty suppression is the only new automatic omission rule. No auto-hide of empty education/activity/certificate/profile/preface, card splitting, Autosave, snapshot/updates, colors or per-portfolio image choices.
+- Existing cover/profile images, confirmed crop URLs, selected item/image order, template save payload, A4, sequential canvas/cleanup, PDF quality levels/10 MB threshold and same-Blob confirmation remain. No Storage/files/accounts reset or real deletion.
+
+### Closing verification
+
+- After final test-only additions/corrections, full-repository `npx tsc --noEmit --incremental false` **PASS** (exit 0). Final scoped ESLint **0 errors/0 warnings** across all changed TS/TSX/test/mock files; git diff --check PASS. No source changes after the successful build.
+- Relative Markdown file-target check across **6 edited documents: 117 links, 0 missing files**; external URLs/every fragment were not network/anchor validated. Screenshot assets are copied from the successful production mock run, not fabricated app/data examples.
+- New-table security review follows Supabase/Postgres guidance: auth role + explicit portfolio ownership, RLS WITH CHECK on new values, minimum grants, no SECURITY DEFINER helper, and primary-key index beginning with portfolio_id for reads/FK/keyed upserts. This review does not replace the live catalog/staging/advisor work that timed out or remains uninstalled.
 
 ## Installation — separate operator step, NOT executed
 
@@ -46,4 +139,7 @@ Implementation/regression/PDF results will be completed in B after A publication
 
 ## Publication
 
-A/B exact remote commits and clean-tree verification will be supplied in the handoff after publication. The final report's containing commit cannot embed its own SHA without changing it; resolve with `git log -1 --format=%H -- docs/verification/SECTION_VISIBILITY_REVIEW.md`.
+- A remote: `d5ac3cf01025dc732d3419ed9c2d1b0fc47755a0`, exact tested tree verified before B.
+- B/final remote SHA and clean-tree verification are supplied in the final handoff after publication; the containing commit cannot embed its own SHA without changing it. Resolve with `git log -1 --format=%H -- docs/verification/SECTION_VISIBILITY_REVIEW.md`.
+- Publication uses expected-parent/non-force update through the configured GitHub connector, compares the complete tree against the tested local commit, then fetches and compares local/remote. Parent mismatch is a stop condition, not permission to overwrite newer work.
+- Stop after B verification. No live migration application, deploy, reset, real deletion or unrelated feature implementation authorized/performed in this round.

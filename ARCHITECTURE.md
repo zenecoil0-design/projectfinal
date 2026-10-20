@@ -64,6 +64,7 @@ Repository: https://github.com/zenecoil0-design/projectfinal
 | คลัง | `user_library_educations`, `user_library_activities`, `user_library_certificates` |
 | รูปคลัง | `user_library_activity_images`, `user_library_certificate_images` |
 | รายการในพอร์ต | `portfolio_educations`, `portfolio_activities`, `portfolio_certificates` |
+| การแสดงหมวด (migration ยังไม่ติดตั้งจริง) | `portfolio_section_visibility`: override หนึ่งแถวต่อ portfolio/section; ปกไม่รับ override; อ่านสำเร็จไม่มีแถว = เปิด |
 | Tags | `user_tags`, `user_library_education_tags`, `user_library_activity_tags`, `user_library_certificate_tags` |
 
 ชื่อเหล่านี้ยืนยันจากโค้ดที่อ่าน ไม่ใช่การยืนยันว่าตาราง นโยบาย หรือ migration ถูกติดตั้งในฐานข้อมูลที่ใช้งานจริงแล้ว
@@ -82,6 +83,7 @@ RPC ปัจจุบันตรวจ `auth.uid()`, เจ้าของพ�
 | เลือกรูป | เก็บรายการที่เลือกและนำรูปทั้งหมดมาใช้ | เก็บชุดรูปที่เลือกแยกในแต่ละพอร์ต |
 | แบบ B | โหลดเนื้อหาจากคลังเมื่อเปิดพอร์ต | เก็บ snapshot พร้อมต้นทางและ version และแจ้งรับข้อมูลใหม่ |
 | บันทึกพอร์ต | ปุ่มบันทึก, dirty state, เตือนก่อนออก | autosave ที่ป้องกัน race/ข้อมูลหาย |
+| การแสดงหมวด | [visibility checkpoint](docs/verification/SECTION_VISIBILITY_REVIEW.md): SectionVisibilityProvider แยกจากหกฟอร์ม, server-confirmed Preview, per-key upsert, loading/error บล็อก export | ยังไม่ลง migration จริง; catalog timeout จึงต้องตรวจ schema/grants/staging/Data API ก่อนใช้งาน live; ไม่ใช่ auto-hide ข้อมูลว่าง |
 | สารบัญและเลขรวม | มีเลขเนื้อหาต่อเนื่องและสารบัญอัตโนมัติระดับหมวดหน้าเดียว ทั้งสามแบบ ใช้ข้อมูลหน้าชุดเดียวกัน ดู [ผลตรวจสารบัญ](docs/verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/visibility และ page model เต็มยังค้าง; ไม่เพิ่มสารบัญรายรายการเป็นข้อกำหนดในรอบนี้ |
 | แบ่งหน้า | pack การ์ดทั้งใบ; การ์ดใหญ่เกินหน้าไม่แบ่ง | split รายการใหญ่พร้อม “(ต่อ)” |
 | จำนวนหน้า | ฐานเดิมมี MAX_PAGES=10; รอบ 16 ต.ค. 2026 ถอดเพดาน UI/export แล้ว ดู [ผลตรวจ PDF](docs/verification/PDF_PAGE_LIMIT_REVIEW.md) | ไม่มีเพดานเชิงผลิตภัณฑ์; ยังต้องประเมินทรัพยากรอุปกรณ์จริง |
@@ -99,6 +101,7 @@ RPC ปัจจุบันตรวจ `auth.uid()`, เจ้าของพ�
 - [เลขหน้า](docs/verification/CONTINUOUS_PAGE_NUMBERING_REVIEW.md) / [สารบัญ](docs/verification/AUTOMATIC_TOC_REVIEW.md): coordinator เฉพาะ live Preview, cleanup ตาม session, ตรวจ layout ก่อน export; ไม่ใช่ระบบ visibility หรือ full document model
 - [PDF ไม่มีเพดานหน้า](docs/verification/PDF_PAGE_LIMIT_REVIEW.md) / [ยืนยันไฟล์ใหญ่](docs/verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md): มีไฟล์จริงจากข้อมูลจำลองและ guards/lifecycle regression ไม่รับประกันจำนวนหน้าอนันต์หรือทุกอุปกรณ์
 - [types/status 20 ต.ค.](docs/verification/TEST_TYPES_AND_STATUS_REVIEW.md): full-repo typecheck และ PGlite tests ผ่าน ไม่ใช้ Next build แทน typecheck; ผล browser/PDF ในลิงก์ก่อนหน้าเป็นประวัติ ไม่ได้รันใหม่ในรอบเอกสาร ไม่มีผล mock ใดยืนยัน RLS/Storage จริงหรือโทรศัพท์จริงครบระบบ
+- [Visibility](docs/verification/SECTION_VISIBILITY_REVIEW.md): ฟอร์มยัง mounted; ถอดเฉพาะ Preview ที่ปิดออกจาก live PageLayout ทำให้เลข/TOC/PDF ใช้ชุดเดียวกัน; TOC ไม่เข้าหก-form readiness, content dirty/main-error guards ยังอยู่, export/visibility ใช้ synchronous locks ทั้งสองทิศทาง การเก็บค่าบนฐานจริงยังไม่เปิดใช้จนติดตั้ง migration และตรวจ integration ตามขั้นตอนแยก
 
 ## 6. ข้อเสนอทางเทคนิค: การแบ่งความรับผิดชอบเป้าหมาย
 

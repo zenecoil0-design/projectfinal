@@ -67,6 +67,7 @@ test('oversize mock waits, cancel/Escape do not download, confirm uses same Blob
   await start.click();
   await expect(picker).toBeDisabled();
   await expect(dialog).toBeVisible({ timeout: PDF_CONFIRMATION_TIMEOUT });
+  expect(await page.locator('[role=switch]').evaluateAll(inputs => inputs.every(input => (input as HTMLInputElement).disabled))).toBe(true);
   await expect(picker).toBeDisabled();
   await expect(dialog).toContainText('10.000001 MB'); await expect(dialog).toContainText('10,000,001 bytes');
   await expect(dialog.getByRole('button', { name: 'ยกเลิก', exact: true })).toBeFocused();

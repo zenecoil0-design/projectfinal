@@ -31,10 +31,12 @@ import { createClient } from "@/lib/supabase/client";
 import { EditorSession, EditorStatus, ReadyPreview } from "@/components/editor/EditorSession";
 import TemplatePicker from "@/components/editor/TemplatePicker";
 import ExportButton from "@/components/editor/ExportButton";
+import { SectionVisibilityProvider, VisibilityPreview, VisibleSection, VisibilityStatus } from "@/components/editor/SectionVisibility";
 import { resetEditorStores, sections } from "@/lib/editor/section-state";
 
 interface PortfolioInfo {
   id: string;
+  ownerId: string;
   title: string;
   template_key: string;
 }
@@ -161,6 +163,7 @@ function EditorContent() {
 
         setPortfolio({
           id: data.id,
+          ownerId: user.id,
           title:
             data.title ||
             "Untitled Portfolio",
@@ -260,7 +263,7 @@ function EditorContent() {
   // =====================================================
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-slate-100">
+    <SectionVisibilityProvider key={`${portfolio.id}:${portfolio.ownerId}`} portfolioId={portfolio.id}><div className="flex h-screen w-full flex-col overflow-hidden bg-slate-100">
       {/* HEADER */}
 
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
@@ -318,6 +321,7 @@ function EditorContent() {
         {/* LEFT */}
 
         <aside className={`${mobilePanel === "form" ? "flex" : "hidden"} md:flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-slate-300 bg-white`}>
+          <div className="shrink-0 px-3 pt-3"><VisibilityStatus /></div>
           <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
             <FormContainer
               visible={desktop || mobilePanel === "form"}
@@ -340,7 +344,7 @@ function EditorContent() {
           }
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
-          <ReadyPreview>
+          <ReadyPreview><VisibilityPreview>
           <TemplateContext.Provider value={portfolio.template_key}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
             {/* PAGE 1 */}
 
@@ -352,52 +356,32 @@ function EditorContent() {
 
             {/* PAGE 2 */}
 
-            <div
-              className="shrink-0"
-            >
-              <PrefacePreview />
-            </div>
+            <VisibleSection section="preface"><div className="shrink-0"><PrefacePreview /></div></VisibleSection>
 
-            <div className="shrink-0"><ContentsPreview /></div>
+            <VisibleSection section="toc"><div className="shrink-0"><ContentsPreview /></div></VisibleSection>
 
             {/* PAGE 3 */}
 
-            <div
-              className="shrink-0"
-            >
-              <ProfilePreview />
-            </div>
+            <VisibleSection section="profile"><div className="shrink-0"><ProfilePreview /></div></VisibleSection>
 
             {/* PAGE 4 */}
 
-            <div
-              className="shrink-0"
-            >
-              <EducationPreview />
-            </div>
+            <VisibleSection section="education"><div className="shrink-0"><EducationPreview /></div></VisibleSection>
 
             {/* PAGE 5 */}
 
-            <div
-              className="shrink-0"
-            >
-              <ActivityPreview />
-            </div>
+            <VisibleSection section="activity"><div className="shrink-0"><ActivityPreview /></div></VisibleSection>
 
             {/* PAGE 6 */}
 
-            <div
-              className="shrink-0"
-            >
-              <CertificatePreview />
-            </div>
+            <VisibleSection section="certificate"><div className="shrink-0"><CertificatePreview /></div></VisibleSection>
 
             <div className="h-8 shrink-0" />
           </PreviewViewport></TemplateContext.Provider>
-          </ReadyPreview>
+          </VisibilityPreview></ReadyPreview>
         </main>
       </div>
-    </div>
+    </div></SectionVisibilityProvider>
   );
 }
 

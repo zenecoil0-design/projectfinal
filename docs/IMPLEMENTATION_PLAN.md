@@ -2,6 +2,8 @@
 >
 > หลักฐานเจ้าของ 2026-10-15: reset/foundation ทำแล้ว เก็บบัญชี 2 บัญชี Storage เหลือ 15 placeholders และยืนยันบันทึกปก/รีเฟรชผ่าน; การยกเว้น backup ใช้เฉพาะข้อมูลทดลองชุดนั้น ไม่ให้รันซ้ำหรือถือว่า integration ทั้งระบบผ่าน ดู [M01_DATABASE_SETUP.md](M01_DATABASE_SETUP.md)
 
+> Checkpoint ถัดมา: [Section visibility](verification/SECTION_VISIBILITY_REVIEW.md) เพิ่ม UI/Preview/PDF และ persistence contract แยกรายพอร์ตแล้ว แต่ migration 20261020084510 ยังไม่ติดตั้งจริง เนื่องจาก catalog reads timeout ต้องตรวจ schema/grants/staging/integration ก่อนเปิดใช้กับระบบจริง; ไม่ปิด M01/M06/M08 ทั้งส่วน
+
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
 ฉบับ 1.5 • 20 ตุลาคม 2569 (Asia/Bangkok)
@@ -78,9 +80,9 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M03 | เลือกข้อมูลและรูปเข้าแต่ละพอร์ตแบบ B | M01, M02 | IN_PROGRESS | UI/ลำดับ/Editor Tags retry ทำแล้ว; snapshot/เลือกรูปรายพอร์ต/รับอัปเดตยังค้าง |
 | M04 | รับอัปเดต ลบคลัง และวงจรข้อมูล | M03 | TODO | ข้อมูลหลายพอร์ตสอดคล้องโดยผู้ใช้ควบคุมการรับอัปเดตได้ |
 | M05 | จัดการพอร์ตและ Autosave | M04 | IN_PROGRESS | lifecycle/dirty/export guards บน manual save มีแล้ว; Autosave/conflict/จัดการพอร์ตยังค้าง |
-| M06 | ฟอร์มเนื้อหา อายุ และ Editor แบบพับขยาย | M05 | IN_PROGRESS | UI หกฟอร์ม/Accordion ทำแล้ว; อายุสองโหมด/visibility/กฎข้อมูลว่างยังค้าง |
+| M06 | ฟอร์มเนื้อหา อายุ และ Editor แบบพับขยาย | M05 | IN_PROGRESS | UI/Accordion และ visibility checkpoint ทำแล้วใน mock; migration visibility ยังไม่ติดตั้งจริง; อายุสองโหมด/กฎข้อมูลว่างยังค้าง |
 | M07 | Responsive หน้าหลักและ Preview | M06 | IN_PROGRESS | แผงมือถือ/fit/section-ID scroll มีหลักฐาน mock; zoom/อุปกรณ์จริง/หน้าแรกยังค้าง |
-| M08 | Document model การแบ่งหน้า สารบัญ และเลขหน้า | M06, M07 | IN_PROGRESS | เลขต่อเนื่อง/สารบัญระดับหมวด/ไม่มีเพดานหน้าแล้ว; page model เต็ม/split/visibility ยังค้าง |
+| M08 | Document model การแบ่งหน้า สารบัญ และเลขหน้า | M06, M07 | IN_PROGRESS | เลข/TOC/ไม่มีเพดานหน้าและ user visibility เชื่อมแล้วใน checkpoint; full model/split/กฎข้อมูลว่าง/integration ยังไม่ครบ |
 | M09 | เทมเพลตสมบูรณ์สามแบบและสองสี | M08 | IN_PROGRESS | Minimal หกหมวดและทั้งสามแบบมี TOC/เลขหน้า; สองสี/ขอบเขตเป้าหมายอื่นยังค้าง |
 | M10 | PDF พร้อมใช้งานและการยืนยันไฟล์ใหญ่ | M05, M08, M09 | IN_PROGRESS | PDF หลายหน้า/guards/ยืนยัน Blob เดิมมีหลักฐาน; revision/quality acceptance/อุปกรณ์จริงยังค้าง |
 | M11 | บัญชีและการกู้รหัสผ่าน | M00, M01 | TODO | เข้าสู่ระบบได้ตามเงื่อนไขพัฒนาและกู้บัญชีได้ครบวงจร |
@@ -120,7 +122,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M01.01 ออกแบบข้อมูลพอร์ตและ snapshot | TODO | มี relations เดิม ไม่มี B ถาวร | กำหนด source ID/version, snapshot payload, selected asset IDs, sort_order, revision, visibility, template/colors, age mode; ตรวจ mapping schema จริงก่อนกำหนดชื่อตาราง | บันทึก data contract และแผนเปลี่ยนข้อมูลที่ caller/store/preview ใช้ตรงกัน |
 | M01.02 ออกแบบการเขียนและ conflict | TODO | มี RPC selection เดิม | กำหนด atomic writes, expected revision, error รูปแบบเดียว, การปฏิเสธ stale request และการ retry ไม่สร้างข้อมูลซ้ำ | มีสัญญา request/response และกรณี conflict/unauthorized/not found ที่ทดสอบได้ |
-| M01.03 ทำ migration และ backfill | IN_PROGRESS | foundation migration พร้อม; snapshot ยังไม่ทำ | ต่อยอด schema แบบเป็นขั้นตอน รักษาข้อมูลเดิม สร้าง snapshot ของพอร์ตเดิมจากข้อมูล ณ ย้ายและบันทึกข้อจำกัด | ทดสอบ migrate/restore ใน staging พร้อมจำนวนรายการก่อน/หลัง; ห้ามอ้างกู้เวอร์ชันอดีตที่ไม่เคยเก็บ |
+| M01.03 ทำ migration และ backfill | IN_PROGRESS | foundation มีหลักฐานเดิม; [visibility migration](verification/SECTION_VISIBILITY_REVIEW.md) เตรียม/PGlite-tested เท่านั้น ยังไม่ลงจริง | ตรวจ catalog/staging ก่อนติดตั้งแยก; snapshot/backfill/revision ยังไม่ทำ | ไม่รัน migration/reset เดิมซ้ำ ไม่อ้างว่า visibility พร้อมใช้บนฐานจริง |
 | M01.04 บังคับ ownership และ validation | IN_PROGRESS | relation ownership/title/grants ผ่าน local; image limits ยังไม่ทำ | RLS/RPC ตรวจเจ้าของรายการ รูป Tags พอร์ต เพดานภาพ และชื่อบังคับ; ไม่พึ่ง UI | A ไม่เข้าถึง B ผ่าน API โดยตรง; invalid writes rollback ได้ |
 | M01.05 กำหนดวงจรไฟล์ภาพ | TODO | ยังไม่มีวงจร snapshot asset | ใช้ asset identity/object key คงที่แยกเวอร์ชัน เก็บ reference และ cleanup retry; ตรวจ public URL กับนโยบายจริง | snapshot เก่ามีไฟล์จริงให้โหลด; ไฟล์ที่มีผู้ใช้อ้างอิงไม่ถูก cleanup |
 
@@ -211,7 +213,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | M06.01 ปรับปก/คำนำ/ประวัติเดิม | PARTIAL | UI ปรับแล้ว ชื่อ/รูปปกแยกจาก profile; [Accordion draft/crop](verification/EDITOR_ACCORDION_REVIEW.md), [หลักฐาน cover](M01_DATABASE_SETUP.md) | ตรวจฟอร์มเป้าหมาย/ตัวอย่างคำนำ/custom fields และ integration ครบต่อไป | ปุ่ม save ยังอยู่ ไม่ใช่ Autosave; หลักฐานเจ้าของยืนยันเฉพาะ cover save/reload |
 | M06.02 วันเกิดและโหมดอายุ | TODO | มี auto อย่างเดียว | เก็บ auto/manual และค่า manual คำนวณปีเต็ม auto จากวันอ้างอิงเดียว; จัดกฎ invalid/29 ก.พ. | manual ไม่ถูกวันเกิดทับ โหมด persist และ preview/export ตรงกัน |
 | M06.03 แทนเมนูด้วย accordion | PARTIAL | [Accordion](verification/EDITOR_ACCORDION_REVIEW.md) หกฟอร์มเปิดหนึ่ง/พับทั้งหมด keyboard/dirty/crop/mobile/late save ผ่าน mock | ส่วนหัว TOC/สี-ดาวน์โหลดตามดีไซน์เป้าหมายยังไม่ทำ; TOC บน A4 ไม่ใช่ฟอร์มที่เจ็ด | เก็บปุ่มบันทึก/ถัดไปหลัง save สำเร็จ; ไม่ซ่อนหมวด A4 เมื่อพับ |
-| M06.04 เปิด/ปิดหมวด | TODO | ยังไม่พบ | สวิตช์ภายในหมวด ปกปิดไม่ได้ เก็บ visibility ถาวรและข้อมูลเมื่อปิด | การพับไม่ปิด A4; เปิดกลับข้อมูลครบ; renderer จะใช้ visibility ใน M08 |
+| M06.04 เปิด/ปิดหมวด | PARTIAL | [visibility checkpoint](verification/SECTION_VISIBILITY_REVIEW.md): ปกคงอยู่ สวิตช์ห้าฟอร์ม/TOC แยก, per-key persistence, ไม่ล้าง draft/selection/รูป | migration 20261020084510 ยังไม่ติดตั้ง ต้องตรวจ schema/grants/Data API/staging และ integration จริงแยก | preview เปลี่ยนหลังยืนยัน; fail/retry ไม่ markSaved เนื้อหา; ยังไม่ใช่ Autosave/หลายแท็บ sync เต็ม |
 | M06.05 กำหนดข้อมูลว่างและข้อผิดพลาด | PARTIAL | [Tags error/retry](verification/EDITOR_TAG_LOADING_REVIEW.md) แยก main/metadata/empty และรักษา draft แล้ว | normalize/omit ช่องว่าง/หัวข้อ/หน้า และกฎเดียวกันทุก template ยังค้าง | ไม่เอา Tags failure ไปตีความว่าไม่มี Tags; ยังไม่ทำ visibility/กฎหมวดว่าง |
 
 **เกณฑ์จบ M06:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
@@ -228,7 +230,7 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M07.01 ปรับหน้าแรกให้กะทัดรัด | TODO | มี responsive เดิม | ลดพื้นที่ hero/การ์ด/ช่องว่างบนคอมตามธีมเดิม ตรวจหลายความกว้างก่อนลดฟอนต์ | ภาพเปรียบเทียบก่อน/หลัง ไม่ล้นแนวนอน และคลังเข้าถึงง่าย |
 | M07.02 จัดแผง editor ตามพื้นที่ | PARTIAL | [Accordion mobile](verification/EDITOR_ACCORDION_REVIEW.md) และ [TOC regression](verification/AUTOMATIC_TOC_REVIEW.md) ที่ 390/1440 ผ่าน | แท็บเล็ต/keyboard/touch/ความสูงและ browser matrix จริงยังต้องตรวจ | ไม่อ้างว่า mock viewport เท่ากับโทรศัพท์จริง |
-| M07.03 ผูกหมวดกับ Preview | PARTIAL | [TOC รอบ B](verification/AUTOMATIC_TOC_REVIEW.md) ใช้ stable section ID และรอสเกลจริง แทรก TOC ไม่เลื่อนผิดหมวด | หมวดซ่อน/ไม่มีหน้าและ visibility UI ยังไม่ทำ | คงหน้าของหมวดว่างที่ renderer เดิมสร้าง ไม่เปลี่ยนกฎเอง |
+| M07.03 ผูกหมวดกับ Preview | PARTIAL | [TOC](verification/AUTOMATIC_TOC_REVIEW.md) ใช้ stable section ID/สเกลจริง; [visibility](verification/SECTION_VISIBILITY_REVIEW.md) แจ้งหมวดปิดและคง scroll เมื่อไม่มีเป้าหมาย | กฎหมวดว่างอัตโนมัติ/อุปกรณ์จริงและ visibility integration ยังต้องตรวจ | ฟอร์มยังเปิดแก้ได้เมื่อ A4 ปิด ไม่เปลี่ยนลำดับ Accordion |
 | M07.04 Fit และซูม | PARTIAL | [Paper/Minimal](verification/MINIMAL_TEMPLATE_REVIEW.md) scale A4 ทั้งหน้า; mobile hidden Preview export ผ่าน | ยังไม่มี UI ซูม ต้องตรวจการซูมไม่เปลี่ยน pagination/PDF เมื่อทำ | fit ที่มีแล้วไม่ใช่ zoom feature ครบ |
 | M07.05 ตรวจการใช้งานจริง | TODO | ยังไม่ยืนยันจริง | ตรวจ keyboard/focus modal crop/ลบ ปุ่มรูปบน touch และหมุนจอ | ข้อมูลคงอยู่ทั้งแท็บและอุปกรณ์; เก็บภาพจริงตาม DESIGN_SYSTEM |
 
@@ -246,8 +248,8 @@ M11 อยู่กลุ่มบัญชีจึงใช้รหัสแ�
 | --- | --- | --- | --- | --- |
 | M08.01 ทำ page model กลาง | PARTIAL | [เลขหน้า](verification/CONTINUOUS_PAGE_NUMBERING_REVIEW.md)/[TOC](verification/AUTOMATIC_TOC_REVIEW.md) ใช้ผลหน้าจริงกลาง แยก physical/printed แล้ว | blocks/visibility/selected assets และ page model เต็มยังไม่ทำ | ไม่เรียก DOM numbering coordinator ว่า document model เป้าหมายเสร็จแล้ว |
 | M08.02 จัด card และแบ่งต่อ | PARTIAL | [measurement portal](verification/PDF_PAGE_LIMIT_REVIEW.md) และ [late image flush](verification/AUTOMATIC_TOC_REVIEW.md) วัดได้แม้ Preview ซ่อน | split ข้อความ/รูป/การ์ดใหญ่พร้อม (ต่อ) ยังไม่ทำ; overflow guard ยังบล็อก | ไม่ซ่อน overflow/ย่อเนื้อหาเพื่ออ้างว่าแบ่งต่อแล้ว |
-| M08.03 ซ่อนส่วนว่างและหน้าที่ไม่ใช้ | TODO | ต้องปรับ preview | ใช้กฎ M06 ไม่สร้าง label/กรอบ/หน้า placeholder; ส่วนปิดไม่ออกเอกสาร | load error ยังขวาง output ที่ขาดข้อมูล; ไม่มีหน้าเปล่าเกินจำเป็น |
-| M08.04 ทำสารบัญและเลขหน้า | PARTIAL | เลขต่อเนื่องและสารบัญระดับหมวดหน้าเดียวครบสามแบบแล้ว ดู [ผลตรวจสารบัญ](verification/AUTOMATIC_TOC_REVIEW.md) | สารบัญหลายหน้า/visibility และ page model เต็มยังไม่ทำ; รายรายการไม่ใช่ข้อกำหนดที่ยืนยันเพิ่มในรอบนี้ | ปก/คำนำ/สารบัญไม่มีเลข profile เริ่ม 1; counter รวมทุกกระดาษ; ไม่ปิด M08 ทั้งระบบ |
+| M08.03 ซ่อนส่วนว่างและหน้าที่ไม่ใช้ | PARTIAL | [ปิดหมวดโดยผู้ใช้](verification/SECTION_VISIBILITY_REVIEW.md) ถอด Preview/Paper และ measurement; TOC ว่างไม่สร้างแต่เก็บ preference | กฎซ่อนช่อง/หมวดว่างอัตโนมัติและ full model ยังแยกงาน; visibility DB integration ยังรอ | main error/dirty ยังบล็อกแม้หมวดปิด; ไม่ปิด overflow หรือสร้าง page model ใหม่ |
+| M08.04 ทำสารบัญและเลขหน้า | PARTIAL | เลข/TOC ระดับหมวดสามแบบและ [visibility](verification/SECTION_VISIBILITY_REVIEW.md) ใช้หน้าเดียวกัน; ปิด profile แล้วเนื้อหาถัดไปเริ่ม 1 | สารบัญหลายหน้า/full model ยังไม่ทำ; visibility migration/live integration ยังรอ ไม่เพิ่มสารบัญรายรายการเป็น requirement | ปก/คำนำ/TOC ไม่มีเลข; TOC ว่างไม่สร้างแต่เก็บ preference; ไม่ปิด M08 ทั้งระบบ |
 | M08.05 ถอดเพดานและตรวจความคงที่ | PARTIAL | ถอดเพดาน UI/export แล้ว ตรวจ PDF จริง 12/20/25 หน้า ดู [รายงาน](verification/PDF_PAGE_LIMIT_REVIEW.md) | ยังต้องตรวจชุดเป้าหมาย/ทรัพยากรอุปกรณ์จริงและ dependency ของ page model; ไม่ถือว่าทั้ง M08 เสร็จ | ไม่มีเพดานหน้า; overflow ยังบล็อกจริง; เกิน 10 MB [ยืนยันดาวน์โหลด](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) ไม่ใช่ hard error |
 
 **เกณฑ์จบ M08:** งานย่อย .01–.05 ต้องครบผลส่งมอบ เคสที่เกี่ยวข้องกับส่วนนี้มีผลจริงหรือเหตุผลที่ยังรันไม่ได้ หากเงื่อนไขจำเป็นยัง BLOCKED ห้ามปิดเป็น DONE อัปเดตทะเบียนงาน/หลักฐาน และ push commit สำเร็จก่อนส่งต่อ ผลทดสอบแบบ mock ต้องระบุว่าเป็น mock
