@@ -3,7 +3,7 @@ export const userId = '00000000-0000-0000-0000-000000000001';
 const user = { id: userId, aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 let database;
 const reset = () => database = {
-  portfolios: [ {id:'a', user_id:userId, title:'Portfolio A', template_key:'classic'}, {id:'b', user_id:userId, title:'Portfolio B', template_key:'classic'} ],
+  portfolios: [ {id:'a', user_id:userId, title:'Portfolio A', template_key:'classic',created_at:'2026-01-01T00:00:00Z',updated_at:null}, {id:'b', user_id:userId, title:'Portfolio B', template_key:'classic',created_at:'2026-01-01T00:00:00Z',updated_at:null} ],
   portfolio_section_visibility: [],
   covers: [{id:'cover-a',portfolio_id:'a', title:'ALPHA',first_name:'Alpha',last_name:'Student',school_name:'School A', cover_image_url:'http://127.0.0.1:54321/sample.png'}],
   prefaces:[{id:'preface-a',portfolio_id:'a',content:'คำนำที่บันทึกไว้ของพอร์ต A',signature_name:'Alpha Author'}],
@@ -38,7 +38,7 @@ createServer(async (req,res) => {
   const table=url.pathname.split('/').at(-1);
   const matches = row => [...url.searchParams].every(([key,value])=> !value.startsWith('eq.') || String(row[key])===value.slice(3));
   const rows=(database[table]??[]).filter(matches);
-  if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body)); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
+  if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body,table==='portfolios'?{updated_at:'2026-10-21T00:00:00Z'}:{})); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
   if(req.method==='POST' && req.headers.prefer?.includes('resolution=merge-duplicates')) {
     const keys=(url.searchParams.get('on_conflict')??'id').split(',');
     const existing=(database[table]??[]).find(row=>keys.every(key=>row[key]===body[key]));
@@ -50,7 +50,11 @@ createServer(async (req,res) => {
     }
     return res.end('null');
   }
-  if(req.method==='POST') { (database[table]??=[]).push(...(Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}])); return res.end('null'); }
+  if(req.method==='POST') {
+    const added=Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}];
+    (database[table]??=[]).push(...added);
+    return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json')?added[0]:added) : 'null');
+  }
   if(req.headers.accept?.includes('vnd.pgrst.object+json')) return res.end(JSON.stringify(rows[0]??null));
   res.end(JSON.stringify(rows));
 }).listen(54321,'127.0.0.1',()=>console.log('Mock Supabase ready'));

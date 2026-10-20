@@ -3,6 +3,7 @@ import { errorMessage as getErrorMessage } from "@/lib/errors";
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -26,6 +27,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
+import RenamePortfolioDialog from "@/components/portfolio/RenamePortfolioDialog";
 
 type PortfolioRow = {
   id: string;
@@ -48,6 +50,11 @@ export default function DashboardPage() {
 
   const [email, setEmail] =
     useState("");
+  const owner = useRef<string | null>(null);
+  const targetLock = useRef(false);
+  const [sessionChanged, setSessionChanged] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<{ portfolio: PortfolioRow; trigger: HTMLButtonElement; ownerId: string } | null>(null);
+  const [renameStatus, setRenameStatus] = useState("");
 
   const [
     portfolios,
@@ -77,21 +84,33 @@ export default function DashboardPage() {
   // =====================================================
 
   useEffect(() => {
+    let active = true;
+    let valid = true;
+    const supabase = createClient();
+    let observedUser: string | null | undefined;
+    const current = () => active && valid;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextOwner = session?.user.id ?? null;
+      if (event === "SIGNED_OUT" || (observedUser !== undefined && nextOwner !== observedUser)) {
+        valid = false; owner.current = null; targetLock.current = false;
+        setRenameTarget(null); setPortfolios([]); setRenameStatus(""); setSessionChanged(true); setIsLoading(false);
+      }
+      observedUser = nextOwner;
+    });
     const loadDashboard =
       async () => {
         setIsLoading(true);
         setLoadError("");
 
         try {
-          const supabase =
-            createClient();
-
           const {
             data: { user },
             error:
               userError,
           } =
             await supabase.auth.getUser();
+
+          if (!current()) return;
 
           if (
             userError ||
@@ -103,6 +122,8 @@ export default function DashboardPage() {
 
             return;
           }
+          owner.current = user.id;
+          observedUser = user.id;
 
           setUsername(
             user
@@ -147,6 +168,7 @@ export default function DashboardPage() {
               }
             );
 
+          if (!current()) return;
           if (
             portfolioError
           ) {
@@ -159,6 +181,7 @@ export default function DashboardPage() {
         } catch (
           error: unknown
         ) {
+          if (!current()) return;
           console.error(
             "Load dashboard error:",
             error
@@ -169,11 +192,12 @@ export default function DashboardPage() {
               "ไม่สามารถโหลด Portfolio ได้"
           );
         } finally {
-          setIsLoading(false);
+          if (current()) setIsLoading(false);
         }
       };
 
     loadDashboard();
+    return () => { active = false; owner.current = null; subscription.unsubscribe(); };
   }, [router]);
 
   // =====================================================
@@ -336,6 +360,8 @@ export default function DashboardPage() {
   // LOADING
   // =====================================================
 
+  if (sessionChanged) return <div className="p-6" role="alert">บัญชีผู้ใช้เปลี่ยนแล้ว กรุณาเปิด Dashboard ใหม่ <a className="text-blue-600 underline" href="/dashboard">เปิด Dashboard</a></div>;
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f8fafc]">
@@ -493,6 +519,7 @@ export default function DashboardPage() {
           )}
 
           {/* PORTFOLIOS */}
+          {renameStatus && <p role="status" className="mt-6 text-sm font-semibold text-emerald-700">{renameStatus}</p>}
 
           <section className="mt-10">
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -573,11 +600,11 @@ export default function DashboardPage() {
 
               {portfolios.map(
                 (portfolio) => (
-                  <Link
+                  <article
                     key={
                       portfolio.id
                     }
-                    href={`/editor?portfolio=${portfolio.id}`}
+                    data-portfolio-id={portfolio.id}
                     className="
                       group
                       flex
@@ -596,6 +623,7 @@ export default function DashboardPage() {
                       hover:shadow-xl
                     "
                   >
+                    <Link href={`/editor?portfolio=${portfolio.id}`} className="flex min-w-0 flex-1 flex-col rounded-xl focus-visible:outline-2 focus-visible:outline-blue-500">
                     {/* PREVIEW */}
 
                     <div className="aspect-[16/10] overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100">
@@ -644,13 +672,29 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  </Link>
+                    </Link>
+                    <button type="button" aria-label={`เปลี่ยนชื่อ ${portfolio.title || "พอร์ตไม่มีชื่อ"}`}
+                      className="mt-3 min-h-11 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-500"
+                      onClick={event => {
+                        if (targetLock.current || !owner.current) return;
+                        targetLock.current = true; setRenameStatus("");
+                        setRenameTarget({ portfolio, trigger: event.currentTarget, ownerId: owner.current });
+                      }}>เปลี่ยนชื่อ</button>
+                  </article>
                 )
               )}
             </div>
           </section>
         </div>
       </main>
+      {renameTarget && <RenamePortfolioDialog key={renameTarget.portfolio.id}
+        portfolio={renameTarget.portfolio} trigger={renameTarget.trigger} ownerId={renameTarget.ownerId}
+        onClose={() => { targetLock.current = false; setRenameTarget(null); }}
+        onSaved={row => {
+          if (owner.current !== renameTarget.ownerId || !targetLock.current) return;
+          setPortfolios(items => items.map(item => item.id === row.id ? { ...item, title: row.title, updated_at: row.updated_at } : item));
+          setRenameStatus("เปลี่ยนชื่อพอร์ตแล้ว"); targetLock.current = false; setRenameTarget(null);
+        }} />}
     </div>
   );
 }
