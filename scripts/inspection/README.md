@@ -1,5 +1,7 @@
 # ตรวจ Supabase ก่อน M01
 
+> Section Visibility รอบ 20 ต.ค.: ใช้ [read-only preflight](section-visibility-preflight.sql) และ [runner](section-visibility-preflight.mjs) ตาม [integration readiness](../../docs/verification/SECTION_VISIBILITY_INTEGRATION_READINESS.md) เท่านั้น งานนี้ไม่อนุญาตรัน foundation/cover/reset หรือ apply migration บน hosted project ข้อความ M01 ด้านล่างเป็นประวัติขั้นตอนเดิม ไม่ใช่คำอนุญาตรอบใหม่
+
 ได้รับ `metadata_report` และภาพ Auth จากเจ้าของแล้ววันที่ 15 ตุลาคม 2026 ดู [ผลตรวจ](../../docs/M00_SCHEMA_REVIEW.md) **ไม่ต้องส่งสองส่วนนี้ซ้ำ**
 
 ## ขั้นตอนปัจจุบัน

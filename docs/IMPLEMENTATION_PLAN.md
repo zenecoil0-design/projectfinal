@@ -4,6 +4,8 @@
 
 > Checkpoint ถัดมา: [Section visibility](verification/SECTION_VISIBILITY_REVIEW.md) เพิ่ม UI/Preview/PDF และ persistence contract แยกรายพอร์ตแล้ว แต่ migration 20261020084510 ยังไม่ติดตั้งจริง เนื่องจาก catalog reads timeout ต้องตรวจ schema/grants/staging/integration ก่อนเปิดใช้กับระบบจริง; ไม่ปิด M01/M06/M08 ทั้งส่วน
 
+> Readiness follow-up: [ชุดตรวจฐานและ integration](verification/SECTION_VISIBILITY_INTEGRATION_READINESS.md) เตรียม read-only preflight และ local PostgreSQL/PostgREST JWT runner แล้ว แต่ target catalog/history ยัง timeout, advisor ไม่คืนผล และเครื่องไม่มี local backend/container runtime จึงยัง NOT_RUN สำหรับ API integration ไม่ถือว่าพร้อมติดตั้งหรือเปลี่ยน visibility เป็น DONE; สถานะการติดตั้งบน target ยังต้องยืนยัน ไม่อนุมานว่าไม่มีตารางจาก timeout
+
 # แผนพัฒนาระบบและติดตามสถานะ — เว็บแอปพลิเคชันจัดทำแฟ้มสะสมผลงาน
 
 ฉบับ 1.5 • 20 ตุลาคม 2569 (Asia/Bangkok)

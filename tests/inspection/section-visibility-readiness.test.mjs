@@ -11,7 +11,9 @@ test("preflight SQL uses only a read-only transaction, timeout, SELECT and COMMI
   assert.equal(statements[1], "SET LOCAL statement_timeout = '10s'");
   assert.match(statements[2], /^WITH relations AS/);
   assert.equal(statements[3], "COMMIT");
-  assert.doesNotMatch(sql, /\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|COPY|CALL|DO|pg_read_file|dblink|set_config|pg_notify)\b/i);
+  // Privilege-name string literals are data, not executable statements.
+  const withoutStrings = sql.replace(/'(?:''|[^'])*'/g, "''");
+  assert.doesNotMatch(withoutStrings, /\b(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|COPY|CALL|DO|pg_read_file|dblink|set_config|pg_notify)\b/i);
   assert.doesNotMatch(sql, /FROM\s+(?:public\.)?portfolios\b/i);
 });
 

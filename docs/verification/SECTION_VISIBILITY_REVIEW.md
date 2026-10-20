@@ -1,5 +1,7 @@
 # Section visibility — implementation and verification
 
+> Follow-up 2026-10-20: [Integration readiness](SECTION_VISIBILITY_INTEGRATION_READINESS.md) supplies read-only catalog preflight and isolated real-API runner. Target catalog/history remain unverified and API acceptance NOT_RUN due unavailable local backend/runtime. This does not replace historical PGlite/mock evidence below or approve hosted installation.
+
 ## Starting point / authority
 
 - Starting local and fetched remote HEAD: `2156526e11ac323e1b7de94f7c249a467ac5c6df`, branch `codex/portfolio-next-phase`, clean tree. Created a separate checkout from that exact current repository, not the old attachments. Main unchanged.

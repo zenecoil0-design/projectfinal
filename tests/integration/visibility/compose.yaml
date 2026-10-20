@@ -1,0 +1,31 @@
+# Disposable LOCAL-only acceptance stack. No host database mount or hosted URL.
+# Credentials are generated in memory by section-visibility-api.mjs, never committed.
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: section_visibility_integration
+      POSTGRES_PASSWORD: ${VISIBILITY_LOCAL_PASSWORD:?use the integration runner}
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d section_visibility_integration"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  api:
+    image: postgrest/postgrest:v14.18
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${VISIBILITY_LOCAL_PASSWORD:?use the integration runner}@db:5432/section_visibility_integration
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${VISIBILITY_LOCAL_JWT_SECRET:?use the integration runner}
+      PGRST_SERVER_PORT: "3000"
+    ports:
+      - "127.0.0.1:${VISIBILITY_LOCAL_API_PORT:?use the integration runner}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+networks:
+  default:
+    internal: true

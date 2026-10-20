@@ -47,6 +47,17 @@ SELECT jsonb_build_object(
       ELSE pg_get_userbyid(acl.grantee) END, 'privilege', acl.privilege_type,
     'grantable', acl.is_grantable)) FROM relations r,
     LATERAL aclexplode(COALESCE(r.relacl, acldefault('r', (SELECT relowner FROM pg_class WHERE oid = r.oid)))) acl), '[]'::jsonb),
+  'effective_table_privileges', COALESCE((SELECT jsonb_agg(jsonb_build_object(
+    'table', r.relname, 'role', roles.rolname,
+    'select', has_table_privilege(roles.oid, r.oid, 'SELECT'),
+    'insert', has_table_privilege(roles.oid, r.oid, 'INSERT'),
+    'update', has_table_privilege(roles.oid, r.oid, 'UPDATE'),
+    'delete', has_table_privilege(roles.oid, r.oid, 'DELETE')))
+    FROM relations r CROSS JOIN roles), '[]'::jsonb),
+  'role_memberships', COALESCE((SELECT jsonb_agg(jsonb_build_object(
+    'member', pg_get_userbyid(m.member), 'granted_role', pg_get_userbyid(m.roleid),
+    'admin_option', m.admin_option)) FROM pg_auth_members m
+    WHERE m.member IN (SELECT oid FROM roles) OR m.roleid IN (SELECT oid FROM roles)), '[]'::jsonb),
   'default_acl', COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'owner', pg_get_userbyid(d.defaclrole), 'schema', n.nspname,
     'object_type', d.defaclobjtype, 'acl', d.defaclacl::text))
