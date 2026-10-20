@@ -194,7 +194,8 @@ test('cover names preview, persist independently, survive reload and clear on po
   await expect(page.getByText('ยังไม่บันทึก:',{exact:false})).toContainText('หน้าปก');
   await page.route('**/rest/v1/covers?**',route=>route.request().method()==='POST' ? route.fulfill({status:500,json:{message:'Cover save failed'}}) : route.continue());
   await page.locator('form:visible button[type="submit"]').click();
-  await expect(page.getByText('Cover save failed')).toBeVisible();
+  await expect(page.getByText('ยืนยันการบันทึกหน้าปกไม่สำเร็จ', { exact: false })).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('Cover save failed');
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('โฟล์ค');
   await page.unroute('**/rest/v1/covers?**');
   await page.locator('form:visible button[type="submit"]').click();

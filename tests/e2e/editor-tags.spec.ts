@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { formSaveError } from '../../src/lib/editor/form-errors';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const configs = [
@@ -132,7 +133,8 @@ for (const config of configs) {
     const submit = form.locator('button[type=submit]');
     await page.route('**/rest/v1/rpc/replace_portfolio_selection', route => route.fulfill({ status: 500, json: { message: 'SAVE FAIL TEST' } }));
     await submit.click();
-    await expect(form.getByRole('alert').filter({ hasText: 'SAVE FAIL TEST' })).toBeVisible();
+    await expect(form.getByRole('alert').filter({ hasText: formSaveError(config.section, null) })).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('SAVE FAIL TEST');
     await expect(page.locator(`#editor-heading-${config.section}`)).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
     page.once('dialog', dialog => dialog.dismiss());
