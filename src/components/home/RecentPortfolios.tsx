@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -16,106 +17,85 @@ import {
 } from "react-icons/fa";
 
 import { createClient } from "@/lib/supabase/client";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+import { parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 
-type PortfolioRow = {
-  id: string;
-
-  title: string | null;
-
-  template_key: string | null;
-
-  created_at: string;
-
-  updated_at: string | null;
-};
+type Phase = "auth-loading" | "guest" | "auth-error" | "session-changed" | "list-loading" | "list-error" | "success";
 
 export default function RecentPortfolios() {
   const [
     portfolios,
     setPortfolios,
   ] =
-    useState<PortfolioRow[]>(
+    useState<DashboardPortfolio[]>(
       []
     );
 
-  const [
-    isLoading,
-    setIsLoading,
-  ] = useState(true);
+  const [phase, setPhase] = useState<Phase>("auth-loading");
+  const retry = useRef<{ auth: () => Promise<void>; list: () => Promise<void> } | null>(null);
 
   useEffect(() => {
-    const loadPortfolios =
-      async () => {
-        setIsLoading(true);
-
-        try {
-          const supabase =
-            createClient();
-
-          const {
-            data: { user },
-          } =
-            await supabase.auth.getUser();
-
-          if (!user) {
-            setPortfolios(
-              []
-            );
-
-            return;
-          }
-
-          const {
-            data,
-            error,
-          } = await supabase
-            .from(
-              "portfolios"
-            )
-            .select(
-              `
-                id,
-                title,
-                template_key,
-                created_at,
-                updated_at
-              `
-            )
-            .eq(
-              "user_id",
-              user.id
-            )
-            .order(
-              "updated_at",
-              {
-                ascending:
-                  false,
-              }
-            )
-            .limit(3);
-
-          if (error) {
-            throw error;
-          }
-
-          setPortfolios(
-            data ?? []
-          );
-        } catch (
-          error
-        ) {
-          console.error(
-            "Load recent portfolios error:",
-            error
-          );
-        } finally {
-          setIsLoading(false);
+    const supabase = createClient();
+    let active = true, version = 0, checking = false, reading = false;
+    let observedOwner: string | null | undefined;
+    let verifiedOwner: string | null = null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const next = session?.user.id ?? null;
+      // SDK recovery may emit SIGNED_IN before INITIAL_SESSION. Bind the first
+      // owner; the getUser result must still match it before any private query.
+      const changed = event === "SIGNED_OUT" || (observedOwner !== undefined && next !== observedOwner);
+      observedOwner = next;
+      if (!active || !changed) return;
+      ++version; verifiedOwner = null; checking = false; reading = false;
+      setPortfolios([]);
+      setPhase(next === null ? "guest" : "session-changed");
+    });
+    const loadList = async () => {
+      if (!active || reading || !verifiedOwner) return;
+      reading = true;
+      const token = version, owner = verifiedOwner;
+      const current = () => active && token === version && owner === verifiedOwner;
+      setPhase("list-loading");
+      try {
+        const { data, error } = await supabase.from("portfolios")
+          .select("id, title, template_key, created_at, updated_at")
+          .eq("user_id", owner).order("updated_at", { ascending: false }).limit(3);
+        if (!current()) return;
+        if (error) throw error;
+        setPortfolios(parseDashboardPortfolios(data));
+        setPhase("success");
+      } catch {
+        if (current()) setPhase("list-error");
+      } finally { if (current()) reading = false; }
+    };
+    const verifyUser = async () => {
+      if (!active || checking) return;
+      checking = true;
+      const token = ++version;
+      const current = () => active && token === version;
+      setPhase("auth-loading");
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!current()) return;
+        if (error && !isAuthSessionMissingError(error)) throw error;
+        if (!user) { verifiedOwner = null; setPortfolios([]); setPhase("guest"); return; }
+        if (observedOwner !== undefined && user.id !== observedOwner) {
+          verifiedOwner = null; setPortfolios([]); setPhase("session-changed"); return;
         }
-      };
-
-    loadPortfolios();
+        observedOwner = user.id; verifiedOwner = user.id;
+        await loadList();
+      } catch {
+        if (current()) { verifiedOwner = null; setPhase("auth-error"); }
+      } finally { if (current()) checking = false; }
+    };
+    retry.current = { auth: verifyUser, list: loadList };
+    void verifyUser();
+    return () => {
+      active = false; ++version; verifiedOwner = null; retry.current = null;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const formatDate = (
@@ -215,7 +195,7 @@ export default function RecentPortfolios() {
   };
 
   return (
-    <section className="mt-10 w-full pb-12">
+    <section aria-label="พอร์ตล่าสุด" className="mt-10 w-full min-w-0 pb-12">
       {/* HEADER */}
 
       <div className="mb-6 flex items-end justify-between gap-4">
@@ -273,23 +253,38 @@ export default function RecentPortfolios() {
           </button>
         </CreatePortfolioModal>
 
-        {/* LOADING */}
-
-        {isLoading && (
-          <div className="flex min-h-[300px] items-center justify-center rounded-[26px] border border-slate-200 bg-white">
-            <div className="text-center">
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
-
-              <p className="mt-3 text-xs font-semibold text-slate-400">
-                กำลังโหลด Portfolio...
-              </p>
-            </div>
+        {/* Keep the create modal mounted independently of auth/list state. */}
+        {phase !== "success" && (
+          <div className="flex min-h-[300px] min-w-0 flex-col items-start justify-center gap-4 rounded-[26px] border border-slate-200 bg-white p-6">
+            <p role={phase === "auth-error" || phase === "list-error" ? "alert" : "status"} className="break-words text-sm leading-6 text-slate-600">
+              {phase === "auth-loading" && "กำลังตรวจสอบบัญชีผู้ใช้…"}
+              {phase === "guest" && "เข้าสู่ระบบเพื่อดูพอร์ตล่าสุดของคุณ"}
+              {phase === "auth-error" && "ยืนยันบัญชีผู้ใช้ไม่สำเร็จ กรุณาลองตรวจสอบบัญชีอีกครั้ง"}
+              {phase === "session-changed" && "บัญชีผู้ใช้เปลี่ยนแล้ว กรุณาตรวจสอบบัญชีอีกครั้งเพื่อดูพอร์ตล่าสุด"}
+              {phase === "list-loading" && "กำลังโหลดรายการพอร์ต…"}
+              {phase === "list-error" && "โหลดรายการพอร์ตล่าสุดไม่สำเร็จ กรุณาลองอีกครั้ง"}
+            </p>
+            {(phase === "list-error" || phase === "list-loading") && (
+              <button type="button" disabled={phase === "list-loading"} onClick={() => { void retry.current?.list(); }} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 disabled:opacity-60">
+                {phase === "list-loading" ? "กำลังโหลด…" : "ลองใหม่"}
+              </button>
+            )}
+            {(phase === "auth-error" || phase === "session-changed" || phase === "auth-loading") && (
+              <button type="button" disabled={phase === "auth-loading"} onClick={() => { void retry.current?.auth(); }} className="min-h-11 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 disabled:opacity-60">
+                {phase === "auth-loading" ? "กำลังตรวจสอบ…" : "ตรวจสอบบัญชีอีกครั้ง"}
+              </button>
+            )}
           </div>
+        )}
+        {phase === "success" && portfolios.length === 0 && (
+          <p role="status" className="flex min-h-[300px] items-center rounded-[26px] border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600">
+            ยังไม่มีพอร์ต เริ่มสร้างพอร์ตแรกของคุณได้เลย
+          </p>
         )}
 
         {/* PORTFOLIOS */}
 
-        {!isLoading &&
+        {phase === "success" &&
           portfolios.map(
             (
               portfolio
@@ -298,7 +293,8 @@ export default function RecentPortfolios() {
                 key={
                   portfolio.id
                 }
-                href={`/editor?portfolio=${portfolio.id}`}
+                href={`/editor?portfolio=${encodeURIComponent(portfolio.id)}`}
+                data-recent-portfolio-id={portfolio.id}
                 className="group flex min-h-[300px] flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
               >
                 <div className="aspect-[16/9] overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100">
