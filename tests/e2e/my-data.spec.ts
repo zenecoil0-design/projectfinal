@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, errors, type Page } from '@playwright/test';
 
 const sections = [
   { key: 'education', plural: 'educations', tab: 'ประวัติการศึกษา', add: 'เพิ่มประวัติการศึกษา', edit: 'แก้ไขประวัติการศึกษา', title: 'ชื่อสถานศึกษา *', titleKey: 'school_name' },
@@ -385,7 +385,7 @@ for (const config of sections) {
 }
 
 
-test('library native refresh warning and browser back/forward observation', async ({ page }, testInfo) => {
+test('library native refresh and App Router Back/Forward preserve draft until confirmed discard', async ({ page }, testInfo) => {
   const config = sections[0]; await fixtures(page, config);
   await page.goto('/dashboard');
   await page.getByRole('link', { name: 'คลังข้อมูลของฉัน', exact: true }).click();
@@ -398,14 +398,23 @@ test('library native refresh warning and browser back/forward observation', asyn
   const dialog = await warning; expect(dialog.type()).toBe('beforeunload'); await dialog.dismiss();
   await reload;
   await expect(title).toHaveValue('แบบร่างก่อน refresh');
-  // Observe App Router history without installing a popstate/history workaround.
-  await page.goBack();
+  // The same original form must remain mounted before discard, not just its URL.
+  await title.evaluate(el => { el.dataset.retained = 'original'; });
+  await page.goBack({ timeout: 1000 }).catch(error => { if (!(error instanceof errors.TimeoutError)) throw error; });
+  const confirmation = page.getByRole('dialog', { name: 'ข้อมูลยังไม่ได้บันทึก', exact: true });
+  await expect(confirmation).toBeVisible(); await expect(page).toHaveURL(/my-data/);
+  await expect(title).toHaveAttribute('data-retained', 'original'); await expect(title).toHaveValue('แบบร่างก่อน refresh');
+  await confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true }).click();
+  await expect(title).toHaveValue('แบบร่างก่อน refresh');
+  await page.goBack({ timeout: 1000 }).catch(error => { if (!(error instanceof errors.TimeoutError)) throw error; });
+  await confirmation.getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true }).click();
   await expect(page).toHaveURL(/dashboard/);
   const backUrl = page.url();
   await page.goForward();
   await expect(page).toHaveURL(/my-data/);
   const forwardUrl = page.url();
-  await testInfo.attach('history-observation', { body: JSON.stringify({ backUrl, forwardUrl, note: 'SPA back/forward is outside the explicit link/tab guard; no history interception.' }), contentType: 'application/json' });
+  await expect(confirmation).toHaveCount(0);
+  await testInfo.attach('history-guard', { body: JSON.stringify({ backUrl, forwardUrl, note: 'Original DOM/draft retained on continue; discard traverses existing target once.' }), contentType: 'application/json' });
   expect(new URL(backUrl).pathname).toBe('/dashboard');
   expect(new URL(forwardUrl).pathname).toBe('/my-data');
 });

@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLibraryHistoryGuard } from "./useLibraryHistoryGuard";
 
 type Flags = { dirty: boolean; busy: boolean };
 type Guard = Flags & { update: (flags: Flags) => void; requestExit: (action: () => void) => void };
 const Context = createContext<Guard | null>(null);
 const clean: Flags = { dirty: false, busy: false };
 
-/** Scoped to the mounted /my-data account; no global router/history interception. */
+/** Scoped to the mounted /my-data account. */
 export function LibraryDraftGuard({ children }: { children: ReactNode }) {
   const [flags, setFlags] = useState(clean);
   const current = useRef(clean);
@@ -29,6 +30,8 @@ export function LibraryDraftGuard({ children }: { children: ReactNode }) {
     setConfirming(false);
     if (discard && action) { update(clean); action(); }
   }, [update]);
+  const getFlags = useCallback(() => current.current, []);
+  const historySupported = useLibraryHistoryGuard(getFlags, requestExit);
 
   useEffect(() => {
     if (!flags.dirty) return;
@@ -39,6 +42,7 @@ export function LibraryDraftGuard({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ ...flags, update, requestExit }), [flags, update, requestExit]);
   return <Context.Provider value={value}>
+    {flags.dirty && !historySupported && <p role="alert" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">เบราว์เซอร์นี้ยังไม่รองรับคำเตือนก่อนย้อนกลับหรือไปข้างหน้า กรุณาบันทึกหรือยกเลิกฟอร์มก่อนใช้ปุ่มดังกล่าว</p>}
     {children}
     {confirming && <DiscardDialog onContinue={() => finish(false)} onDiscard={() => finish(true)} />}
   </Context.Provider>;
