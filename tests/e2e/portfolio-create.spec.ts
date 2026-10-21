@@ -82,3 +82,116 @@ for (const failure of ['backend', 'network'] as const) {
     await page.unroute('**/auth/v1/user'); await submit(page).click(); await expect(page).toHaveURL(/editor\?portfolio=/);
   });
 }
+
+type Caller = 'dashboard' | 'sidebar' | 'recent';
+function trigger(page: Page, caller: Caller) {
+  return caller === 'sidebar' ? page.locator('aside').getByRole('button', { name: 'สร้าง', exact: true })
+    : page.getByRole('button', { name: caller === 'recent' ? 'สร้างผลงานใหม่' : 'สร้าง Portfolio ใหม่', exact: false });
+}
+async function openCaller(page: Page, caller: Caller, history = false) {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  if (caller === 'dashboard') {
+    if (history) { await page.goto('/'); await page.getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); }
+    else await page.goto('/dashboard');
+    await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
+  } else {
+    if (history) { await page.goto('/dashboard'); await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible(); await page.getByRole('link', { name: /Auto - Portfolio/ }).click(); }
+    else await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Portfolio A', exact: true })).toBeVisible();
+  }
+  await trigger(page, caller).click(); await expect(modal(page)).toBeVisible();
+}
+
+for (const caller of ['sidebar', 'recent'] as const) {
+  test(`${caller}: shared create succeeds independently of Dashboard`, async ({ page }) => {
+    await openCaller(page, caller); await draft(page); await submit(page).click();
+    await expect(page).toHaveURL(/editor\?portfolio=/); await expect(page.getByText('พอร์ต Science', { exact: true })).toBeVisible();
+  });
+  test(`${caller}: genuinely missing session preserves the existing login destination`, async ({ page, context }) => {
+    await context.clearCookies(); await page.goto('/'); await trigger(page, caller).click(); await draft(page);
+    let inserts = 0; page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios') inserts++; });
+    await submit(page).click(); await expect(page).toHaveURL(/login\?next=(%2F|\/)$/); expect(inserts).toBe(0);
+  });
+}
+
+for (const caller of ['dashboard', 'sidebar', 'recent'] as const) for (const phase of ['auth', 'insert'] as const) for (const destination of ['account', 'navigation'] as const) {
+  test(`${caller}: old ${phase} result after ${destination} cannot insert/navigate/show error in a new round`, async ({ page }) => {
+    await openCaller(page, caller, destination === 'navigation'); await draft(page);
+    let release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
+    let started = false; let settled = false; let inserts = 0;
+    page.on('request', r => {
+      if (r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios') {
+        inserts++; expect(r.postDataJSON()).toEqual({ user_id: user.id, title: 'พอร์ต Science', template_key: 'minimal' });
+      }
+    });
+    await page.route(phase === 'auth' ? '**/auth/v1/user' : '**/rest/v1/portfolios?**', async route => {
+      if (started || (phase === 'insert' && route.request().method() !== 'POST')) return route.continue();
+      started = true; await gate;
+      if (phase === 'auth') await route.fulfill({ json: user });
+      else if (destination === 'account') await route.fulfill({ status: 500, json: { message: internal } });
+      else await route.fulfill({ response: await route.fetch() });
+      settled = true;
+    });
+    await submit(page).click(); await expect.poll(() => started).toBe(true);
+    if (destination === 'account') {
+      await page.evaluate(user => { const channel = new BroadcastChannel('sb-127-auth-token'); channel.postMessage({ event: 'SIGNED_IN', session: { user: { ...user, id: 'account-b' } } }); channel.close(); }, user);
+      await expect(modal(page)).toHaveCount(0);
+      if (caller !== 'dashboard') {
+        await trigger(page, caller).click(); await expect(name(page)).toHaveValue('');
+        await expect(modal(page).getByRole('button', { name: /Emerald Editorial/ })).toHaveAttribute('aria-pressed', 'true');
+        await name(page).fill('new account draft');
+      } else await expect(page.getByText('บัญชีผู้ใช้เปลี่ยนแล้ว', { exact: false })).toBeVisible();
+    } else {
+      await page.goBack(); await expect(page).toHaveURL(caller === 'dashboard' ? /\/$/ : /dashboard$/);
+    }
+    release(); await expect.poll(() => settled).toBe(true);
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    expect(inserts).toBe(phase === 'auth' ? 0 : 1);
+    await expect(page.locator('body')).not.toContainText(internal);
+    await expect(page.getByText(createResultError, { exact: true })).toHaveCount(0);
+    if (destination === 'account' && caller !== 'dashboard') {
+      await expect(name(page)).toHaveValue('new account draft'); await expect(submit(page)).toBeEnabled();
+      await expect(page).toHaveURL(/\/$/);
+    } else if (destination === 'navigation') await expect(page).toHaveURL(caller === 'dashboard' ? /\/$/ : /dashboard$/);
+  });
+}
+
+test('verified owner mismatch without an auth event discards old draft before any insert', async ({ page }) => {
+  await openCaller(page, 'recent'); await draft(page); let inserts = 0;
+  page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios') inserts++; });
+  await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: 'other-owner' } }));
+  await submit(page).click(); await expect(modal(page)).toHaveCount(0); expect(inserts).toBe(0);
+  await trigger(page, 'recent').click(); await expect(name(page)).toHaveValue('');
+  await expect(modal(page).getByRole('button', { name: /Emerald Editorial/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Home error round closes/reopens without carrying its error; retained draft can be retried', async ({ page }) => {
+  await openCaller(page, 'recent'); await draft(page);
+  await page.route('**/rest/v1/portfolios?**', route => route.request().method() === 'POST' ? route.fulfill({ status: 500, json: { message: internal } }) : route.continue());
+  await submit(page).click(); await expect(modal(page).getByRole('alert')).toHaveText(createResultError);
+  await name(page).press('Escape'); await expect(modal(page)).toHaveCount(0);
+  await trigger(page, 'recent').click(); await expect(name(page)).toHaveValue('  พอร์ต Science  ');
+  await expect(modal(page).getByRole('alert')).toHaveCount(0);
+  await page.unroute('**/rest/v1/portfolios?**'); await submit(page).click(); await expect(page).toHaveURL(/editor\?portfolio=/);
+});
+
+for (const width of [1440, 390]) {
+  test(`${width}px: Home create pending/error is readable and controls remain reachable`, async ({ page }, testInfo) => {
+    await openCaller(page, 'recent'); await page.setViewportSize({ width, height: 900 }); await draft(page);
+    let release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; }); let started = false;
+    await page.route('**/rest/v1/portfolios?**', async route => {
+      if (route.request().method() !== 'POST') return route.continue();
+      started = true; await gate; await route.fulfill({ status: 500, json: { message: internal.repeat(100) } });
+    });
+    await submit(page).click(); await expect.poll(() => started).toBe(true);
+    await modal(page).getByRole('status').scrollIntoViewIfNeeded(); await expect(modal(page).getByRole('status')).toBeInViewport();
+    await page.screenshot({ path: testInfo.outputPath(`create-pending-${width}.png`) });
+    release(); const alert = modal(page).getByRole('alert'); await expect(alert).toHaveText(createResultError);
+    await alert.scrollIntoViewIfNeeded();
+    expect(await alert.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    const box = await alert.boundingBox(); expect(box).not.toBeNull(); expect(box!.x).toBeGreaterThanOrEqual(0); expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    await expect(submit(page)).toBeInViewport(); await expect(submit(page)).toBeEnabled();
+    await page.screenshot({ path: testInfo.outputPath(`create-error-${width}.png`) });
+    await expect(page.locator('body')).not.toContainText(internal);
+  });
+}

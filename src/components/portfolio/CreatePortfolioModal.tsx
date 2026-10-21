@@ -1,6 +1,6 @@
 "use client";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
-import { confirmedCreatedId, createAuthError, createResultError } from "@/lib/portfolio-create";
+import { confirmedCreatedId, createAccountChanged, createAuthError, createResultError } from "@/lib/portfolio-create";
 
 import {
   ReactNode,
@@ -96,7 +96,7 @@ export default function CreatePortfolioModal({
     const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
       const next = session?.user.id ?? null, previous = state.owner;
       state.owner = next;
-      if (event === "SIGNED_OUT" || (previous !== undefined && previous !== next)) discardAccountDraft();
+      if (createAccountChanged(previous, next, event)) discardAccountDraft();
     });
     return () => { state.alive = false; ++state.version; state.busy = false; state.owner = undefined; subscription.unsubscribe(); };
   }, [discardAccountDraft]);
