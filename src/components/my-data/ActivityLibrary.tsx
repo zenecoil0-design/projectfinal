@@ -149,7 +149,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     tagIds: selectedTagIds, images: existingImages, files: newFiles,
   });
   const draftReads = useRef(0);
-  useEffect(() => () => { draftReads.current++; }, []);
+  const saveLifetime = useRef(0);
+  useEffect(() => () => { draftReads.current++; saveLifetime.current++; }, []);
 
   const loadData = useCallback((uid: string, fresh = false) => run(uid,
     () => Promise.all([
@@ -780,6 +781,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
       return;
     }
 
+    const lifetime = saveLifetime.current;
+    const saveCurrent = () => lifetime === saveLifetime.current;
     setIsSaving(true);
 
     try {
@@ -844,6 +847,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
           data.id;
       }
 
+      if (!saveCurrent()) return;
       if (!activityId) {
         throw new Error(
           "Activity ID missing"
@@ -901,17 +905,20 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
         }
       }
 
+      if (!saveCurrent()) return;
       await loadData(userId, true);
 
+      if (!saveCurrent()) return;
       resetForm();
     } catch (error) {
+      if (!saveCurrent()) return;
       console.error(error);
 
       alert(
         "ไม่สามารถบันทึกข้อมูลได้"
       );
     } finally {
-      setIsSaving(false);
+      if (saveCurrent()) setIsSaving(false);
     }
   };
 

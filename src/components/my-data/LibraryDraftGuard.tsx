@@ -50,13 +50,25 @@ export function LibraryDraftGuard({ children }: { children: ReactNode }) {
 
 function DiscardDialog({ onContinue, onDiscard }: { onContinue: () => void; onDiscard: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = dialog.current;
+    const previousFocus = document.activeElement;
     element?.showModal();
-    return () => element?.close();
+    return () => {
+      element?.close();
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    };
   }, []);
-  return <dialog ref={dialog} aria-labelledby="library-discard-title" aria-describedby="library-discard-description"
+  return <dialog ref={dialog} aria-labelledby="library-discard-title" aria-describedby="library-discard-description" tabIndex={-1}
     onCancel={event => { event.preventDefault(); onContinue(); }}
+    onKeyDown={event => {
+      if (event.key !== "Tab") return;
+      const controls = dialog.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+      if (!controls?.length) { event.preventDefault(); dialog.current?.focus(); return; }
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }}
     className="fixed inset-0 m-auto max-h-[calc(100dvh-32px)] w-[min(480px,calc(100vw-32px))] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl backdrop:bg-slate-950/60 sm:p-6">
     <h2 id="library-discard-title" className="text-lg font-bold">ข้อมูลยังไม่ได้บันทึก</h2>
     <p id="library-discard-description" className="mt-3 text-sm leading-7">มีข้อมูลที่ยังไม่ได้บันทึก ต้องการทิ้งการเปลี่ยนแปลงหรือไม่</p>

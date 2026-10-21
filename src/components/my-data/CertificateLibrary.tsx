@@ -139,7 +139,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     tagIds: selectedTagIds, images: existingImages, files: newFiles,
   });
   const draftReads = useRef(0);
-  useEffect(() => () => { draftReads.current++; }, []);
+  const saveLifetime = useRef(0);
+  useEffect(() => () => { draftReads.current++; saveLifetime.current++; }, []);
 
   const loadData = useCallback((uid: string, fresh = false) => run(uid,
     () => Promise.all([
@@ -724,6 +725,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       return;
     }
 
+    const lifetime = saveLifetime.current;
+    const saveCurrent = () => lifetime === saveLifetime.current;
     setIsSaving(true);
 
     try {
@@ -793,6 +796,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
         id = data.id;
       }
 
+      if (!saveCurrent()) return;
       if (!id) {
         throw new Error();
       }
@@ -836,17 +840,20 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
         }
       }
 
+      if (!saveCurrent()) return;
       await loadData(userId, true);
 
+      if (!saveCurrent()) return;
       resetForm();
     } catch (error) {
+      if (!saveCurrent()) return;
       console.error(error);
 
       alert(
         "ไม่สามารถบันทึกเกียรติบัตรได้"
       );
     } finally {
-      setIsSaving(false);
+      if (saveCurrent()) setIsSaving(false);
     }
   };
 

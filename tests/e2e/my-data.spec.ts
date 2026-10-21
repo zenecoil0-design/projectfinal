@@ -418,3 +418,139 @@ test('library native refresh and App Router Back/Forward preserve draft until co
   expect(new URL(backUrl).pathname).toBe('/dashboard');
   expect(new URL(forwardUrl).pathname).toBe('/my-data');
 });
+
+async function blockedHistory(page: Page, direction: 'back' | 'forward') {
+  try { if (direction === 'back') await page.goBack({ timeout: 1000 }); else await page.goForward({ timeout: 1000 }); }
+  catch (error) { if (!(error instanceof errors.TimeoutError)) throw error; }
+}
+async function libraryHistory(page: Page, config: Section) {
+  await page.goto('/'); await page.locator('aside').getByRole('link', { name: 'คลังข้อมูล', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'เพิ่มผลงานหรือกิจกรรม', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
+  await page.goBack(); await expect(page).toHaveURL(/my-data$/);
+  await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
+}
+async function accountEvent(page: Page, id: string | null) {
+  await page.evaluate(({ id, user }) => {
+    const channel = new BroadcastChannel('sb-127-auth-token');
+    channel.postMessage({ event: id ? 'SIGNED_IN' : 'SIGNED_OUT', session: id ? { user: { ...user, id } } : null }); channel.close();
+  }, { id, user });
+}
+
+for (const config of sections) {
+  test(`${config.key}: history keeps Tags/image order/cropped File and original DOM until manual save`, async ({ page, request }) => {
+    const { state, longName } = await fixtures(page, config);
+    if (config.key === 'education') state.rows[0].logo_url = 'http://127.0.0.1:54321/sample.png';
+    await libraryHistory(page, config);
+    await page.locator('article').filter({ has: page.getByRole('heading', { name: longName, exact: true }) }).getByRole('button', { name: /แก้ไข/ }).click();
+    const form = page.locator('main div[role=dialog]'); const confirmation = page.getByRole('dialog', { name: 'ข้อมูลยังไม่ได้บันทึก', exact: true });
+    const title = form.getByLabel(config.title, { exact: true }); await title.fill('history draft with File');
+    const oldSources = await form.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src')));
+    await blockedHistory(page, 'back'); await expect(confirmation).toBeVisible();
+    await confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true }).click();
+    expect(await form.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src')))).toEqual(oldSources);
+    const file = await request.get('http://127.0.0.1:54321/sample.png'); const png = await file.body();
+    await form.locator('input[type=file]').setInputFiles({ name: 'history-file.png', mimeType: 'image/png', buffer: png });
+    await page.locator('dialog').getByRole('button', { name: 'ตัดรูปและใช้รูปนี้', exact: true }).click();
+    await expect(form.locator('img')).toHaveCount(config.key === 'education' ? 1 : 3);
+    const sources = await form.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src')));
+    const cropped = sources.at(-1)!; expect(cropped).toMatch(/^data:image\//);
+    const bytes = Buffer.from(cropped.split(',')[1], 'base64');
+    await form.evaluate(el => { el.dataset.retained = 'history-original'; }); const reads = state.reads;
+    const uploads: Buffer[] = []; const deletes: string[] = [];
+    await page.route('**/storage/v1/**', route => {
+      if (route.request().method() === 'POST') uploads.push(route.request().postDataBuffer()!);
+      if (route.request().method() === 'DELETE') deletes.push(route.request().url());
+      return route.request().method() === 'GET' ? route.fulfill({ contentType: 'image/png', body: png }) : route.fulfill({ json: { Key: 'synthetic-upload' } });
+    });
+    for (const direction of ['back', 'forward'] as const) {
+      await title.focus(); await blockedHistory(page, direction); await expect(confirmation).toBeVisible();
+      await expect(confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true })).toBeFocused();
+      await page.keyboard.press('Escape'); await expect(confirmation).toHaveCount(0); await expect(title).toBeFocused();
+      await expect(page).toHaveURL(/my-data$/); await expect(form).toHaveAttribute('data-retained', 'history-original');
+      await expect(title).toHaveValue('history draft with File');
+      await expect(form.getByRole('button', { name: /Tagยาวไม่มีช่องว่าง/ })).toHaveAttribute('aria-pressed', 'true');
+      expect(await form.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src')))).toEqual(sources);
+      expect(state.reads).toBe(reads); expect(uploads).toHaveLength(0); expect(deletes).toHaveLength(0);
+    }
+    await form.getByRole('button', { name: /^บันทึก/ }).click(); await expect(form).toHaveCount(0);
+    expect(uploads).toHaveLength(1); expect(uploads[0].includes(bytes)).toBe(true); expect(deletes).toHaveLength(0);
+    expect(state.rows[0][config.titleKey]).toBe('history draft with File');
+  });
+
+  test(`${config.key}: failed save remains dirty; busy history is blocked; success restores clean navigation`, async ({ page }) => {
+    const { state } = await fixtures(page, config); await libraryHistory(page, config);
+    await page.getByRole('button', { name: config.add, exact: true }).click(); const form = page.locator('main div[role=dialog]');
+    const confirmation = page.getByRole('dialog', { name: 'ข้อมูลยังไม่ได้บันทึก', exact: true });
+    const title = form.getByLabel(config.title, { exact: true }); await title.fill('save draft for history');
+    if (config.key === 'education') await form.getByLabel('ระดับการศึกษา *', { exact: true }).fill('มัธยมศึกษา');
+    state.failSave = true; page.once('dialog', dialog => dialog.accept());
+    await form.getByRole('button', { name: /^บันทึก/ }).click(); await expect(form.getByRole('button', { name: /^บันทึก/ })).toBeEnabled();
+    await blockedHistory(page, 'forward'); await expect(confirmation).toBeVisible();
+    await confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true }).click(); await expect(title).toHaveValue('save draft for history');
+    state.failSave = false; state.saveLoading = true; const writes = state.writes;
+    await form.getByRole('button', { name: /^บันทึก/ }).click(); await expect.poll(() => state.writes).toBe(writes + 1);
+    for (const direction of ['back', 'forward'] as const) {
+      await blockedHistory(page, direction); await expect(page).toHaveURL(/my-data$/); await expect(confirmation).toHaveCount(0); await expect(title).toBeDisabled();
+    }
+    state.saveLoading = false; state.releaseSave(); await expect(form).toHaveCount(0);
+    await page.goBack(); await expect(page).toHaveURL(/\/$/); await expect(confirmation).toHaveCount(0);
+    await page.goForward(); await expect(page).toHaveURL(/my-data$/);
+    await page.goForward(); await expect(page).toHaveURL(/dashboard$/);
+  });
+
+  for (const lateFailure of [true, false]) test(`${config.key}: account change drops pending history action and a late ${lateFailure ? 'failing' : 'successful'} save cannot alter the next account`, async ({ page }) => {
+    const { state } = await fixtures(page, config); await libraryHistory(page, config);
+    await page.getByRole('button', { name: config.add, exact: true }).click(); let form = page.locator('main div[role=dialog]');
+    await form.getByLabel(config.title, { exact: true }).fill('old owner draft');
+    if (config.key === 'education') await form.getByLabel('ระดับการศึกษา *', { exact: true }).fill('มัธยมศึกษา');
+    await blockedHistory(page, 'back'); await expect(page.getByRole('dialog', { name: 'ข้อมูลยังไม่ได้บันทึก', exact: true })).toBeVisible();
+    state.account = 'next-account'; await accountEvent(page, state.account);
+    await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page).toHaveURL(/my-data$/);
+    await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
+    await page.getByRole('button', { name: config.add, exact: true }).click(); form = page.locator('main div[role=dialog]');
+    await expect(form.getByLabel(config.title, { exact: true })).toHaveValue('');
+    await form.getByLabel(config.title, { exact: true }).fill('save owned by next account');
+    if (config.key === 'education') await form.getByLabel('ระดับการศึกษา *', { exact: true }).fill('มัธยมศึกษา');
+    state.saveLoading = true; state.failSave = lateFailure; const writes = state.writes;
+    await form.getByRole('button', { name: /^บันทึก/ }).click(); await expect.poll(() => state.writes).toBe(writes + 1);
+    state.account = 'third-account'; await accountEvent(page, state.account); await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
+    await page.getByRole('button', { name: config.add, exact: true }).click();
+    await form.getByLabel(config.title, { exact: true }).fill('third account draft');
+    const alerts: string[] = []; page.on('dialog', async dialog => { alerts.push(dialog.message()); await dialog.accept(); });
+    const reads = state.reads, tagWrites = state.tagWrites;
+    const finished = page.waitForResponse(response => response.status() === (lateFailure ? 500 : 200) && new URL(response.url()).pathname === `/rest/v1/user_library_${config.plural}`);
+    state.saveLoading = false; state.releaseSave(); await finished;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    expect(alerts).toEqual([]); await expect(form.getByLabel(config.title, { exact: true })).toHaveValue('third account draft');
+    expect(state.reads).toBe(reads); expect(state.tagWrites).toBe(tagWrites);
+    await expect(page).toHaveURL(/my-data$/);
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`history dialog ${width}px: keyboard focus, Escape, signout cleanup and neighboring navigation`, async ({ page, context }, testInfo) => {
+    const config = sections[1]; await fixtures(page, config); await libraryHistory(page, config); await page.setViewportSize({ width, height: 900 });
+    await page.getByRole('button', { name: config.add, exact: true }).click(); const form = page.locator('main div[role=dialog]');
+    const title = form.getByLabel(config.title, { exact: true }); await title.fill('mobile history draft'); await blockedHistory(page, 'back');
+    const confirmation = page.getByRole('dialog', { name: 'ข้อมูลยังไม่ได้บันทึก', exact: true });
+    await expect(confirmation).toBeVisible(); await expect(confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab'); await expect(confirmation.getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab'); await expect(confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab'); await expect(confirmation.getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true })).toBeFocused();
+    await page.keyboard.press('Shift+Tab'); await expect(confirmation.getByRole('button', { name: 'แก้ไขต่อ', exact: true })).toBeFocused();
+    expect(await confirmation.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`library-history-${width}.png`) });
+    await page.keyboard.press('Enter'); await expect(confirmation).toHaveCount(0); await expect(title).toHaveValue('mobile history draft');
+    await blockedHistory(page, 'back'); await expect(confirmation).toBeVisible();
+    await page.keyboard.press('Escape'); await expect(title).toHaveValue('mobile history draft');
+    await blockedHistory(page, 'back'); await expect(confirmation).toBeVisible();
+    await context.clearCookies(); await page.route('**/auth/v1/user', route => route.fulfill({ status: 401, json: { message: 'synthetic signed out' } }));
+    await accountEvent(page, null); await expect(page).toHaveURL(/login\?next=/); await expect(confirmation).toHaveCount(0);
+    await expect(page.getByText('mobile history draft', { exact: true })).toHaveCount(0);
+    await page.goto('/'); await expect(page.getByRole('region', { name: 'พอร์ตล่าสุด' })).toBeVisible();
+    await page.goBack(); await expect(page).toHaveURL(/login\?next=/); await expect(confirmation).toHaveCount(0);
+    await page.goForward(); await expect(page).toHaveURL(/\/$/);
+  });
+}

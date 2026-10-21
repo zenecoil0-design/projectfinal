@@ -1,5 +1,7 @@
 # /my-data: load failures และ unsaved drafts
 
+อัปเดต 22 ต.ค. 2026: เพิ่ม guard สำหรับ **cancelable same-document Back/Forward ที่มี Navigation API** และ lifecycle ของ save หลัง unmount ตาม [LIBRARY_HISTORY_GUARD_REVIEW](LIBRARY_HISTORY_GUARD_REVIEW.md) ตรวจด้วย Chromium 153/mock; browser ที่ไม่มี API หรือ traversal ที่ยกเลิกไม่ได้ยังอยู่นอกการรับประกัน ข้อความ Back/Forward ด้านล่างเป็นประวัติรอบเดิม ไม่ใช่สถานะของเส้นทางที่รองรับล่าสุด ยังไม่ปิดงานคลังทั้งระบบ
+
 อัปเดตสถานะ 20 ต.ค. 2026: TS2571 เก้าจุดที่บันทึกด้านล่างแก้แล้ว และ full-repo typecheck/PGlite tests ผ่านใน [รายงาน types/status](TEST_TYPES_AND_STATUS_REVIEW.md); [Editor Tags](EDITOR_TAG_LOADING_REVIEW.md) ทำแล้วในรอบถัดมา ผล/ข้อจำกัดด้านล่างเป็นประวัติ ไม่ใช่การรัน browser ใหม่รอบนี้ Back/Forward guard, เกียรติบัตร 2 รูปและ atomic save/Storage integration ยังไม่ครบ
 
 เริ่มจาก local/remote `14530925400fd65efb2620bdf0e49933319f1ec6` บน `codex/portfolio-next-phase`, working tree สะอาด อ่าน AGENTS/PRD/ARCHITECTURE/DESIGN_SYSTEM และคู่มือ Link ของ Next ที่ติดตั้ง ใช้ repository ปัจจุบัน ไม่ใช้ไฟล์แนบเก่าทับ ไม่แก้ main
@@ -70,7 +72,7 @@
 | /my-data Tags โหลดไม่ครบแล้วเสี่ยงบันทึกว่าง | ป้องกันด้วย load status และ save/edit guards |
 | /my-data draft warning / cancel / close / category / Dashboard Link | ทำแล้ว รวมข้อความ Tags และรูป |
 | Native refresh/close warning | beforeunload เฉพาะ dirty; native refresh ตรวจจริงใน mock browser แล้ว |
-| Browser Back/Forward แบบ App Router | ยังไม่กัน; ตรวจแล้วออกได้โดยไม่ผ่าน dialog จึงยังอาจเสีย draft |
+| Browser Back/Forward แบบ App Router | ฐานรอบเดิมยังไม่กัน; ต่อมาเพิ่ม guard เฉพาะ Navigation API cancelable same-document ตาม [ผลตรวจ 22 ต.ค.](LIBRARY_HISTORY_GUARD_REVIEW.md); ยังไม่รับประกัน browser ที่ไม่รองรับ/การบังคับออกที่ยกเลิกไม่ได้ |
 | Editor Tags loadError | รอบนี้เดิมยังไม่แก้; รอบถัดมาแก้สามหมวดใน [Editor Tags loading review](EDITOR_TAG_LOADING_REVIEW.md) แล้ว |
 | เกียรติบัตรเป้าหมาย 2 รูป | งานเดิมแยก ยังรักษา 4 รูปตามโค้ด |
 | Storage cleanup / atomic multi-request save | พฤติกรรมเดิม ไม่เปลี่ยน/ไม่ทดสอบกับข้อมูลจริง |
