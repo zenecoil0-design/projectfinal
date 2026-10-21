@@ -31,4 +31,43 @@ Part A must be published/fetched before B. Actual published SHAs are recorded in
 
 ## Part B / remaining boundaries
 
-Async/session/create draft/rename/keyboard/mobile regression results and screenshots will be recorded after execution. This is mock localhost testing, not hosted Supabase/PostgreSQL/RLS/device acceptance. Section Visibility PostgreSQL/PostgREST acceptance and hosted integration remain **NOT_RUN/unverified** per [readiness](SECTION_VISIBILITY_INTEGRATION_READINESS.md). No migration, database/Storage real write, Editor/PDF change, dependency, Autosave, copy/delete or realtime work.
+Part A published/fetched as **`6e8468577a19e8ff21fad11a3dc70db2b2db99d8`**, complete tree `1166d2dcbe2b389881e27db6e3e96280a5610dd3`. Compared contents to the tested local commit and aligned the equivalent detached worktree; clean and equal to remote before B began. Older dirty checkout remains untouched.
+
+### Actual verification
+
+- Added production browser cases: **9/9 PASS (24.0s)** on first run. Same-tick duplicate retry -> one read; actual ID/owner filter check; failed retry then successful retry retains open create name/Minimal selection, verified by unchanged create POST payload and new Editor navigation. Initial/retry success/error responses after account change or actual navigation to /my-data cannot re-enter UI. Reopening Dashboard loads a clean session. Auth verification failure sends no portfolio query and remains separate from list error. Recovered-list rename stays confirmed through reload; keyboard retry and 1440/390 layouts pass.
+- Combined focused unit regression: **14/14 PASS**, zero skips: three parser, nine preceding Editor error-copy, two PDF result/format tests. No PGlite/hosted database calls.
+- Full-repo TypeScript after build and final B test additions: PASS. Scoped ESLint: **0 errors/0 warnings**. Diff and report/plan links pass. B changes only tests/docs/assets, no application or mock-source changes after A build.
+- Existing rename production regression: **20/20 PASS in one run (35.9s)** on this round's production build. Includes exact title-only save/owner filters, safe failures/retry, synchronous locks, account/navigation late results, legacy/long names, keyboard, unchanged cover/content/template/visibility/selection, new Editor filename, create/open/logout. This is a new run, not evidence borrowed from the prior round.
+
+Browser results are separate runs: initial A 1/2/3, corrected A 6/6, B 9/9. Do not combine these into a claimed clean 15/15 invocation. No skip/assertion reduction/application workaround. Test-only locator correction did not need another production build.
+
+### Async/read/rename reasoning
+
+Every logical list load is serialized by the closure lock, request ID and owner/lifetime guard; installed SDK may internally retry network GET, which is distinct from duplicate UI jobs. Retry exists only after error. No automatic/manual refresh is exposed after success. Thus the current UI cannot start an older competing read after a successful list and confirmed rename. Regression checks two reads (initial failure + recovery), no new read after rename, no retry control after success, and persisted name after reload. Late pending reads after navigation/account changes are explicitly gated/released in four browser cases. Session-local confirmed-name overlay additionally prevents applying stale title/timestamp snapshots without overwriting template or content. Its lifetime ends with the Dashboard session; this is not multi-tab conflict resolution.
+
+### Visual inspection
+
+Opened actual [desktop 1440px](assets/dashboard-load-desktop.png) and [mobile 390px](assets/dashboard-load-mobile.png) screenshots: fixed Thai error wraps, retry has visible focus and comfortable target, count/empty copy absent on failure, create action remains available, no horizontal overflow. Retry works with Enter. Backend marker repeated 100 times never becomes UI text. Chromium viewport emulation is not physical-phone testing.
+
+### Commands used
+
+```sh
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key npm run build -- --webpack
+node_modules/.bin/tsc --noEmit --incremental false
+node_modules/.bin/eslint src/app/dashboard/page.tsx src/lib/dashboard-portfolios.ts tests/dashboard-portfolios.test.ts tests/e2e/dashboard-load.spec.ts tests/mock-supabase.mjs
+node --import tsx --test tests/dashboard-portfolios.test.ts tests/editor-form-errors.test.ts tests/pdf-result.test.ts
+# All browser commands use PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=<extracted Chromium 153> and unchanged project config/production server.
+node_modules/.bin/playwright test tests/e2e/dashboard-load.spec.ts --reporter=line --max-failures=2
+node_modules/.bin/playwright test tests/e2e/dashboard-load.spec.ts --reporter=line --max-failures=1
+node_modules/.bin/playwright test tests/e2e/dashboard-load.spec.ts --grep-invert 'successful list|failure is safe' --reporter=line --max-failures=2
+node_modules/.bin/playwright test tests/e2e/portfolio-rename.spec.ts --reporter=line --max-failures=2
+git diff --check
+git diff --quiet 6e84685 -- src tests/mock-supabase.mjs package.json package-lock.json
+```
+
+Updated only M05.04 evidence; status stays PARTIAL and M05 IN_PROGRESS. Not declaring Dashboard or portfolio management complete. This is mock localhost testing, not hosted Supabase/PostgreSQL/RLS/device acceptance. Section Visibility PostgreSQL/PostgREST acceptance and hosted integration remain **NOT_RUN/unverified** per [readiness](SECTION_VISIBILITY_INTEGRATION_READINESS.md). No migration, database/Storage real write, Editor/PDF change, dependency, Autosave, copy/delete or realtime work. No new real 14 MB PDF fixture or whole-browser/database suite run is claimed.
+
+Multi-tab changes still require reload; no realtime/conflict protocol. Initial auth failures have an explicit reopen link, not the list retry button. Create/rename errors outside list loading retain existing behavior. No guarantee that network failure proves server rollback.
+
+Final B SHA is supplied with actual fetched remote HEAD/tree and isolated-worktree status in the handoff; resolve report version via `git log -1 --format=%H -- docs/verification/DASHBOARD_LOAD_RETRY_REVIEW.md`.
