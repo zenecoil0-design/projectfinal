@@ -89,3 +89,160 @@ test('Home list retry locks same-turn duplicates until its response settles', as
   await expect.poll(() => reads).toBe(2); await expect(recent(page).getByRole('button', { name: 'กำลังโหลด…', exact: true })).toBeDisabled();
   release(); await expect(cards(page)).toHaveCount(2); expect(reads).toBe(2);
 });
+
+async function authEvent(page: Page, event: string, id: string | null) {
+  await page.evaluate(({ event, id, user }) => {
+    const channel = new BroadcastChannel('sb-127-auth-token');
+    channel.postMessage({ event, session: id === null ? null : { user: { ...user, id } } }); channel.close();
+  }, { event, id, user });
+}
+const row = (id: string, title: string) => ({ id, title, template_key: null, created_at: null, updated_at: null });
+async function settledFrame(page: Page) { await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))); }
+
+test('confirmed Home cards clear on owner switch; only explicit verified B reads may return', async ({ page }) => {
+  await page.goto('/'); await expect(cards(page)).toHaveCount(2); let auth = 0, reads = 0;
+  await page.route('**/auth/v1/user', route => { auth++; return route.fulfill({ json: { ...user, id: 'account-b' } }); });
+  await page.route('**/rest/v1/portfolios?**', route => {
+    reads++; expect(new URL(route.request().url()).searchParams.get('user_id')).toBe('eq.account-b');
+    return route.fulfill({ json: [row('new', 'NEW OWNER')] });
+  });
+  await authEvent(page, 'SIGNED_IN', 'account-b'); await expect(cards(page)).toHaveCount(0);
+  await expect(recent(page).getByRole('status')).toContainText('บัญชีผู้ใช้เปลี่ยนแล้ว'); expect(auth).toBe(0); expect(reads).toBe(0);
+  await recent(page).getByRole('button', { name: 'ตรวจสอบบัญชีอีกครั้ง', exact: true }).click();
+  await expect(recent(page).getByRole('heading', { name: 'NEW OWNER' })).toBeVisible(); expect(auth).toBe(1); expect(reads).toBe(1);
+  await expect(recent(page).getByRole('heading', { name: 'Portfolio A' })).toHaveCount(0);
+});
+
+test('getUser owner mismatch without an event never queries private Home cards', async ({ page }) => {
+  let reads = 0; page.on('request', r => { if (new URL(r.url()).pathname === '/rest/v1/portfolios') reads++; });
+  await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: 'account-b' } }));
+  await page.goto('/'); await expect(recent(page).getByRole('status')).toContainText('บัญชีผู้ใช้เปลี่ยนแล้ว');
+  expect(reads).toBe(0); await expect(cards(page)).toHaveCount(0); await expect(page).toHaveURL(/\/$/);
+});
+
+for (const phase of ['auth', 'list', 'retry'] as const) for (const destination of ['account', 'navigation'] as const) {
+  test(`Home late ${phase} after ${destination} cannot overwrite a newer page/session`, async ({ page }) => {
+    let release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
+    let started = false, settled = false, oldReads = 0, nextReads = 0;
+    await page.route('**/auth/v1/user', async route => {
+      if (phase === 'auth' && !started) { started = true; await gate; await route.fulfill({ json: user }); settled = true; return; }
+      return route.fulfill({ json: destination === 'account' ? { ...user, id: 'account-b' } : user });
+    });
+    // In list/retry cases initial getUser must verify account A, not the future B.
+    if (phase !== 'auth') await page.unroute('**/auth/v1/user');
+    await page.route('**/rest/v1/portfolios?**', async route => {
+      const url = new URL(route.request().url()); if (url.searchParams.get('limit') !== '3') return route.continue();
+      if (url.searchParams.get('user_id') === 'eq.account-b') { nextReads++; return route.fulfill({ json: [row('new', 'NEW OWNER')] }); }
+      oldReads++;
+      if (phase === 'auth') return route.fulfill({ json: [row('old', 'OLD PRIVATE SNAPSHOT')] });
+      if (phase === 'retry' && oldReads === 1) return route.fulfill({ status: 500, json: { message: internal } });
+      started = true; await gate;
+      await route.fulfill(phase === 'retry' ? { status: 500, json: { message: internal } } : { json: [row('old', 'OLD PRIVATE SNAPSHOT')] }); settled = true;
+    });
+    await page.goto('/');
+    if (phase === 'retry') { await expect(recent(page).getByRole('alert')).toHaveText(listError); await recent(page).getByRole('button', { name: 'ลองใหม่', exact: true }).click(); }
+    await expect.poll(() => started).toBe(true);
+    await expect(recent(page).getByRole('status')).toHaveText(phase === 'auth' ? 'กำลังตรวจสอบบัญชีผู้ใช้…' : 'กำลังโหลดรายการพอร์ต…');
+    if (destination === 'account') {
+      if (phase !== 'auth') await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: 'account-b' } }));
+      await authEvent(page, 'SIGNED_IN', 'account-b');
+      await expect(recent(page).getByRole('status')).toContainText('บัญชีผู้ใช้เปลี่ยนแล้ว'); await expect(cards(page)).toHaveCount(0);
+      expect(nextReads).toBe(0); // No automatic read from an unverified event.
+      await recent(page).getByRole('button', { name: 'ตรวจสอบบัญชีอีกครั้ง', exact: true }).click();
+      await expect(recent(page).getByRole('heading', { name: 'NEW OWNER' })).toBeVisible(); expect(nextReads).toBe(1);
+    } else {
+      await page.getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
+      await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
+    }
+    release(); await expect.poll(() => settled).toBe(true); await settledFrame(page);
+    await expect(page.locator('body')).not.toContainText('OLD PRIVATE SNAPSHOT'); await expect(page.locator('body')).not.toContainText(internal);
+    await expect(page.getByText(listError, { exact: true })).toHaveCount(0);
+    if (destination === 'account') {
+      await expect(cards(page)).toHaveCount(1); await expect(recent(page).getByRole('heading', { name: 'NEW OWNER' })).toBeVisible();
+      expect(oldReads).toBe(phase === 'auth' ? 0 : phase === 'retry' ? 2 : 1);
+    } else await expect(page).toHaveURL(/dashboard$/);
+  });
+}
+
+test('signout clears confirmed cards and account-bound create draft immediately, without a read or redirect', async ({ page }) => {
+  await page.goto('/'); await expect(cards(page)).toHaveCount(2); let reads = 0;
+  page.on('request', r => { if (new URL(r.url()).pathname === '/rest/v1/portfolios') reads++; });
+  await recent(page).getByRole('button', { name: 'สร้างผลงานใหม่' }).click();
+  const dialog = page.getByRole('dialog', { name: 'สร้าง Portfolio ใหม่', exact: true });
+  await dialog.getByLabel('ชื่อ Portfolio', { exact: true }).fill('old owner draft'); await dialog.getByRole('button', { name: /Minimal/ }).click();
+  await authEvent(page, 'SIGNED_OUT', null); await expect(dialog).toHaveCount(0); await expect(cards(page)).toHaveCount(0);
+  await expect(recent(page).getByRole('status')).toHaveText('เข้าสู่ระบบเพื่อดูพอร์ตล่าสุดของคุณ'); expect(reads).toBe(0); await expect(page).toHaveURL(/\/$/);
+  await recent(page).getByRole('button', { name: 'สร้างผลงานใหม่' }).click(); await expect(dialog.getByLabel('ชื่อ Portfolio', { exact: true })).toHaveValue('');
+  await expect(dialog.getByRole('button', { name: /Emerald Editorial/ })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('a retry response after signout cannot restore private cards or its error', async ({ page }) => {
+  let reads = 0, started = false, settled = false, release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/rest/v1/portfolios?**', async route => {
+    if (++reads === 1) return route.fulfill({ status: 500, json: { message: internal } });
+    started = true; await gate; await route.fulfill({ json: [row('old', 'OLD PRIVATE SNAPSHOT')] }); settled = true;
+  });
+  await page.goto('/'); await expect(recent(page).getByRole('alert')).toHaveText(listError);
+  await recent(page).getByRole('button', { name: 'ลองใหม่', exact: true }).click(); await expect.poll(() => started).toBe(true);
+  await authEvent(page, 'SIGNED_OUT', null); await expect(recent(page).getByRole('status')).toHaveText('เข้าสู่ระบบเพื่อดูพอร์ตล่าสุดของคุณ');
+  release(); await expect.poll(() => settled).toBe(true); await settledFrame(page);
+  await expect(cards(page)).toHaveCount(0); await expect(recent(page).getByRole('alert')).toHaveCount(0); await expect(page.locator('body')).not.toContainText('OLD PRIVATE SNAPSHOT');
+});
+
+test('Home retry failure/success and same-owner refresh preserve mounted create name/template', async ({ page }) => {
+  let reads = 0, auth = 0, release = () => {}; let gate: Promise<void>;
+  const hold = () => { gate = new Promise<void>(resolve => { release = resolve; }); }; hold();
+  page.on('request', r => { if (new URL(r.url()).pathname === '/auth/v1/user') auth++; });
+  await page.route('**/rest/v1/portfolios?**', async route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const attempt = ++reads; if (attempt > 1) await gate;
+    if (attempt <= 2) return route.fulfill({ status: 500, json: { message: internal } });
+    return route.fulfill({ response: await route.fetch() });
+  });
+  await page.goto('/'); await expect(recent(page).getByRole('alert')).toHaveText(listError);
+  await recent(page).getByRole('button', { name: 'สร้างผลงานใหม่' }).click();
+  const dialog = page.getByRole('dialog', { name: 'สร้าง Portfolio ใหม่', exact: true }); const input = dialog.getByLabel('ชื่อ Portfolio', { exact: true });
+  await input.fill('draft through Home retry'); await dialog.getByRole('button', { name: /Minimal/ }).click();
+  const backgroundRetry = async () => recent(page).getByRole('button', { name: 'ลองใหม่', exact: true }).evaluate(button => {
+    if (!(button instanceof HTMLButtonElement)) throw new Error('Expected retry button'); button.click(); button.click();
+  });
+  await backgroundRetry(); await expect.poll(() => reads).toBe(2); await expect(input).toHaveValue('draft through Home retry');
+  release(); await expect(recent(page).getByRole('alert')).toHaveText(listError); await expect(input).toHaveValue('draft through Home retry');
+  hold(); await backgroundRetry(); await expect.poll(() => reads).toBe(3); release(); await expect(cards(page)).toHaveCount(2);
+  await authEvent(page, 'TOKEN_REFRESHED', user.id); await settledFrame(page);
+  await expect(cards(page)).toHaveCount(2); await expect(input).toHaveValue('draft through Home retry');
+  await expect(dialog.getByRole('button', { name: /Minimal/ })).toHaveAttribute('aria-pressed', 'true'); expect(reads).toBe(3); expect(auth).toBe(1);
+  const sent = page.waitForRequest(r => r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios');
+  await dialog.getByRole('button', { name: 'สร้าง Portfolio', exact: true }).click();
+  expect((await sent).postDataJSON()).toEqual({ user_id: user.id, title: 'draft through Home retry', template_key: 'minimal' });
+  await expect(page).toHaveURL(/editor\?portfolio=/);
+});
+
+test('explicit Home auth retry locks duplicate verification before React commit', async ({ page }) => {
+  let calls = 0, release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/auth/v1/user', async route => {
+    if (++calls === 1) return route.fulfill({ status: 500, json: { message: internal } });
+    await gate; await route.fulfill({ json: user });
+  });
+  await page.goto('/'); await expect(recent(page).getByRole('alert')).toHaveText(authError);
+  await recent(page).getByRole('button', { name: 'ตรวจสอบบัญชีอีกครั้ง', exact: true }).evaluate(button => {
+    if (!(button instanceof HTMLButtonElement)) throw new Error('Expected auth retry button'); button.click(); button.click();
+  });
+  await expect.poll(() => calls).toBe(2); await expect(recent(page).getByRole('button', { name: 'กำลังตรวจสอบ…', exact: true })).toBeDisabled();
+  release(); await expect(cards(page)).toHaveCount(2); expect(calls).toBe(2);
+});
+
+for (const width of [1440, 390]) {
+  test(`${width}px: Home error/retry fits and responds to keyboard`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.route('**/rest/v1/portfolios?**', route => route.fulfill({ status: 500, json: { message: internal.repeat(100) } }));
+    await page.goto('/'); const alert = recent(page).getByRole('alert'); await expect(alert).toHaveText(listError);
+    const retry = recent(page).getByRole('button', { name: 'ลองใหม่', exact: true }); await retry.scrollIntoViewIfNeeded(); await retry.focus(); await expect(retry).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const box = await alert.boundingBox(); expect(box).not.toBeNull(); expect(box!.x).toBeGreaterThanOrEqual(0); expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    await page.screenshot({ path: testInfo.outputPath(`home-error-${width}.png`) });
+    await page.unroute('**/rest/v1/portfolios?**'); await retry.press('Enter'); await expect(cards(page)).toHaveCount(2);
+    await expect(page.locator('body')).not.toContainText(internal);
+    await recent(page).locator('[data-recent-portfolio-id="a"]').click(); await expect(page).toHaveURL(/editor\?portfolio=a$/);
+  });
+}
