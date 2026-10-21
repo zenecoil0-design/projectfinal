@@ -1,8 +1,13 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+import { confirmedCreatedId, createAuthError, createResultError } from "@/lib/portfolio-create";
 
 import {
   ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
   useState,
 } from "react";
 
@@ -55,6 +60,8 @@ export default function CreatePortfolioModal({
   children,
 }: CreatePortfolioModalProps) {
   const router = useRouter();
+  const nameId = useId();
+  const lifecycle = useRef<{ alive: boolean; version: number; owner: string | null | undefined; busy: boolean }>({ alive: false, version: 0, owner: undefined, busy: false });
 
   const [isOpen, setIsOpen] =
     useState(false);
@@ -78,19 +85,39 @@ export default function CreatePortfolioModal({
     setErrorMessage,
   ] = useState("");
 
+  const discardAccountDraft = useCallback(() => {
+    ++lifecycle.current.version; lifecycle.current.busy = false;
+    setIsCreating(false); setIsOpen(false); setTitle(""); setSelectedTemplate("modern"); setErrorMessage("");
+  }, []);
+
+  useEffect(() => {
+    const state = lifecycle.current;
+    state.alive = true;
+    const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
+      const next = session?.user.id ?? null, previous = state.owner;
+      state.owner = next;
+      if (event === "SIGNED_OUT" || (previous !== undefined && previous !== next)) discardAccountDraft();
+    });
+    return () => { state.alive = false; ++state.version; state.busy = false; state.owner = undefined; subscription.unsubscribe(); };
+  }, [discardAccountDraft]);
+
   const openModal = () => {
+    if (lifecycle.current.busy) return;
+    ++lifecycle.current.version;
     setErrorMessage("");
     setIsOpen(true);
   };
 
   const closeModal = () => {
-    if (isCreating) return;
+    if (lifecycle.current.busy) return;
+    ++lifecycle.current.version;
 
     setIsOpen(false);
   };
 
   const handleCreatePortfolio =
     async () => {
+      if (!lifecycle.current.alive || lifecycle.current.busy) return;
       const cleanTitle =
         title.trim();
 
@@ -102,10 +129,16 @@ export default function CreatePortfolioModal({
         return;
       }
 
+      const version = lifecycle.current.version, expectedOwner = lifecycle.current.owner;
+      const current = () => lifecycle.current.alive && lifecycle.current.version === version;
+      const submitted = { title: cleanTitle, template_key: selectedTemplate };
+      lifecycle.current.busy = true;
+      let stage: "auth" | "insert" = "auth";
       setErrorMessage("");
       setIsCreating(true);
 
       try {
+        if (expectedOwner === undefined) throw new Error("Session initialization incomplete");
         const supabase =
           createClient();
 
@@ -115,33 +148,40 @@ export default function CreatePortfolioModal({
         } =
           await supabase.auth.getUser();
 
-        if (userError || !user) {
+        if (!current()) return;
+        if (userError && !isAuthSessionMissingError(userError)) throw userError;
+        if (!user) {
+          setIsOpen(false);
           router.push(
             "/login?next=/"
           );
 
           return;
         }
+        if (user.id !== expectedOwner) {
+          lifecycle.current.owner = user.id;
+          discardAccountDraft();
+          return;
+        }
+        const payload = { user_id: user.id, ...submitted };
+        stage = "insert";
 
         const {
           data: portfolio,
           error,
         } = await supabase
           .from("portfolios")
-          .insert({
-            user_id: user.id,
-            title: cleanTitle,
-            template_key:
-              selectedTemplate,
-          })
-          .select("id")
+          .insert(payload)
+          .select("id, user_id, title, template_key")
           .single();
 
+        if (!current()) return;
         if (error) {
           throw error;
         }
 
-        if (!portfolio?.id) {
+        const id = confirmedCreatedId(portfolio, payload);
+        if (!id) {
           throw new Error(
             "ไม่พบ Portfolio ID"
           );
@@ -150,20 +190,12 @@ export default function CreatePortfolioModal({
         setIsOpen(false);
 
         router.push(
-          `/editor?portfolio=${portfolio.id}`
+          `/editor?portfolio=${encodeURIComponent(id)}`
         );
-      } catch (error: unknown) {
-        console.error(
-          "Create portfolio error:",
-          error
-        );
-
-        setErrorMessage(
-          getErrorMessage(error) ||
-            "ไม่สามารถสร้าง Portfolio ได้"
-        );
+      } catch {
+        if (current()) setErrorMessage(stage === "auth" ? createAuthError : createResultError);
       } finally {
-        setIsCreating(false);
+        if (current()) { lifecycle.current.busy = false; setIsCreating(false); }
       }
     };
 
@@ -180,6 +212,10 @@ export default function CreatePortfolioModal({
       {/* Modal */}
       {isOpen && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${nameId}-heading`}
+          onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); closeModal(); } }}
           className="
             fixed
             inset-0
@@ -219,7 +255,7 @@ export default function CreatePortfolioModal({
             {/* Header */}
             <div className="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-5">
               <div>
-                <h2 className="text-xl font-black text-slate-900 md:text-2xl">
+                <h2 id={`${nameId}-heading`} className="text-xl font-black text-slate-900 md:text-2xl">
                   สร้าง Portfolio ใหม่
                 </h2>
 
@@ -233,6 +269,7 @@ export default function CreatePortfolioModal({
               <button
                 type="button"
                 onClick={closeModal}
+                aria-label="ปิดกล่องสร้างพอร์ต"
                 disabled={isCreating}
                 className="
                   flex
@@ -257,15 +294,19 @@ export default function CreatePortfolioModal({
             <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
               {/* Portfolio name */}
               <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">
+                <label htmlFor={nameId} className="mb-2 block text-sm font-bold text-slate-700">
                   ชื่อ Portfolio
                 </label>
 
                 <input
                   type="text"
+                  id={nameId}
+                  disabled={isCreating}
+                  aria-invalid={!!errorMessage}
+                  aria-describedby={errorMessage ? `${nameId}-error` : undefined}
                   value={title}
                   onChange={(event) =>
-                    setTitle(
+                    !lifecycle.current.busy && setTitle(
                       event.target
                         .value
                     )
@@ -319,8 +360,10 @@ export default function CreatePortfolioModal({
                             template.key
                           }
                           type="button"
+                          disabled={isCreating}
+                          aria-pressed={isSelected}
                           onClick={() =>
-                            setSelectedTemplate(
+                            !lifecycle.current.busy && setSelectedTemplate(
                               template.key
                             )
                           }
@@ -431,10 +474,11 @@ export default function CreatePortfolioModal({
 
               {/* Error */}
               {errorMessage && (
-                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                <div id={`${nameId}-error`} role="alert" className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
                   {errorMessage}
                 </div>
               )}
+              {isCreating && <p role="status" className="mt-4 text-sm leading-6 text-slate-500">กำลังยืนยันการสร้างพอร์ต กรุณารอสักครู่</p>}
             </div>
 
             {/* Footer */}
