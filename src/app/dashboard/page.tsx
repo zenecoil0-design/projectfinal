@@ -1,5 +1,5 @@
 "use client";
-import { errorMessage as getErrorMessage } from "@/lib/errors";
+import { parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import {
   useEffect,
@@ -27,19 +27,9 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
-import RenamePortfolioDialog from "@/components/portfolio/RenamePortfolioDialog";
+import RenamePortfolioDialog, { type RenamedPortfolio } from "@/components/portfolio/RenamePortfolioDialog";
 
-type PortfolioRow = {
-  id: string;
-
-  title: string | null;
-
-  template_key: string | null;
-
-  created_at: string;
-
-  updated_at: string | null;
-};
+type PortfolioRow = DashboardPortfolio;
 
 export default function DashboardPage() {
   const router =
@@ -52,6 +42,10 @@ export default function DashboardPage() {
     useState("");
   const owner = useRef<string | null>(null);
   const targetLock = useRef(false);
+  const retryList = useRef<(() => Promise<void>) | null>(null);
+  const confirmedNames = useRef(new Map<string, RenamedPortfolio>());
+  const [listPhase, setListPhase] = useState<"loading" | "success" | "error">("loading");
+  const [authError, setAuthError] = useState("");
   const [sessionChanged, setSessionChanged] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ portfolio: PortfolioRow; trigger: HTMLButtonElement; ownerId: string } | null>(null);
   const [renameStatus, setRenameStatus] = useState("");
@@ -86,6 +80,8 @@ export default function DashboardPage() {
   useEffect(() => {
     let active = true;
     let valid = true;
+    let reading = false;
+    let requestId = 0;
     const supabase = createClient();
     let observedUser: string | null | undefined;
     const current = () => active && valid;
@@ -93,111 +89,49 @@ export default function DashboardPage() {
       const nextOwner = session?.user.id ?? null;
       if (event === "SIGNED_OUT" || (observedUser !== undefined && nextOwner !== observedUser)) {
         valid = false; owner.current = null; targetLock.current = false;
+        confirmedNames.current.clear(); ++requestId;
         setRenameTarget(null); setPortfolios([]); setRenameStatus(""); setSessionChanged(true); setIsLoading(false);
       }
       observedUser = nextOwner;
     });
-    const loadDashboard =
-      async () => {
-        setIsLoading(true);
-        setLoadError("");
-
-        try {
-          const {
-            data: { user },
-            error:
-              userError,
-          } =
-            await supabase.auth.getUser();
-
-          if (!current()) return;
-
-          if (
-            userError ||
-            !user
-          ) {
-            router.replace(
-              "/login"
-            );
-
-            return;
-          }
-          owner.current = user.id;
-          observedUser = user.id;
-
-          setUsername(
-            user
-              .user_metadata
-              ?.username ||
-              user
-                .user_metadata
-                ?.full_name ||
-              "ผู้ใช้งาน"
-          );
-
-          setEmail(
-            user.email || ""
-          );
-
-          const {
-            data,
-            error:
-              portfolioError,
-          } = await supabase
-            .from(
-              "portfolios"
-            )
-            .select(
-              `
-                id,
-                title,
-                template_key,
-                created_at,
-                updated_at
-              `
-            )
-            .eq(
-              "user_id",
-              user.id
-            )
-            .order(
-              "updated_at",
-              {
-                ascending:
-                  false,
-              }
-            );
-
-          if (!current()) return;
-          if (
-            portfolioError
-          ) {
-            throw portfolioError;
-          }
-
-          setPortfolios(
-            data ?? []
-          );
-        } catch (
-          error: unknown
-        ) {
-          if (!current()) return;
-          console.error(
-            "Load dashboard error:",
-            error
-          );
-
-          setLoadError(
-            getErrorMessage(error) ||
-              "ไม่สามารถโหลด Portfolio ได้"
-          );
-        } finally {
-          if (current()) setIsLoading(false);
-        }
-      };
-
-    loadDashboard();
-    return () => { active = false; owner.current = null; subscription.unsubscribe(); };
+    const loadList = async () => {
+      if (!current() || reading || !owner.current) return;
+      reading = true;
+      const id = ++requestId, ownerId = owner.current;
+      const latest = () => current() && requestId === id && owner.current === ownerId;
+      setListPhase("loading"); setLoadError("");
+      try {
+        const { data, error } = await supabase.from("portfolios")
+          .select("id, title, template_key, created_at, updated_at")
+          .eq("user_id", ownerId).order("updated_at", { ascending: false });
+        if (!latest()) return;
+        if (error) throw error;
+        const rows = parseDashboardPortfolios(data);
+        // Do not let a read snapshot undo a rename confirmed in this page lifetime.
+        setPortfolios(rows.map(row => ({ ...row, ...confirmedNames.current.get(row.id) })));
+        setListPhase("success");
+      } catch {
+        if (latest()) { setLoadError("โหลดรายการพอร์ตไม่สำเร็จ กรุณาลองอีกครั้ง"); setListPhase("error"); }
+      } finally { reading = false; }
+    };
+    retryList.current = loadList;
+    const loadUser = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!current()) return;
+        if (error) throw error;
+        if (!user) { router.replace("/login"); return; }
+        owner.current = user.id; observedUser = user.id;
+        setUsername(user.user_metadata?.username || user.user_metadata?.full_name || "ผู้ใช้งาน");
+        setEmail(user.email || ""); setIsLoading(false);
+        await loadList();
+      } catch {
+        if (current()) setAuthError("ยืนยันบัญชีผู้ใช้ไม่สำเร็จ กรุณาเปิด Dashboard ใหม่");
+      } finally { if (current()) setIsLoading(false); }
+    };
+    void loadUser();
+    const names = confirmedNames.current;
+    return () => { active = false; ++requestId; owner.current = null; retryList.current = null; names.clear(); subscription.unsubscribe(); };
   }, [router]);
 
   // =====================================================
@@ -361,6 +295,7 @@ export default function DashboardPage() {
   // =====================================================
 
   if (sessionChanged) return <div className="p-6" role="alert">บัญชีผู้ใช้เปลี่ยนแล้ว กรุณาเปิด Dashboard ใหม่ <a className="text-blue-600 underline" href="/dashboard">เปิด Dashboard</a></div>;
+  if (authError) return <div className="p-6" role="alert">{authError} <a className="text-blue-600 underline" href="/dashboard">เปิด Dashboard</a></div>;
 
   if (isLoading) {
     return (
@@ -512,9 +447,10 @@ export default function DashboardPage() {
 
           {/* ERROR */}
 
-          {loadError && (
-            <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
-              {loadError}
+          {(loadError || listPhase === "loading") && (
+            <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-600">
+              {loadError && <p role="alert" className="min-w-0 wrap-anywhere">{loadError}</p>}
+              <button type="button" disabled={listPhase === "loading"} onClick={() => void retryList.current?.()} className="min-h-11 rounded-xl border border-red-300 px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-50">{listPhase === "loading" ? "กำลังโหลด…" : "ลองใหม่"}</button>
             </div>
           )}
 
@@ -528,11 +464,11 @@ export default function DashboardPage() {
                   พอร์ตฟอลิโอของฉัน
                 </h2>
 
-                <p className="mt-2 text-sm leading-6 text-slate-500">
+                {listPhase === "success" && <p className="mt-2 text-sm leading-6 text-slate-500">
                   มีทั้งหมด{" "}
                   {portfolios.length}{" "}
                   Portfolio
-                </p>
+                </p>}
               </div>
 
               <Link
@@ -545,7 +481,9 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+            {listPhase === "loading" && <p role="status" className="mb-4 text-sm text-slate-500">กำลังโหลดรายการพอร์ต…</p>}
+            {listPhase === "success" && portfolios.length === 0 && <p className="mb-4 text-sm text-slate-500">ยังไม่มีพอร์ต เริ่มสร้างพอร์ตใหม่ได้ที่นี่</p>}
+            <div aria-busy={listPhase === "loading"} className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
               {/* CREATE */}
 
               <CreatePortfolioModal>
@@ -692,6 +630,7 @@ export default function DashboardPage() {
         onClose={() => { targetLock.current = false; setRenameTarget(null); }}
         onSaved={row => {
           if (owner.current !== renameTarget.ownerId || !targetLock.current) return;
+          confirmedNames.current.set(row.id, row);
           setPortfolios(items => items.map(item => item.id === row.id ? { ...item, title: row.title, updated_at: row.updated_at } : item));
           setRenameStatus("เปลี่ยนชื่อพอร์ตแล้ว"); targetLock.current = false; setRenameTarget(null);
         }} />}

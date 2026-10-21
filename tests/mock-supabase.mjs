@@ -51,7 +51,7 @@ createServer(async (req,res) => {
     return res.end('null');
   }
   if(req.method==='POST') {
-    const added=Array.isArray(body)?body:[{id:crypto.randomUUID(),...body}];
+    const added=Array.isArray(body)?body:[{id:crypto.randomUUID(),...(table==='portfolios'?{created_at:'2026-01-01T00:00:00Z',updated_at:null}:{}),...body}];
     (database[table]??=[]).push(...added);
     return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json')?added[0]:added) : 'null');
   }
