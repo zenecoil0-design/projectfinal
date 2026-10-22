@@ -150,7 +150,8 @@ const nextPath =
                 bg-white
                 pl-11
                 pr-4
-                text-sm
+                text-base
+                sm:text-sm
                 text-slate-800
                 outline-none
                 transition-all
@@ -198,7 +199,8 @@ const nextPath =
                 bg-white
                 pl-11
                 pr-12
-                text-sm
+                text-base
+                sm:text-sm
                 text-slate-800
                 outline-none
                 transition-all

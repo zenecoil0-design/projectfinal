@@ -216,7 +216,8 @@ export default function RegisterPage() {
                 bg-white
                 pl-11
                 pr-4
-                text-sm
+                text-base
+                sm:text-sm
                 outline-none
                 transition-all
                 focus:border-blue-500
@@ -256,7 +257,8 @@ export default function RegisterPage() {
                 bg-white
                 pl-11
                 pr-4
-                text-sm
+                text-base
+                sm:text-sm
                 outline-none
                 transition-all
                 focus:border-blue-500
@@ -300,7 +302,8 @@ export default function RegisterPage() {
                 bg-white
                 pl-11
                 pr-12
-                text-sm
+                text-base
+                sm:text-sm
                 outline-none
                 transition-all
                 focus:border-blue-500
@@ -362,7 +365,8 @@ export default function RegisterPage() {
                 bg-white
                 pl-11
                 pr-4
-                text-sm
+                text-base
+                sm:text-sm
                 outline-none
                 transition-all
                 focus:border-blue-500

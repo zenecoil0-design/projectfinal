@@ -34,3 +34,18 @@ test('Register fields have accessible names and password reveal controls both fi
   await expect(password).toHaveAttribute('type', 'password');
   await expect(confirm).toHaveAttribute('type', 'password');
 });
+
+test('mobile auth inputs use readable 16px font without changing desktop sizing', async ({ page }) => {
+  for (const route of ['/login', '/register']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(route);
+    const mobile = await page.locator('main input').evaluateAll(inputs =>
+      inputs.map(input => getComputedStyle(input).fontSize));
+    expect(mobile.length).toBe(route === '/login' ? 2 : 4);
+    expect(mobile).toEqual(Array(mobile.length).fill('16px'));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const desktop = await page.locator('main input').evaluateAll(inputs =>
+      inputs.map(input => getComputedStyle(input).fontSize));
+    expect(desktop).toEqual(Array(mobile.length).fill('14px'));
+  }
+});
