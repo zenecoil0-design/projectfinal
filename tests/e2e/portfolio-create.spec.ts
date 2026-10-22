@@ -17,6 +17,22 @@ async function dashboard(page: Page) {
 }
 async function draft(page: Page) { await name(page).fill('  พอร์ต Science  '); await modal(page).getByRole('button', { name: /Minimal/ }).click(); }
 
+test('mobile create portfolio dialog has readable text and touch-sized close control', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('main').getByRole('button', { name: 'เริ่มสร้าง Portfolio', exact: true }).click();
+  const nameInput = name(page);
+  await expect(nameInput).toBeVisible();
+  expect(await nameInput.evaluate(input => getComputedStyle(input).fontSize)).toBe('16px');
+  const close = modal(page).getByRole('button', { name: 'ปิดกล่องสร้างพอร์ต' });
+  const size = await close.boundingBox();
+  expect(size).not.toBeNull();
+  expect(size!.width).toBeGreaterThanOrEqual(44);
+  expect(size!.height).toBeGreaterThanOrEqual(44);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  expect(await nameInput.evaluate(input => getComputedStyle(input).fontSize)).toBe('14px');
+});
+
 test('confirmed create sends the captured trimmed payload and opens only its returned ID', async ({ page }) => {
   await dashboard(page); await draft(page);
   const request = page.waitForRequest(r => r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios');

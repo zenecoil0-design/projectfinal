@@ -273,8 +273,8 @@ export default function CreatePortfolioModal({
                 disabled={isCreating}
                 className="
                   flex
-                  h-10
-                  w-10
+                  h-11
+                  w-11
                   shrink-0
                   items-center
                   justify-center
@@ -283,6 +283,9 @@ export default function CreatePortfolioModal({
                   transition-all
                   hover:bg-slate-100
                   hover:text-slate-700
+                  focus-visible:outline-2
+                  focus-visible:outline-offset-2
+                  focus-visible:outline-blue-600
                   disabled:opacity-50
                 "
               >
@@ -323,7 +326,8 @@ export default function CreatePortfolioModal({
                     bg-white
                     px-4
                     py-3.5
-                    text-sm
+                    text-base
+                    sm:text-sm
                     text-slate-800
                     outline-none
                     transition-all
