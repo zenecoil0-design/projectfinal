@@ -93,9 +93,11 @@ for (const config of sections) {
     await title.fill('ข้อมูลใหม่ที่บันทึกสำเร็จ');
     if (config.key === 'education') await dialog.getByLabel('ระดับการศึกษา *', { exact: true }).fill('มัธยมศึกษา');
     state.failSave = true;
-    const alert = page.waitForEvent('dialog');
-    await dialog.getByRole('button', { name: /^บันทึก/ }).click();
-    const failure = await alert; expect(failure.type()).toBe('alert'); await failure.accept();
+    const alert = page.waitForEvent('dialog').then(async failure => {
+      expect(failure.type()).toBe('alert');
+      await failure.accept();
+    });
+    await Promise.all([alert, dialog.getByRole('button', { name: /^บันทึก/ }).click()]);
     await expect(title).toHaveValue('ข้อมูลใหม่ที่บันทึกสำเร็จ');
     state.failSave = false;
     await dialog.getByRole('button', { name: /^บันทึก/ }).click();

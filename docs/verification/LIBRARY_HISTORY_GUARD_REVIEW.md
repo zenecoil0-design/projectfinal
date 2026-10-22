@@ -1,5 +1,15 @@
 # Library Browser Back/Forward draft guard
 
+## Astra independent review — 2026-10-22
+
+Reviewed fetched HEAD `88ca8be456f37d1420d6cb5d82efd4fb54d783f3`, tree `64956ab9ea371b21635544344c7159c1d505ea1a`, source diff, tests, and desktop/mobile report screenshots. Production build and standalone full-repository TypeScript passed; scoped lint had zero errors and six existing img warnings.
+
+The first 59-case review run left a failed result for the certificate responsive/save test; its terminal session expired, so no aggregate pass count is claimed for that run. A focused rerun with trace reproduced the 90-second timeout. The test awaited the save click before accepting its native alert, allowing the alert to block completion of the click. Changed only the test to handle/accept the awaited alert concurrently with the click using Promise.all, retaining the alert-type and draft assertions. No application source, timeout, or assertion was relaxed.
+
+After this test-only correction, the complete `library-history.spec.ts` + `my-data.spec.ts` production browser run passed **59/59 in one run (2.2 minutes)**. Standalone TypeScript, lint for the changed test, and diff check also passed. The existing production build remained valid because application source did not change. All tests use localhost mocks and Chromium emulation; no hosted data was changed.
+
+Accepted for the documented cancelable same-document Navigation API scope. Non-cancelable traversals, unsupported browsers, physical-device acceptance, atomic save/upload/cleanup, and Section Visibility hosted/API integration remain outstanding. Save lifetime checks guard the documented checkpoints; they do not abort every in-flight upload or make multi-request saves atomic.
+
 ## Baseline / scope
 
 Started from fetched local/remote branch `codex/portfolio-next-phase` at `12ac8f6e778897d396020384594d7ca5e3412fc6`. Prior scratch checkouts had been pruned by workspace maintenance, so cloned a fresh `library-history` checkout; no reset/clean/force/main modification. Used current source, AGENTS, installed Next 16.2.9 router/Link guidance, guard/draft/save code and existing /my-data fixtures/tests. No real database/Storage writes, migrations or dependency changes.
