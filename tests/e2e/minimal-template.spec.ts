@@ -103,6 +103,20 @@ test('Minimal without photos stays compact; genuine long preface overflow is sti
   expect(downloads).toBe(0);
 });
 
+test('Editor template selector is readable and touch-sized on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  const picker = page.getByLabel('เทมเพลต', { exact: true });
+  await expect(picker).toBeVisible();
+  expect(await picker.evaluate(element => getComputedStyle(element).fontSize)).toBe('16px');
+  const rect = await picker.boundingBox();
+  expect(rect).not.toBeNull();
+  expect(rect!.height).toBeGreaterThanOrEqual(44);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  expect(await picker.evaluate(element => getComputedStyle(element).fontSize)).toBe('14px');
+});
+
 test('Minimal has six distinct section styles; switching preserves drafts, selection and dirty baseline', async ({ page }) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();

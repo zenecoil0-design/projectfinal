@@ -33,7 +33,7 @@ export default function TemplatePicker({ portfolioId, value, onSaved, onBusy }: 
   };
   return <div className="flex flex-wrap items-center gap-2 text-xs">
     <label htmlFor="portfolio-template" className="font-semibold text-slate-700">เทมเพลต</label>
-    <select id="portfolio-template" value={value} disabled={busy || exporting} onChange={event => void change(event.target.value)} className="max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-800">
+    <select id="portfolio-template" value={value} disabled={busy || exporting} onChange={event => void change(event.target.value)} className="min-h-11 max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm">
       <option value="classic">Classic</option>
       <option value="modern">Emerald Editorial · เขียว–ครีม</option>
       <option value="minimal">Minimal</option>
