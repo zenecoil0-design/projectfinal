@@ -9,7 +9,7 @@ import {
 
 export default function HomeHeader() {
   return (
-    <header className="sticky top-0 z-50 h-16 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 h-16 w-full border-b border-slate-200 bg-white">
       <div className="flex h-full w-full items-center justify-between px-5 md:px-8">
         {/* Logo */}
         <Link

@@ -18,12 +18,17 @@ test('Home create shortcuts open a new-portfolio dialog instead of an ID-less ed
   await page.getByRole('main').getByRole('button', { name: 'เริ่มสร้าง Portfolio', exact: true }).click();
   const createDialog = page.getByRole('dialog', { name: 'สร้าง Portfolio ใหม่', exact: true });
   await expect(createDialog).toBeVisible();
-  await expect(page).toHaveURL(/\\/$/);
+  await expect(page).toHaveURL('http://127.0.0.1:3000/');
   await createDialog.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
   await expect(createDialog).toHaveCount(0);
   await page.locator('header').getByRole('button', { name: 'สร้างผลงานใหม่', exact: true }).click();
   await expect(createDialog).toBeVisible();
-  await expect(page).toHaveURL(/\\/$/);
+  // The overlay must fill the viewport, not only the sticky header.
+  expect(await createDialog.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    return Math.abs(bounds.top) < 1 && Math.abs(bounds.bottom - window.innerHeight) < 1;
+  })).toBe(true);
+  await expect(page).toHaveURL('http://127.0.0.1:3000/');
 });
 
 test('Home confirms owner/select/order/limit and only genuine [] is empty', async ({ page }) => {
