@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatPortfolioDate, parseDashboardPortfolios } from '../src/lib/dashboard-portfolios';
+import { formatPortfolioDate, portfolioTemplateName, parseDashboardPortfolios } from '../src/lib/dashboard-portfolios';
 const row = { id: 'a', title: null, template_key: 'future-template', created_at: null, updated_at: null };
 test('successful empty array is distinct from malformed responses', () => {
   assert.deepEqual(parseDashboardPortfolios([]), []);
@@ -28,4 +28,12 @@ test('valid portfolio dates preserve Thai locale formatting', () => {
     day: 'numeric', month: 'short', year: 'numeric',
   });
   assert.equal(formatPortfolioDate(timestamp), expected);
+});
+
+test('display name agrees with the template chooser and handles unknown keys without rewriting them', () => {
+  assert.equal(portfolioTemplateName('modern'), 'Emerald Editorial');
+  assert.equal(portfolioTemplateName('minimal'), 'Minimal');
+  assert.equal(portfolioTemplateName('classic'), 'Classic');
+  assert.equal(portfolioTemplateName(null), 'Classic');
+  assert.equal(portfolioTemplateName('future-template'), 'รูปแบบเดิม');
 });

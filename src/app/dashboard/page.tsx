@@ -1,5 +1,5 @@
 "use client";
-import { formatPortfolioDate, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
+import { formatPortfolioDate, portfolioTemplateName, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import {
   useEffect,
@@ -181,23 +181,6 @@ export default function DashboardPage() {
   // =====================================================
   // TEMPLATE NAME
   // =====================================================
-
-  const getTemplateName = (
-    template:
-      | string
-      | null
-  ) => {
-    switch (template) {
-      case "modern":
-        return "Modern";
-
-      case "minimal":
-        return "Minimal";
-
-      default:
-        return "Classic";
-    }
-  };
 
   // =====================================================
   // TEMPLATE PREVIEW
@@ -560,7 +543,7 @@ export default function DashboardPage() {
                           <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
                             <FaFileAlt />
 
-                            {getTemplateName(
+                            {portfolioTemplateName(
                               portfolio.template_key
                             )}
                           </div>

@@ -27,3 +27,14 @@ export function formatPortfolioDate(value: string | null): string {
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
 }
+
+/** Display template names consistently without rewriting legacy template keys. */
+export function portfolioTemplateName(key: string | null): string {
+  switch (key) {
+    case "modern": return "Emerald Editorial";
+    case "minimal": return "Minimal";
+    case "classic":
+    case null: return "Classic";
+    default: return "รูปแบบเดิม";
+  }
+}

@@ -18,7 +18,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
-import { formatPortfolioDate, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
+import { formatPortfolioDate, portfolioTemplateName, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 
@@ -99,23 +99,6 @@ export default function RecentPortfolios() {
   }, []);
 
 
-
-  const getTemplateName = (
-    template:
-      | string
-      | null
-  ) => {
-    switch (template) {
-      case "modern":
-        return "Modern";
-
-      case "minimal":
-        return "Minimal";
-
-      default:
-        return "Classic";
-    }
-  };
 
   const renderPreview = (
     template:
@@ -289,7 +272,7 @@ export default function RecentPortfolios() {
                   <div className="mt-2 inline-flex w-max items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase text-slate-500">
                     <FaFileAlt />
 
-                    {getTemplateName(
+                    {portfolioTemplateName(
                       portfolio.template_key
                     )}
                   </div>
