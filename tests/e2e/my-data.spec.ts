@@ -376,6 +376,10 @@ for (const config of sections) {
     const image = await page.request.get('http://127.0.0.1:54321/sample.png');
     await chooser.setFiles({ name: 'mock.png', mimeType: 'image/png', buffer: await image.body() });
     await expect(page.locator('dialog')).toBeVisible();
+    const cropDialog = page.getByRole('dialog', { name: 'ปรับขอบเขตรูปภาพ' });
+    await expect(cropDialog).toBeVisible();
+    await expect(cropDialog.getByRole('button', { name: 'ใช้รูปต้นฉบับ' })).toBeVisible();
+    await expect(cropDialog.getByRole('button', { name: 'ตัดรูปและใช้รูปนี้' })).toBeVisible();
     await page.locator('dialog').getByRole('button', { name: 'ยกเลิก', exact: true }).click();
     await dialog.locator('input[type=file]').setInputFiles({ name: 'mock.png', mimeType: 'image/png', buffer: await image.body() });
     await page.locator('dialog').getByRole('button', { name: 'ใช้รูปต้นฉบับ', exact: true }).click();

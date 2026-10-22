@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type ComponentProps } from "react";
 import { createPortal } from "react-dom";
 
 type Selection = { id: number; files: File[]; done: File[] };
@@ -60,6 +60,8 @@ function CropSelection({ onChange, active = true, ...props }: Props) {
 
 function CropDialog({ file, onAccept, onCancel }: { file: File; onAccept: (file: File) => void; onCancel: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const filenameId = useId();
   const image = useRef<HTMLImageElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [ratio, setRatio] = useState("original");
@@ -98,9 +100,9 @@ function CropDialog({ file, onAccept, onCancel }: { file: File; onAccept: (file:
       setError("ตัดรูปไม่สำเร็จ ลองอีกครั้งหรือใช้รูปต้นฉบับ");
     } finally { setWorking(false); }
   }
-  return <dialog ref={dialog} onCancel={event => { event.preventDefault(); onCancel(); }} className="fixed inset-0 m-auto max-h-[95dvh] w-[min(95vw,480px)] overflow-auto rounded-2xl bg-white p-6 text-slate-800 shadow-2xl backdrop:bg-slate-950/60">
-    <h2 className="text-lg font-bold">ปรับขอบเขตรูปภาพ</h2>
-    <p className="mb-4 text-xs text-slate-500">{file.name}</p>
+  return <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={filenameId} onCancel={event => { event.preventDefault(); onCancel(); }} className="fixed inset-0 m-auto max-h-[95dvh] w-[min(95vw,480px)] overflow-auto rounded-2xl bg-white p-6 text-slate-800 shadow-2xl backdrop:bg-slate-950/60">
+    <h2 id={titleId} className="text-lg font-bold">ปรับขอบเขตรูปภาพ</h2>
+    <p id={filenameId} className="mb-4 text-xs text-slate-500">{file.name}</p>
     <div className="relative mx-auto overflow-hidden bg-slate-100" style={{ width, height }}>
       <img ref={image} alt="ตัวอย่างขอบเขตที่จะตัด" onLoad={event => setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} onError={() => setError("อ่านรูปภาพไม่ได้")} style={{ position: "absolute", maxWidth: "none", width: size.width * scale, height: size.height * scale, left: -left, top: -top }} />
     </div>
@@ -108,9 +110,9 @@ function CropDialog({ file, onAccept, onCancel }: { file: File; onAccept: (file:
     {[{ label: "ซูม", value: zoom, set: setZoom, min: 1, max: 3, step: 0.01 }, { label: "ตำแหน่งแนวนอน", value: x, set: setX, min: 0, max: 100, step: 1 }, { label: "ตำแหน่งแนวตั้ง", value: y, set: setY, min: 0, max: 100, step: 1 }].map(control => <label key={control.label} className="mt-3 block text-xs">{control.label}<input aria-label={control.label} type="range" min={control.min} max={control.max} step={control.step} value={control.value} onChange={event => control.set(Number(event.target.value))} className="block w-full" /></label>)}
     {error && <p role="alert" className="mt-2 text-sm text-red-700">{error}</p>}
     <div className="mt-5 flex flex-wrap justify-end gap-3 text-sm">
-      <button type="button" disabled={working} onClick={onCancel}>ยกเลิก</button>
-      <button type="button" disabled={working} onClick={() => onAccept(file)} className="rounded border px-3 py-2">ใช้รูปต้นฉบับ</button>
-      <button type="button" disabled={working || !size.width} onClick={crop} className="rounded bg-blue-600 px-3 py-2 text-white disabled:opacity-40">ตัดรูปและใช้รูปนี้</button>
+      <button type="button" disabled={working} onClick={onCancel} className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">ยกเลิก</button>
+      <button type="button" disabled={working} onClick={() => onAccept(file)} className="min-h-11 rounded-lg border border-slate-300 px-3 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">ใช้รูปต้นฉบับ</button>
+      <button type="button" disabled={working || !size.width} onClick={crop} className="min-h-11 rounded-lg bg-blue-600 px-3 py-2 font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-40">ตัดรูปและใช้รูปนี้</button>
     </div>
   </dialog>;
 }
