@@ -296,7 +296,7 @@ function EditorContent() {
 
           <Link
             href="/dashboard"
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+            className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             กลับ Dashboard
           </Link>
@@ -309,8 +309,8 @@ function EditorContent() {
       </div>
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">
-        <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
-        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => setMobilePanel("preview")} className={`flex-1 rounded-lg py-2 text-sm font-bold ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
+        <button type="button" aria-pressed={mobilePanel === "form"} onClick={() => setMobilePanel("form")} className={`min-h-11 flex-1 rounded-lg py-2 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${mobilePanel === "form" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>กรอกข้อมูล</button>
+        <button type="button" aria-pressed={mobilePanel === "preview"} onClick={() => setMobilePanel("preview")} className={`min-h-11 flex-1 rounded-lg py-2 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${mobilePanel === "preview" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}`}>ดูตัวอย่าง</button>
       </div>
 
       {/* BODY */}

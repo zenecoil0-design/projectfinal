@@ -10,6 +10,27 @@ test.beforeEach(async ({ context, request }) => {
   await context.addCookies([{name:'sb-127-auth-token',value:'base64-'+Buffer.from(JSON.stringify(session)).toString('base64url'),domain:'127.0.0.1',path:'/'}]);
 });
 
+test('mobile Editor navigation has touch-sized links and panel toggles', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  const controls = [
+    page.getByRole('link', { name: 'กลับ Dashboard', exact: true }),
+    page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }),
+    page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }),
+  ];
+  for (const control of controls) {
+    await expect(control).toBeVisible();
+    const bounds = await control.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+  }
+  await controls[2].click();
+  await expect(controls[2]).toHaveAttribute('aria-pressed', 'true');
+  await controls[1].click();
+  await expect(controls[1]).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('all sections load without opening their forms; drafts survive step switches; PDF downloads', async ({ page }) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
