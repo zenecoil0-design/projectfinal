@@ -5,6 +5,7 @@ import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 import {
   FaPlus,
   FaUserCircle,
+  FaDatabase,
 } from "react-icons/fa";
 
 export default function HomeHeader() {
@@ -21,6 +22,15 @@ export default function HomeHeader() {
 
         {/* Right */}
         <div className="flex items-center gap-3">
+          {/* Sidebar is hidden on mobile; keep the personal library reachable. */}
+          <Link
+            href="/my-data"
+            aria-label="เปิดคลังข้อมูล"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-700 transition-colors hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 md:hidden"
+          >
+            <FaDatabase aria-hidden="true" className="text-lg" />
+          </Link>
+
           {/* Create */}
           <CreatePortfolioModal>
             <button

@@ -31,6 +31,24 @@ test('Home create shortcuts open a new-portfolio dialog instead of an ID-less ed
   await expect(page).toHaveURL('http://127.0.0.1:3000/');
 });
 
+test('mobile Home exposes library navigation when the desktop sidebar is hidden', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const mobileLibrary = page.getByRole('banner').getByRole('link', { name: 'เปิดคลังข้อมูล' });
+  await expect(mobileLibrary).toBeVisible();
+  await expect(mobileLibrary).toHaveAttribute('href', '/my-data');
+  await expect(page.locator('aside')).toBeHidden();
+  await mobileLibrary.click();
+  await expect(page).toHaveURL(/\/my-data(?:\?.*)?$/);
+});
+
+test('desktop Home keeps library in sidebar without a duplicate header shortcut', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expect(page.getByRole('banner').getByRole('link', { name: 'เปิดคลังข้อมูล' })).toBeHidden();
+  await expect(page.locator('aside').getByRole('link', { name: 'คลังข้อมูล' })).toBeVisible();
+});
+
 test('Home confirms owner/select/order/limit and only genuine [] is empty', async ({ page }) => {
   let reads = 0;
   await page.route('**/rest/v1/portfolios?**', route => {
