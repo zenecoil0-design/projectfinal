@@ -18,7 +18,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
-import { parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
+import { formatPortfolioDate, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 
@@ -98,30 +98,7 @@ export default function RecentPortfolios() {
     };
   }, []);
 
-  const formatDate = (
-    value:
-      | string
-      | null
-  ) => {
-    if (!value) {
-      return "-";
-    }
 
-    try {
-      return new Date(
-        value
-      ).toLocaleDateString(
-        "th-TH",
-        {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }
-      );
-    } catch {
-      return "-";
-    }
-  };
 
   const getTemplateName = (
     template:
@@ -320,7 +297,7 @@ export default function RecentPortfolios() {
                   <div className="mt-4 flex items-center gap-2 text-[11px] text-slate-400">
                     <FaClock />
 
-                    {formatDate(
+                    {formatPortfolioDate(
                       portfolio.updated_at ||
                         portfolio.created_at
                     )}

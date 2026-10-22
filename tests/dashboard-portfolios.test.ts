@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDashboardPortfolios } from '../src/lib/dashboard-portfolios';
+import { formatPortfolioDate, parseDashboardPortfolios } from '../src/lib/dashboard-portfolios';
 const row = { id: 'a', title: null, template_key: 'future-template', created_at: null, updated_at: null };
 test('successful empty array is distinct from malformed responses', () => {
   assert.deepEqual(parseDashboardPortfolios([]), []);
@@ -14,4 +14,18 @@ test('UI-compatible nullable/empty/long names and unknown template are accepted 
 });
 test('incorrect field types cannot acknowledge a list', () => {
   for (const key of Object.keys(row)) assert.throws(() => parseDashboardPortfolios([{ ...row, [key]: 7 }]));
+});
+
+test('portfolio dates use a placeholder for missing and invalid values', () => {
+  for (const value of [null, '', ' ', 'not-a-date', '2026-99-99']) {
+    assert.equal(formatPortfolioDate(value), '-');
+  }
+});
+
+test('valid portfolio dates preserve Thai locale formatting', () => {
+  const timestamp = '2026-10-22T10:30:00.000Z';
+  const expected = new Date(timestamp).toLocaleDateString('th-TH', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+  assert.equal(formatPortfolioDate(timestamp), expected);
 });

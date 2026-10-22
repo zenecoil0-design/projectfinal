@@ -1,5 +1,5 @@
 "use client";
-import { parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
+import { formatPortfolioDate, parseDashboardPortfolios, type DashboardPortfolio } from "@/lib/dashboard-portfolios";
 
 import {
   useEffect,
@@ -176,30 +176,7 @@ export default function DashboardPage() {
   // FORMAT DATE
   // =====================================================
 
-  const formatDate = (
-    value:
-      | string
-      | null
-  ) => {
-    if (!value) {
-      return "-";
-    }
 
-    try {
-      return new Date(
-        value
-      ).toLocaleDateString(
-        "th-TH",
-        {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }
-      );
-    } catch {
-      return "-";
-    }
-  };
 
   // =====================================================
   // TEMPLATE NAME
@@ -594,7 +571,7 @@ export default function DashboardPage() {
                         <FaClock />
 
                         แก้ไขล่าสุด{" "}
-                        {formatDate(
+                        {formatPortfolioDate(
                           portfolio.updated_at ||
                             portfolio.created_at
                         )}

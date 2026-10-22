@@ -19,3 +19,11 @@ export function parseDashboardPortfolios(value: unknown): DashboardPortfolio[] {
     return { id: row.id, title: row.title, template_key: row.template_key, created_at: row.created_at, updated_at: row.updated_at };
   });
 }
+
+/** Keep optional portfolio timestamps readable if a stored date is malformed. */
+export function formatPortfolioDate(value: string | null): string {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+}
