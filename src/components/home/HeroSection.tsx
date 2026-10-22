@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 
 import {
   FaArrowRight,
@@ -39,14 +40,16 @@ export default function HeroSection() {
 
           <div className="mt-7 flex flex-wrap gap-3">
             {/* Create */}
-            <Link
-              href="/editor"
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              เริ่มสร้าง Portfolio
+            <CreatePortfolioModal>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-blue-50"
+              >
+                เริ่มสร้าง Portfolio
 
-              <FaArrowRight className="text-xs" />
-            </Link>
+                <FaArrowRight className="text-xs" />
+              </button>
+            </CreatePortfolioModal>
 
             {/* Dashboard */}
             <Link

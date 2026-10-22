@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 import {
   FaPlus,
   FaUserCircle,
@@ -21,14 +22,16 @@ export default function HomeHeader() {
         {/* Right */}
         <div className="flex items-center gap-3">
           {/* Create */}
-          <Link
-            href="/editor"
-            className="hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-600 md:flex"
-          >
-            <FaPlus className="text-xs" />
+          <CreatePortfolioModal>
+            <button
+              type="button"
+              className="hidden items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-blue-600 md:flex"
+            >
+              <FaPlus className="text-xs" />
 
-            สร้างผลงานใหม่
-          </Link>
+              สร้างผลงานใหม่
+            </button>
+          </CreatePortfolioModal>
 
           {/* Profile / Dashboard */}
           <Link
