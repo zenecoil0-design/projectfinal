@@ -57,6 +57,17 @@ test('Home description reflects existing PDF export and sidebar Dashboard link h
   await expect(dashboard).toHaveAttribute('href', '/dashboard');
 });
 
+test('desktop Home creation shortcut has visible keyboard focus', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  const logo = page.locator('header').getByRole('link', { name: 'Auto - Portfolio' });
+  await logo.focus();
+  await page.keyboard.press('Tab');
+  const create = page.locator('header').getByRole('button', { name: 'สร้างผลงานใหม่' });
+  await expect(create).toBeFocused();
+  expect(await create.evaluate(element => getComputedStyle(element).outlineWidth)).toBe('2px');
+});
+
 test('Home confirms owner/select/order/limit and only genuine [] is empty', async ({ page }) => {
   let reads = 0;
   await page.route('**/rest/v1/portfolios?**', route => {

@@ -19,7 +19,7 @@ export default function HomeSidebar() {
         <CreatePortfolioModal>
           <button
             type="button"
-            className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-2 py-4 transition-all hover:border-blue-300 hover:bg-blue-100"
+            className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-2 py-4 transition-all hover:border-blue-300 hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-200 transition-transform group-hover:scale-105">
               <FaPlus />
@@ -34,7 +34,7 @@ export default function HomeSidebar() {
         {/* My Data */}
         <Link
           href="/my-data"
-          className="group flex w-full flex-col items-center gap-2 rounded-2xl px-2 py-4 transition-all hover:bg-violet-50"
+          className="group flex w-full flex-col items-center gap-2 rounded-2xl px-2 py-4 transition-all hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-50 text-violet-600 transition-all group-hover:bg-violet-600 group-hover:text-white">
             <FaDatabase />
@@ -48,7 +48,7 @@ export default function HomeSidebar() {
         {/* My Portfolio */}
         <Link
           href="/dashboard"
-          className="group flex w-full flex-col items-center gap-2 rounded-2xl px-2 py-4 transition-all hover:bg-slate-100"
+          className="group flex w-full flex-col items-center gap-2 rounded-2xl px-2 py-4 transition-all hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition-all group-hover:bg-blue-100 group-hover:text-blue-600">
             <FaFolderOpen />
@@ -64,7 +64,7 @@ export default function HomeSidebar() {
           <Link
             href="/dashboard"
             aria-label="ไปหน้า Dashboard"
-            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <FaUserCircle className="text-2xl" />
           </Link>

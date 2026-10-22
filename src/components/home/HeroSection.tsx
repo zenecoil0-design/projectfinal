@@ -43,7 +43,7 @@ export default function HeroSection() {
             <CreatePortfolioModal>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-blue-50"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 เริ่มสร้าง Portfolio
 
@@ -54,7 +54,7 @@ export default function HeroSection() {
             {/* Dashboard */}
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition-all hover:bg-white/15"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition-all hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               ดูผลงานของฉัน
             </Link>
