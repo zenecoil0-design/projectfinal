@@ -90,7 +90,7 @@ export default function HeroSection() {
               </div>
 
               <p className="mt-1 text-xs leading-5 text-slate-300">
-                พร้อมต่อยอดระบบดาวน์โหลด PDF
+                ตรวจตัวอย่างและดาวน์โหลดเป็นไฟล์ PDF
               </p>
             </div>
           </div>

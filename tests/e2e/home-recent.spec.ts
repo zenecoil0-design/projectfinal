@@ -49,6 +49,14 @@ test('desktop Home keeps library in sidebar without a duplicate header shortcut'
   await expect(page.locator('aside').getByRole('link', { name: 'คลังข้อมูล' })).toBeVisible();
 });
 
+test('Home description reflects existing PDF export and sidebar Dashboard link has a Thai accessible name', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('main')).toContainText('ตรวจตัวอย่างและดาวน์โหลดเป็นไฟล์ PDF');
+  await expect(page.getByRole('main')).not.toContainText('พร้อมต่อยอดระบบดาวน์โหลด PDF');
+  const dashboard = page.locator('aside').getByRole('link', { name: 'ไปหน้า Dashboard' });
+  await expect(dashboard).toHaveAttribute('href', '/dashboard');
+});
+
 test('Home confirms owner/select/order/limit and only genuine [] is empty', async ({ page }) => {
   let reads = 0;
   await page.route('**/rest/v1/portfolios?**', route => {

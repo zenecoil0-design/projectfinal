@@ -63,7 +63,7 @@ export default function HomeSidebar() {
         <div className="mt-auto">
           <Link
             href="/dashboard"
-            aria-label="Dashboard"
+            aria-label="ไปหน้า Dashboard"
             className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-all hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
           >
             <FaUserCircle className="text-2xl" />
