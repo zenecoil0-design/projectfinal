@@ -31,7 +31,7 @@ test('mobile Editor navigation has touch-sized links and panel toggles', async (
   await expect(controls[1]).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('all sections load without opening their forms; drafts survive step switches; PDF downloads', async ({ page }) => {
+test('all sections load without opening their forms; drafts survive step switches; PDF downloads', async ({ page }, testInfo) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('main')).toContainText('Saved Activity');
@@ -51,9 +51,9 @@ test('all sections load without opening their forms; drafts survive step switche
   const download = page.waitForEvent('download');
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
   const file = await download;
-  await file.saveAs('/tmp/portfolio-e2e.pdf');
+  await file.saveAs(testInfo.outputPath('portfolio-e2e.pdf'));
   expect(file.suggestedFilename()).toBe('Portfolio A.pdf');
-  await page.screenshot({path:'/tmp/portfolio-editor.png',fullPage:true});
+  await page.screenshot({path:testInfo.outputPath('portfolio-editor.png'),fullPage:true});
 });
 
 test('switching portfolio clears every section and failed loads cannot be saved', async ({ page }) => {
@@ -85,7 +85,7 @@ test('failed atomic save retains selection and warns before leaving', async ({pa
   await expect(page).toHaveURL(/editor/);
 });
 
-test('cropped image remains selected after changing steps on a phone viewport', async ({page}) => {
+test('cropped image remains selected after changing steps on a phone viewport', async ({page}, testInfo) => {
   await page.setViewportSize({width:390,height:844});
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
@@ -99,7 +99,7 @@ test('cropped image remains selected after changing steps on a phone viewport', 
   await openEditorSection(page, 'preface');
   await openEditorSection(page, 'cover');
   await expect(page.locator('form:visible img')).toHaveAttribute('src',/^blob:/);
-  await page.screenshot({path:'/tmp/portfolio-mobile.png',fullPage:true});
+  await page.screenshot({path:testInfo.outputPath('portfolio-mobile.png'),fullPage:true});
   await page.getByRole('button',{name:'ดูตัวอย่าง',exact:true}).click();
   await expect(page.locator('main')).toBeVisible();
   await page.getByRole('button',{name:'กรอกข้อมูล',exact:true}).click();
@@ -150,7 +150,7 @@ test('a late response from the previous portfolio cannot overwrite the current o
   await expect(page.locator('main')).not.toContainText('Saved Activity');
 });
 
-test('A4 scales uniformly on desktop and phone; persisted editorial template exports seven pages', async ({page}) => {
+test('A4 scales uniformly on desktop and phone; persisted editorial template exports seven pages', async ({page}, testInfo) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
@@ -172,16 +172,16 @@ test('A4 scales uniformly on desktop and phone; persisted editorial template exp
     }));
     for (const page of geometry) { expect(page.width).toBe(794);expect(page.height).toBe(1123);expect(page.ratio).toBeCloseTo(210/297,3);expect(page.font).toBe('16px'); }
   }
-  await page.screenshot({path:'/tmp/emerald-mobile.png'});
+  await page.screenshot({path:testInfo.outputPath('emerald-mobile.png')});
   await page.setViewportSize({width:1440,height:1000});
   const download=page.waitForEvent('download');
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
-  await (await download).saveAs('/tmp/emerald-editorial.pdf');
-  await page.locator('[data-section="หน้าปก"]').screenshot({path:'/tmp/emerald-cover.png'});
-  await page.screenshot({path:'/tmp/emerald-editor.png'});
+  await (await download).saveAs(testInfo.outputPath('emerald-editorial.pdf'));
+  await page.locator('[data-section="หน้าปก"]').screenshot({path:testInfo.outputPath('emerald-cover.png')});
+  await page.screenshot({path:testInfo.outputPath('emerald-editor.png')});
 });
 
-test('failed template save preserves prior design and keeps PDF usable', async ({page}) => {
+test('failed template save preserves prior design and keeps PDF usable', async ({page}, testInfo) => {
   await page.goto('/editor?portfolio=b');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.route('**/rest/v1/portfolios?**',route => route.request().method()==='PATCH' ? route.fulfill({status:403,json:{message:'Template save denied'}}) : route.continue());
@@ -191,7 +191,7 @@ test('failed template save preserves prior design and keeps PDF usable', async (
   await expect(page.locator('[data-portfolio-page][data-template="classic"]')).toHaveCount(7);
   const download=page.waitForEvent('download');
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
-  await (await download).saveAs('/tmp/empty-classic.pdf');
+  await (await download).saveAs(testInfo.outputPath('empty-classic.pdf'));
 });
 
 
@@ -205,7 +205,7 @@ test('mobile export detects overflowing content while preview tab is hidden', as
   await expect(page.getByText('เนื้อหาล้นหน้า 2',{exact:false})).toBeVisible();
 });
 
-test('cover names preview, persist independently, survive reload and clear on portfolio switch', async ({page}) => {
+test('cover names preview, persist independently, survive reload and clear on portfolio switch', async ({page}, testInfo) => {
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('Alpha');
@@ -229,7 +229,7 @@ test('cover names preview, persist independently, survive reload and clear on po
   await expect(page.getByText('บันทึกเทมเพลตแล้ว')).toBeVisible();
   await expect(page.locator('[data-section="หน้าปก"]')).toContainText('โฟล์ค ทดสอบ');
   await page.setViewportSize({width:390,height:844});
-  await page.screenshot({path:'/tmp/cover-name-fields-mobile.png'});
+  await page.screenshot({path:testInfo.outputPath('cover-name-fields-mobile.png')});
   await page.goto('/editor?portfolio=b');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('');
