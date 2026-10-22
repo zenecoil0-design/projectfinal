@@ -160,14 +160,14 @@ export default function RegisterPage() {
       >
         {/* Error */}
         {errorMessage && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
             {errorMessage}
           </div>
         )}
 
         {/* Success */}
         {successMessage && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-medium leading-6 text-emerald-700">
+          <div role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-medium leading-6 text-emerald-700">
             <div className="flex gap-3">
               <FaCheckCircle className="mt-1 shrink-0" />
 
@@ -189,7 +189,7 @@ export default function RegisterPage() {
 
         {/* Username */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-700">
+          <label htmlFor="register-username" className="mb-2 block text-sm font-bold text-slate-700">
             ชื่อผู้ใช้
           </label>
 
@@ -197,6 +197,7 @@ export default function RegisterPage() {
             <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
 
             <input
+              id="register-username"
               type="text"
               value={username}
               onChange={(event) =>
@@ -228,7 +229,7 @@ export default function RegisterPage() {
 
         {/* Email */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-700">
+          <label htmlFor="register-email" className="mb-2 block text-sm font-bold text-slate-700">
             อีเมล
           </label>
 
@@ -236,6 +237,7 @@ export default function RegisterPage() {
             <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
 
             <input
+              id="register-email"
               type="email"
               value={email}
               onChange={(event) =>
@@ -267,7 +269,7 @@ export default function RegisterPage() {
 
         {/* Password */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-700">
+          <label htmlFor="register-password" className="mb-2 block text-sm font-bold text-slate-700">
             รหัสผ่าน
           </label>
 
@@ -280,6 +282,7 @@ export default function RegisterPage() {
                   ? "text"
                   : "password"
               }
+              id="register-password"
               value={password}
               onChange={(event) =>
                 setPassword(
@@ -313,7 +316,9 @@ export default function RegisterPage() {
                   !showPassword
                 )
               }
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+              aria-label={showPassword ? "ซ่อนรหัสผ่าน" : "แสดงรหัสผ่าน"}
+              aria-pressed={showPassword}
+              className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               {showPassword ? (
                 <FaEyeSlash />
@@ -326,7 +331,7 @@ export default function RegisterPage() {
 
         {/* Confirm */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-700">
+          <label htmlFor="register-confirm-password" className="mb-2 block text-sm font-bold text-slate-700">
             ยืนยันรหัสผ่าน
           </label>
 
@@ -339,6 +344,7 @@ export default function RegisterPage() {
                   ? "text"
                   : "password"
               }
+              id="register-confirm-password"
               value={confirmPassword}
               onChange={(event) =>
                 setConfirmPassword(

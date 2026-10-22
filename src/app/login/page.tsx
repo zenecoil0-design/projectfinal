@@ -118,14 +118,14 @@ const nextPath =
       >
         {/* Error */}
         {errorMessage && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+          <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
             {errorMessage}
           </div>
         )}
 
         {/* Email */}
         <div>
-          <label className="mb-2 block text-sm font-bold text-slate-700">
+          <label htmlFor="login-email" className="mb-2 block text-sm font-bold text-slate-700">
             อีเมล
           </label>
 
@@ -133,6 +133,7 @@ const nextPath =
             <FaEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
 
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(event) =>
@@ -165,7 +166,7 @@ const nextPath =
         {/* Password */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <label className="text-sm font-bold text-slate-700">
+            <label htmlFor="login-password" className="text-sm font-bold text-slate-700">
               รหัสผ่าน
             </label>
           </div>
@@ -179,6 +180,7 @@ const nextPath =
                   ? "text"
                   : "password"
               }
+              id="login-password"
               value={password}
               onChange={(event) =>
                 setPassword(
@@ -219,7 +221,8 @@ const nextPath =
                   ? "ซ่อนรหัสผ่าน"
                   : "แสดงรหัสผ่าน"
               }
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+              aria-pressed={showPassword}
+              className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               {showPassword ? (
                 <FaEyeSlash />
