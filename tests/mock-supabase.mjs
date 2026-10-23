@@ -32,12 +32,25 @@ createServer(async (req,res) => {
     const {p_portfolio_id,p_section,p_item_ids}=body;
     const plural={activity:'activities',education:'educations',certificate:'certificates'}[p_section];
     const table=`portfolio_${plural}`;
+    if (!plural || !Array.isArray(p_item_ids) || p_item_ids.some(id => !(database[`user_library_${plural}`]??[]).some(row => row.id===id && row.user_id===userId))) {
+      res.statusCode=403; return res.end(JSON.stringify({code:'42501',message:'Library item not found or access denied'}));
+    }
     database[table]=[...(database[table]??[]).filter(row=>row.portfolio_id!==p_portfolio_id),...p_item_ids.map((id,index)=>({portfolio_id:p_portfolio_id,[`${p_section}_id`]:id,sort_order:index}))];
     return res.end('null');
   }
   const table=url.pathname.split('/').at(-1);
-  const matches = row => [...url.searchParams].every(([key,value])=> !value.startsWith('eq.') || String(row[key])===value.slice(3));
+  const matches = row => [...url.searchParams].every(([key,value])=> !value.startsWith('eq.') || String(key==='portfolios.user_id' ? database.portfolios.find(p=>p.id===row.portfolio_id)?.user_id : row[key])===value.slice(3));
   const rows=(database[table]??[]).filter(matches);
+  if(req.method==='DELETE') {
+    database[table]=(database[table]??[]).filter(row=>!rows.includes(row));
+    const kind={user_library_educations:'education',user_library_activities:'activity',user_library_certificates:'certificate'}[table];
+    if(kind) {
+      const plural={education:'educations',activity:'activities',certificate:'certificates'}[kind];
+      for(const dependent of [`portfolio_${plural}`,`user_library_${kind}_images`,`user_library_${kind}_tags`]) database[dependent]=(database[dependent]??[]).filter(row=>!rows.some(source=>source.id===row[`${kind}_id`]));
+    }
+    return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(rows.map(row=>({id:row.id}))) : 'null');
+  }
+  if(req.method==='GET' && url.searchParams.get('select')?.includes('portfolios!inner')) return res.end(JSON.stringify(rows.map(row=>({...row,portfolios:database.portfolios.find(p=>p.id===row.portfolio_id)}))));
   if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body,table==='portfolios'?{updated_at:'2026-10-21T00:00:00Z'}:{})); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
   if(req.method==='POST' && req.headers.prefer?.includes('resolution=merge-duplicates')) {
     const keys=(url.searchParams.get('on_conflict')??'id').split(',');

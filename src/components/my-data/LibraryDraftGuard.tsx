@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { useLibraryHistoryGuard } from "./useLibraryHistoryGuard";
 
 type Flags = { dirty: boolean; busy: boolean };
-type Guard = Flags & { update: (flags: Flags) => void; requestExit: (action: () => void) => void };
+type Guard = Flags & { update: (flags: Flags) => void; setOperationBusy: (busy: boolean) => void; requestExit: (action: () => void) => void };
 const Context = createContext<Guard | null>(null);
 const clean: Flags = { dirty: false, busy: false };
 
@@ -12,12 +12,20 @@ const clean: Flags = { dirty: false, busy: false };
 export function LibraryDraftGuard({ children }: { children: ReactNode }) {
   const [flags, setFlags] = useState(clean);
   const current = useRef(clean);
+  const draftFlags = useRef(clean);
+  const operationBusy = useRef(false);
   const pending = useRef<(() => void) | null>(null);
   const [confirming, setConfirming] = useState(false);
   const update = useCallback((next: Flags) => {
-    current.current = next;
-    setFlags(previous => previous.dirty === next.dirty && previous.busy === next.busy ? previous : next);
+    draftFlags.current = next;
+    const combined = { dirty: next.dirty, busy: next.busy || operationBusy.current };
+    current.current = combined;
+    setFlags(previous => previous.dirty === combined.dirty && previous.busy === combined.busy ? previous : combined);
   }, []);
+  const setOperationBusy = useCallback((busy: boolean) => {
+    operationBusy.current = busy;
+    update(draftFlags.current);
+  }, [update]);
   const requestExit = useCallback((action: () => void) => {
     if (current.current.busy || pending.current) return;
     if (!current.current.dirty) { action(); return; }
@@ -40,7 +48,7 @@ export function LibraryDraftGuard({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("beforeunload", beforeUnload);
   }, [flags.dirty]);
 
-  const value = useMemo(() => ({ ...flags, update, requestExit }), [flags, update, requestExit]);
+  const value = useMemo(() => ({ ...flags, update, setOperationBusy, requestExit }), [flags, update, setOperationBusy, requestExit]);
   return <Context.Provider value={value}>
     {flags.dirty && !historySupported && <p role="alert" className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">เบราว์เซอร์นี้ยังไม่รองรับคำเตือนก่อนย้อนกลับหรือไปข้างหน้า กรุณาบันทึกหรือยกเลิกฟอร์มก่อนใช้ปุ่มดังกล่าว</p>}
     {children}

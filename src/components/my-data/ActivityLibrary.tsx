@@ -1,6 +1,8 @@
 "use client";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
+import LibraryDeleteDialog from "./LibraryDeleteDialog";
+import { canAddLibraryImages, libraryImageLimits } from "@/lib/library-lifecycle";
 import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
@@ -67,7 +69,7 @@ type ActivityImageRow = {
   sort_order: number;
 };
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = libraryImageLimits.activity;
 const MAX_IMAGE_SIZE =
   5 * 1024 * 1024;
 
@@ -87,6 +89,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     useRef<HTMLInputElement | null>(null);
 
   const userId = ownerId;
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
@@ -588,36 +591,6 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     setIsAddingTag(false);
   };
 
-  const pathFromUrl = (
-    publicUrl: string
-  ) => {
-    try {
-      const url =
-        new URL(publicUrl);
-
-      const marker =
-        "/storage/v1/object/public/portfolio-images/";
-
-      const index =
-        url.pathname.indexOf(
-          marker
-        );
-
-      if (index < 0) {
-        return null;
-      }
-
-      return decodeURIComponent(
-        url.pathname.slice(
-          index +
-            marker.length
-        )
-      );
-    } catch {
-      return null;
-    }
-  };
-
   const uploadImages = async (
     activityId: string
   ) => {
@@ -685,7 +658,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
           publicUrl,
 
         sort_order:
-          existingImages.length +
+          Math.max(-1, ...existingImages.map(image => image.sort_order)) + 1 +
           index,
       });
     }
@@ -706,71 +679,23 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     }
   };
 
-  const deleteRemovedImages =
-    async () => {
-      if (
-        removedImageIds.length ===
-        0
-      ) {
-        return;
-      }
-
-      const oldImages =
-        activities
-          .flatMap(
-            (activity) =>
-              activity.images
-          )
-          .filter(
-            (image) =>
-              removedImageIds.includes(
-                image.id
-              )
-          );
-
-      const { error } =
-        await supabase
-          .from(
-            "user_library_activity_images"
-          )
-          .delete()
-          .in(
-            "id",
-            removedImageIds
-          );
-
-      if (error) {
-        throw error;
-      }
-
-      const paths =
-        oldImages
-          .map((image) =>
-            pathFromUrl(
-              image.image_url
-            )
-          )
-          .filter(
-            (
-              path
-            ): path is string =>
-              Boolean(path)
-          );
-
-      if (paths.length) {
-        await supabase.storage
-          .from(
-            "portfolio-images"
-          )
-          .remove(paths);
-      }
-    };
+  const deleteRemovedImages = async () => {
+    if (!removedImageIds.length) return;
+    const { error } = await supabase.from("user_library_activity_images").delete().in("id", removedImageIds);
+    if (error) throw error;
+    // Retain Storage files until reference-safe cleanup is separately verified.
+  };
 
   const handleSave = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
     if (isSaving || !canSave) return;
+
+    if (!canAddLibraryImages('activity', existingImages.length, newFiles.length)) {
+      alert("เพิ่มรูปเกินเพดาน 4 รูปไม่ได้");
+      return;
+    }
 
     if (!userId) return;
 
@@ -817,7 +742,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
             .eq(
               "user_id",
               userId
-            );
+            ).select("id").single();
 
         if (error) {
           throw error;
@@ -922,62 +847,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
     }
   };
 
-  const handleDelete = async (
-    activity: Activity
-  ) => {
-    if (
-      !window.confirm(
-        "ต้องการลบรายการนี้ใช่หรือไม่?"
-      )
-    ) {
-      return;
-    }
-
-    const paths =
-      activity.images
-        .map((image) =>
-          pathFromUrl(
-            image.image_url
-          )
-        )
-        .filter(
-          (
-            path
-          ): path is string =>
-            Boolean(path)
-        );
-
-    const { error } =
-      await supabase
-        .from(
-          "user_library_activities"
-        )
-        .delete()
-        .eq(
-          "id",
-          activity.id
-        )
-        .eq(
-          "user_id",
-          userId
-        );
-
-    if (error) {
-      alert(
-        "ไม่สามารถลบข้อมูลได้"
-      );
-      return;
-    }
-
-    if (paths.length) {
-      await supabase.storage
-        .from(
-          "portfolio-images"
-        )
-        .remove(paths);
-    }
-
-    await loadData(userId, true);
+  const handleDelete = (item: Activity) => {
+    if (!isSaving) setDeleteTarget({ id: item.id, title: item.title });
   };
 
   const totalImages =
@@ -992,6 +863,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
 
   return (
     <>
+      {deleteTarget && <LibraryDeleteDialog key={deleteTarget.id} kind="activity" ownerId={userId} item={deleteTarget}
+        onClose={() => setDeleteTarget(null)} onDeleted={() => { void loadData(userId, true); }} />}
       <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <SectionHeader
@@ -1169,6 +1042,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
             className="@container min-w-0 space-y-5"
           >
                 <fieldset disabled={isSaving} className="min-w-0 space-y-5">
+                <p className="text-xs leading-6 text-slate-600">การนำรูปออกจะบันทึกเมื่อกดบันทึก ไฟล์เดิมใน Storage เก็บไว้จนตรวจ cleanup ที่ปลอดภัย ไม่ลบไฟล์จากการแก้ draft</p>
                 <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
             <Field htmlFor="activity-library-title" label="ชื่อผลงาน / กิจกรรม *">
               <input id="activity-library-title" autoFocus

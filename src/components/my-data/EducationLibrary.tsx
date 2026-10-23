@@ -1,6 +1,7 @@
 "use client";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
+import LibraryDeleteDialog from "./LibraryDeleteDialog";
 import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
@@ -60,6 +61,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     useRef<HTMLInputElement | null>(null);
 
   const userId = ownerId;
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
@@ -447,36 +449,6 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     setIsAddingTag(false);
   };
 
-  const pathFromUrl = (
-    urlString: string
-  ) => {
-    try {
-      const url =
-        new URL(urlString);
-
-      const marker =
-        "/storage/v1/object/public/portfolio-images/";
-
-      const index =
-        url.pathname.indexOf(
-          marker
-        );
-
-      if (index < 0) {
-        return null;
-      }
-
-      return decodeURIComponent(
-        url.pathname.slice(
-          index +
-            marker.length
-        )
-      );
-    } catch {
-      return null;
-    }
-  };
-
   const uploadLogo = async (
     educationId: string
   ) => {
@@ -591,7 +563,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
             .eq(
               "user_id",
               userId
-            );
+            ).select("id").single();
 
         if (error) {
           throw error;
@@ -636,28 +608,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
         currentLogoUrl ||
         null;
 
-      if (removeLogo) {
-        logoUrl = null;
-
-        if (
-          currentLogoUrl
-        ) {
-          const oldPath =
-            pathFromUrl(
-              currentLogoUrl
-            );
-
-          if (oldPath) {
-            await supabase.storage
-              .from(
-                "portfolio-images"
-              )
-              .remove([
-                oldPath,
-              ]);
-          }
-        }
-      }
+      if (removeLogo) logoUrl = null; // Do not remove a file before confirming the database write.
 
       if (selectedLogo) {
         logoUrl =
@@ -742,59 +693,8 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     }
   };
 
-  const handleDelete = async (
-    education: Education
-  ) => {
-    if (
-      !window.confirm(
-        "ต้องการลบประวัติการศึกษานี้ใช่หรือไม่?"
-      )
-    ) {
-      return;
-    }
-
-    const { error } =
-      await supabase
-        .from(
-          "user_library_educations"
-        )
-        .delete()
-        .eq(
-          "id",
-          education.id
-        )
-        .eq(
-          "user_id",
-          userId
-        );
-
-    if (error) {
-      alert(
-        "ไม่สามารถลบข้อมูลได้"
-      );
-      return;
-    }
-
-    if (
-      education.logo_url
-    ) {
-      const path =
-        pathFromUrl(
-          education.logo_url
-        );
-
-      if (path) {
-        await supabase.storage
-          .from(
-            "portfolio-images"
-          )
-          .remove([
-            path,
-          ]);
-      }
-    }
-
-    await loadData(userId, true);
+  const handleDelete = (item: Education) => {
+    if (!isSaving) setDeleteTarget({ id: item.id, title: item.school_name });
   };
 
   if (isLoading && !loaded && !loadError && !tagsLoadError) {
@@ -805,6 +705,8 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
 
   return (
     <>
+      {deleteTarget && <LibraryDeleteDialog key={deleteTarget.id} kind="education" ownerId={userId} item={deleteTarget}
+        onClose={() => setDeleteTarget(null)} onDeleted={() => { void loadData(userId, true); }} />}
       <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <SectionHeader
@@ -1005,6 +907,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
                 className="@container min-w-0 space-y-5"
               >
                 <fieldset disabled={isSaving} className="min-w-0 space-y-5">
+                <p className="text-xs leading-6 text-slate-600">การนำรูปออกจะบันทึกเมื่อกดบันทึก ไฟล์เดิมใน Storage เก็บไว้จนตรวจ cleanup ที่ปลอดภัย ไม่ลบไฟล์จากการแก้ draft</p>
                 <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
                 <div>
                   <p className="mb-2 text-sm font-semibold text-slate-700">

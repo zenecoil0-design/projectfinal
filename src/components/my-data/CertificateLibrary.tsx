@@ -1,6 +1,8 @@
 "use client";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
+import LibraryDeleteDialog from "./LibraryDeleteDialog";
+import { canAddLibraryImages, libraryImageLimits } from "@/lib/library-lifecycle";
 import { useLibraryLoad } from "./useLibraryLoad";
 import CropInput from "@/components/images/CropInput";
 
@@ -57,7 +59,7 @@ type CertificateImageRow = {
   sort_order: number;
 };
 
-const MAX_IMAGES = 4;
+const MAX_IMAGES = libraryImageLimits.certificate;
 const MAX_SIZE =
   5 * 1024 * 1024;
 
@@ -74,6 +76,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     useRef<HTMLInputElement | null>(null);
 
   const userId = ownerId;
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const { isLoading, loaded, loadError, tagsError: tagsLoadError, canSave, run } = useLibraryLoad();
 
@@ -345,11 +348,15 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
 
     if (remaining <= 0) {
       alert(
-        "เพิ่มได้สูงสุด 4 รูป"
+        "เพิ่มได้สูงสุด 2 รูป รายการเก่าที่เกินเพดานยังดูและแก้ข้อความได้"
       );
       return;
     }
 
+    if (files.length > remaining) {
+      alert("จำนวนรูปเกินช่องที่เหลือ กรุณาเลือกใหม่ให้ไม่เกิน 2 รูปต่อรายการ");
+      return;
+    }
     const accepted =
       files
         .filter(
@@ -416,6 +423,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
   const removeOld = (
     image: CertificateImage
   ) => {
+    if (!window.confirm("นำรูปนี้ออกจากรายการเมื่อบันทึกหรือไม่? ไฟล์เดิมยังไม่ถูกลบจาก Storage")) return;
     setExistingImages(
       (current) =>
         current.filter(
@@ -450,36 +458,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
             i !== index
         )
     );
-  };
-
-  const pathFromUrl = (
-    urlString: string
-  ) => {
-    try {
-      const url =
-        new URL(urlString);
-
-      const marker =
-        "/storage/v1/object/public/portfolio-images/";
-
-      const index =
-        url.pathname.indexOf(
-          marker
-        );
-
-      if (index < 0) {
-        return null;
-      }
-
-      return decodeURIComponent(
-        url.pathname.slice(
-          index +
-            marker.length
-        )
-      );
-    } catch {
-      return null;
-    }
   };
 
   const toggleTag = (
@@ -634,7 +612,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
           publicUrl,
 
         sort_order:
-          existingImages.length +
+          Math.max(-1, ...existingImages.map(image => image.sort_order)) + 1 +
           i,
       });
     }
@@ -653,70 +631,23 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     }
   };
 
-  const deleteRemoved =
-    async () => {
-      if (
-        !removedImageIds.length
-      ) {
-        return;
-      }
-
-      const oldImages =
-        certificates
-          .flatMap(
-            (item) =>
-              item.images
-          )
-          .filter(
-            (image) =>
-              removedImageIds.includes(
-                image.id
-              )
-          );
-
-      const { error } =
-        await supabase
-          .from(
-            "user_library_certificate_images"
-          )
-          .delete()
-          .in(
-            "id",
-            removedImageIds
-          );
-
-      if (error) {
-        throw error;
-      }
-
-      const paths =
-        oldImages
-          .map((image) =>
-            pathFromUrl(
-              image.image_url
-            )
-          )
-          .filter(
-            (
-              item
-            ): item is string =>
-              Boolean(item)
-          );
-
-      if (paths.length) {
-        await supabase.storage
-          .from(
-            "portfolio-images"
-          )
-          .remove(paths);
-      }
-    };
+  const deleteRemoved = async () => {
+    if (!removedImageIds.length) return;
+    const { error } = await supabase.from("user_library_certificate_images").delete().in("id", removedImageIds);
+    if (error) throw error;
+    // Retain Storage files until reference-safe cleanup is separately verified.
+  };
 
   const handleSave = async (
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
     if (isSaving || !canSave) return;
+
+    if (!canAddLibraryImages('certificate', existingImages.length, newFiles.length)) {
+      alert("เพิ่มรูปเกินเพดาน 2 รูปไม่ได้ กรุณาจัดการรูปก่อนเพิ่มรูปใหม่");
+      return;
+    }
 
     if (!title.trim()) {
       alert(
@@ -763,7 +694,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
             .eq(
               "user_id",
               userId
-            );
+            ).select("id").single();
 
         if (error) {
           throw error;
@@ -857,62 +788,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     }
   };
 
-  const handleDelete = async (
-    item: CertificateItem
-  ) => {
-    if (
-      !window.confirm(
-        "ต้องการลบเกียรติบัตรนี้ใช่หรือไม่?"
-      )
-    ) {
-      return;
-    }
-
-    const paths =
-      item.images
-        .map((image) =>
-          pathFromUrl(
-            image.image_url
-          )
-        )
-        .filter(
-          (
-            path
-          ): path is string =>
-            Boolean(path)
-        );
-
-    const { error } =
-      await supabase
-        .from(
-          "user_library_certificates"
-        )
-        .delete()
-        .eq(
-          "id",
-          item.id
-        )
-        .eq(
-          "user_id",
-          userId
-        );
-
-    if (error) {
-      alert(
-        "ลบข้อมูลไม่สำเร็จ"
-      );
-      return;
-    }
-
-    if (paths.length) {
-      await supabase.storage
-        .from(
-          "portfolio-images"
-        )
-        .remove(paths);
-    }
-
-    await loadData(userId, true);
+  const handleDelete = (item: CertificateItem) => {
+    if (!isSaving) setDeleteTarget({ id: item.id, title: item.title });
   };
 
   const totalImages =
@@ -929,6 +806,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
 
   return (
     <>
+      {deleteTarget && <LibraryDeleteDialog key={deleteTarget.id} kind="certificate" ownerId={userId} item={deleteTarget}
+        onClose={() => setDeleteTarget(null)} onDeleted={() => { void loadData(userId, true); }} />}
       <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
       <section className="mt-6 min-w-0">
         <div className="flex min-w-0 flex-col items-start gap-4 @min-[40rem]:flex-row @min-[40rem]:items-center @min-[40rem]:justify-between">
@@ -1134,6 +1013,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
                 aria-busy={isSaving} className="@container min-w-0 space-y-5"
               >
                 <fieldset disabled={isSaving} className="min-w-0 space-y-5">
+                <p className="text-xs leading-6 text-slate-600">การนำรูปออกจะบันทึกเมื่อกดบันทึก ไฟล์เดิมใน Storage เก็บไว้จนตรวจ cleanup ที่ปลอดภัย ไม่ลบไฟล์จากการแก้ draft</p>
                 <LibraryLoadStatus isLoading={isLoading} loaded={loaded} loadError={loadError} tagsError={tagsLoadError} retry={() => void loadData(userId)} />
                 <div>
                   <div className="mb-2 flex min-w-0 flex-wrap items-center justify-between gap-2">
@@ -1145,10 +1025,11 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
                       {
                         totalImages
                       }{" "}
-                      / 4 รูป
+                      / {MAX_IMAGES} รูป
                     </span>
                   </div>
 
+                  {existingImages.length > MAX_IMAGES && <p className="mb-3 text-sm leading-7 text-amber-900">รายการเดิมมีรูปเกิน 2 รูป ระบบเก็บรูปเดิมครบและยังแก้ข้อความได้ แต่เพิ่มรูปไม่ได้ การนำรูปออกต้องยืนยันและกดบันทึกเอง</p>}
                   <CropInput id="certificate-library-images"
                     ref={
                       fileInputRef
@@ -1166,7 +1047,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
                     type="button"
                     disabled={
                       totalImages >=
-                      4
+                      MAX_IMAGES
                     }
                     onClick={() =>
                       fileInputRef.current?.click()
@@ -1176,8 +1057,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
                     <FaImage />
 
                     {totalImages >=
-                    4
-                      ? "ครบ 4 รูปแล้ว"
+                    MAX_IMAGES
+                      ? "เพิ่มรูปไม่ได้ (สูงสุด 2 รูป)"
                       : "เพิ่มรูปเกียรติบัตร"}
                   </button>
 
