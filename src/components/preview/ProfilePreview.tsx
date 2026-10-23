@@ -6,10 +6,16 @@ import { calculateAge } from "@/lib/age";
 import { useProfileStore } from "@/store/useProfileStore";
 import { FaFacebook, FaLine, FaInstagram } from "react-icons/fa";
 
+const hasText = (value: string) => value.trim().length > 0;
+
 export default function ProfilePreview() {
   const profileStore = useProfileStore();
 
   const age = calculateAge(profileStore.birthday, new Date());
+  const socials = profileStore.socials.filter(social => hasText(social.link));
+  const customFields = profileStore.customFields.filter(field => hasText(field.title) || hasText(field.value));
+  const hasContact = hasText(profileStore.phone) || hasText(profileStore.email) || hasText(profileStore.address) || socials.length > 0;
+  const hasAdditional = hasText(profileStore.skills) || hasText(profileStore.motto) || customFields.length > 0;
 
   const renderSocialIcon = (platform: string) => {
     switch (platform) {
@@ -54,18 +60,18 @@ export default function ProfilePreview() {
         </div>
 
         {/* ข้อมูลการติดต่อ */}
-        <div className="border-t pt-3 flex flex-col gap-1.5">
+        {hasContact && <div className="border-t pt-3 flex flex-col gap-1.5">
           <h3 className="font-bold text-xs uppercase tracking-wider text-blue-600">ข้อมูลการติดต่อ</h3>
-          <div><span className="font-semibold text-slate-600">เบอร์โทรศัพท์ :</span> {profileStore.phone}</div>
-          <div><span className="font-semibold text-slate-600">อีเมล :</span> {profileStore.email}</div>
-          <div><span className="font-semibold text-slate-600">ที่อยู่ :</span> {profileStore.address}</div>
+          {hasText(profileStore.phone) && <div><span className="font-semibold text-slate-600">เบอร์โทรศัพท์ :</span> {profileStore.phone}</div>}
+          {hasText(profileStore.email) && <div><span className="font-semibold text-slate-600">อีเมล :</span> {profileStore.email}</div>}
+          {hasText(profileStore.address) && <div><span className="font-semibold text-slate-600">ที่อยู่ :</span> {profileStore.address}</div>}
           
           {/* แสดง Social Media ที่ผู้ใช้เพิ่มเข้ามา */}
-          {profileStore.socials && profileStore.socials.length > 0 && (
+          {socials.length > 0 && (
             <div className="flex flex-col gap-1 mt-1">
               <span className="font-semibold text-slate-600">ช่องทางอื่นๆ :</span>
               <div className="flex flex-col gap-1 pl-2">
-                {profileStore.socials.map((s) => (
+                {socials.map((s) => (
                   <div key={s.id} className="profile-social-row flex items-center gap-2 text-xs">
                     <span>{renderSocialIcon(s.platform)}</span>
                     <span className="capitalize font-medium">{s.platform}:</span>
@@ -75,21 +81,24 @@ export default function ProfilePreview() {
               </div>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* ข้อมูลเพิ่มเติมและความสามารถ */}
-        <div className="border-t pt-3 flex flex-col gap-1.5">
+        {hasAdditional && <div className="border-t pt-3 flex flex-col gap-1.5">
           <h3 className="font-bold text-xs uppercase tracking-wider text-blue-600">ข้อมูลเพิ่มเติม</h3>
-          <div><span className="font-semibold text-slate-600">ความสามารถพิเศษ (Skills) :</span> {profileStore.skills}</div>
-          <div><span className="font-semibold text-slate-600">คติประจำใจ (Motto) :</span> {profileStore.motto}</div>
+          {hasText(profileStore.skills) && <div><span className="font-semibold text-slate-600">ความสามารถพิเศษ (Skills) :</span> {profileStore.skills}</div>}
+          {hasText(profileStore.motto) && <div><span className="font-semibold text-slate-600">คติประจำใจ (Motto) :</span> {profileStore.motto}</div>}
 
           {/* แสดงหัวข้อพิเศษที่ผู้ใช้กดเพิ่มเอง (Custom Fields) */}
-          {profileStore.customFields && profileStore.customFields.map((field) => (
-            <div key={field.id}>
-              <span className="font-semibold text-slate-600">{field.title} :</span> {field.value}
-            </div>
-          ))}
-        </div>
+          {customFields.map(field => {
+            const hasTitle = hasText(field.title), hasValue = hasText(field.value);
+            return <div key={field.id}>
+              {hasTitle && <span className="font-semibold text-slate-600">{field.title}{hasValue ? " :" : ""}</span>}
+              {hasTitle && hasValue && " "}
+              {hasValue && field.value}
+            </div>;
+          })}
+        </div>}
 
       </div>
 
