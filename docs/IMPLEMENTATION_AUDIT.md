@@ -7,6 +7,8 @@ Branch: `codex/portfolio-system-fixes`
 
 ## วิธีอ่านและขอบเขต
 
+ขอบเขตรอบส่งเปลี่ยนตามเจ้าของยืนยัน 2026-10-23: Autosave เนื้อหา/รูปย่อยรายพอร์ต/snapshot-version-รับอัปเดตเป็น **DEFERRED ไม่ใช่ DONE** ดู [แผนล่าสุด](IMPLEMENTATION_PLAN.md) / [รายงานรวม](verification/UI_REGRESSION_AND_CORE_SCOPE_REVIEW.md) ตาราง audit/เคส/ตัวเลขด้านล่างคงเป็นประวัติของ commit เดิม ไม่ใช้เรียกงานที่เลื่อนกลับเข้ารอบส่งหรือถือว่า hosted integration ผ่าน
+
 อัปเดตหลัง baseline 16 ตุลาคม 2026: F33 ส่วนเพดานจำนวนหน้าถอดแล้วทั้ง UI/export และตรวจ PDF จริง 12/20/25 หน้า ดู [รายงาน PDF](verification/PDF_PAGE_LIMIT_REVIEW.md) ตาราง/ผล static ด้านล่างเป็นประวัติที่ commit อ้างอิงเดิม ไม่ใช่สถานะใหม่ทั้งหมด; 10 MB, pagination split และ PDF ส่วนอื่นยังค้าง
 
 อัปเดต 17 ตุลาคม 2026: F37 ส่วนยืนยันไฟล์ใหญ่ทำแล้ว ตามเกณฑ์ล่าสุด <=10,000,000 bytes ไม่ถาม และ > จึงถาม ตรวจ PDF จริง 14,446,304 bytes/32 หน้าและ hash ตรง Blob ที่เสนอ ดู [รายงาน large-file](verification/PDF_LARGE_FILE_CONFIRMATION_REVIEW.md) ส่วน pagination/สารบัญ/quality-floor review และ PDF งานอื่นยังค้าง
