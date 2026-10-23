@@ -15,7 +15,7 @@ test.beforeEach(async ({ context, request }) => {
   await context.addCookies([{ name: 'sb-127-auth-token', value: 'base64-' + part(session), domain: '127.0.0.1', path: '/' }]);
 });
 
-async function fixtures(page: Page, config: Section) {
+async function fixtures(page: Page, config: Section, imageCount = 2) {
   const longName = 'ชื่อรายการภาษาไทยยาวไม่มีช่องว่าง'.repeat(6);
   const state = { saveLoading: false, releaseSave: () => {}, account: user.id, mainError: false, tagsError: false, linksError: false, imageError: false, reads: 0, writes: 0, tagWrites: 0, loading: false, release: () => {}, empty: false, failSave: false, deletes: 0, rows: [{ id: 'library-existing', user_id: user.id, [config.titleKey]: longName, level: 'มัธยมศึกษา', study_plan: '', gpa: null, logo_url: '', start_year: '', end_year: '', description: 'รายละเอียดภาษาไทยยาว'.repeat(10), organization: '', activity_date: null, issued_by: '', issued_date: null }] as Record<string, unknown>[] };
   await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: state.account } }));
@@ -23,7 +23,7 @@ async function fixtures(page: Page, config: Section) {
   await page.route(`**/rest/v1/user_library_${config.key}_tags?**`, route => { if (route.request().method() !== 'GET') state.tagWrites++; return route.fulfill(state.linksError ? { status: 500, json: { message: 'private relationship details' } } : { json: [{ [`${config.key}_id`]: 'library-existing', tag_id: 'tag-long' }] }); });
   await page.route(`**/rest/v1/user_library_${config.plural}?**`, async route => {
     const method = route.request().method();
-    if (method === 'DELETE') { state.deletes++; const id = new URL(route.request().url()).searchParams.get('id')?.replace('eq.', ''); state.rows = state.rows.filter(row => row.id !== id); return route.fulfill({ json: null }); }
+    if (method === 'DELETE') { state.deletes++; const id = new URL(route.request().url()).searchParams.get('id')?.replace('eq.', ''); const deleted = state.rows.filter(row => row.id === id).map(row => ({ id: row.id })); state.rows = state.rows.filter(row => row.id !== id); return route.fulfill({ json: deleted }); }
     if (method === 'POST' || method === 'PATCH') {
       state.writes++;
       if (state.saveLoading) await new Promise<void>(resolve => { state.releaseSave = resolve; });
@@ -42,7 +42,7 @@ async function fixtures(page: Page, config: Section) {
   });
   if (config.key !== 'education') {
     state.rows.push({ ...state.rows[0], id: 'library-no-image', [config.titleKey]: 'รายการไม่มีรูปและไม่มี Tags', description: '' });
-    const pictures = [[80, 160], [160, 80]].map(([width, height]) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#2563eb"/><rect x="10" y="10" width="${width-20}" height="${height-20}" fill="#f59e0b"/></svg>`)}`);
+    const pictures = [[80, 160], [160, 80]].slice(0, imageCount).map(([width, height]) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#2563eb"/><rect x="10" y="10" width="${width-20}" height="${height-20}" fill="#f59e0b"/></svg>`)}`);
     await page.route(`**/rest/v1/user_library_${config.key}_images?**`, route => route.fulfill(state.imageError ? { status: 500, json: { message: 'private image details' } } : { json: pictures.map((image_url, sort_order) => ({ id: `image-${sort_order}`, [`${config.key}_id`]: 'library-existing', image_url, sort_order })) }));
   }
   return { state, longName };
@@ -114,8 +114,11 @@ for (const config of sections) {
     await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.key === 'education' ? 'ผลงานและกิจกรรม' : 'ประวัติการศึกษา', exact: true }).click();
     await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
     await expect(page.getByRole('heading', { name: 'ข้อมูลแก้ไข', exact: true })).toBeVisible();
-    page.once('dialog', async confirm => { expect(confirm.type()).toBe('confirm'); await confirm.dismiss(); });
     await page.locator('article').filter({ has: page.getByRole('heading', { name: 'ข้อมูลแก้ไข', exact: true }) }).getByRole('button', { name: /ลบ/ }).click();
+    const deletion = page.getByRole('dialog', { name: 'ลบรายการจากคลัง', exact: true });
+    await expect(deletion.getByRole('button', { name: 'ลบจากคลังและทุกพอร์ต', exact: true })).toBeVisible();
+    await deletion.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
+    await expect(deletion).toHaveCount(0);
     expect(state.deletes).toBe(0);
     await expect(page.getByRole('heading', { name: 'ข้อมูลแก้ไข', exact: true })).toBeVisible();
   });
@@ -210,6 +213,7 @@ for (const config of sections) {
     await expect(form).toHaveCount(0); await expect(confirmation).toHaveCount(0);
     // Removing an existing image must prompt; discarding never calls Storage cleanup.
     await page.locator('article').first().getByRole('button', { name: /แก้ไข/ }).click();
+    if (config.key === 'certificate') page.once('dialog', dialog => dialog.accept());
     await form.getByRole('button', { name: 'ลบรูป', exact: true }).first().click();
     await form.getByRole('button', { name: 'ยกเลิก', exact: true }).click();
     await confirmation.getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true }).click();
@@ -325,8 +329,11 @@ for (const config of sections) {
     await expect.poll(() => state.reads).toBe(2);
     const release = () => state.release();
     state.loading = false;
-    page.once('dialog', dialog => dialog.accept());
     await page.locator('article').filter({ has: page.getByRole('heading', { name: longName, exact: true }) }).getByRole('button', { name: /ลบ/ }).click();
+    const deletion = page.getByRole('dialog', { name: 'ลบรายการจากคลัง', exact: true });
+    await deletion.getByRole('button', { name: 'ลบจากคลังและทุกพอร์ต', exact: true }).click();
+    await expect(deletion.getByRole('status')).toContainText('ยืนยันแล้วว่าไม่มีรายการนี้ในคลัง');
+    await deletion.getByRole('button', { name: 'ปิด', exact: true }).click();
     await expect(page.getByRole('heading', { name: longName, exact: true })).toHaveCount(0);
     expect(state.deletes).toBe(1);
     const oldResponse = page.waitForResponse(response => response.url().includes(`user_library_${config.plural}?`) && response.request().method() === 'GET');
@@ -445,7 +452,7 @@ async function accountEvent(page: Page, id: string | null) {
 
 for (const config of sections) {
   test(`${config.key}: history keeps Tags/image order/cropped File and original DOM until manual save`, async ({ page, request }) => {
-    const { state, longName } = await fixtures(page, config);
+    const { state, longName } = await fixtures(page, config, config.key === 'certificate' ? 1 : 2);
     if (config.key === 'education') state.rows[0].logo_url = 'http://127.0.0.1:54321/sample.png';
     await libraryHistory(page, config);
     await page.locator('article').filter({ has: page.getByRole('heading', { name: longName, exact: true }) }).getByRole('button', { name: /แก้ไข/ }).click();
@@ -458,7 +465,7 @@ for (const config of sections) {
     const file = await request.get('http://127.0.0.1:54321/sample.png'); const png = await file.body();
     await form.locator('input[type=file]').setInputFiles({ name: 'history-file.png', mimeType: 'image/png', buffer: png });
     await page.locator('dialog').getByRole('button', { name: 'ตัดรูปและใช้รูปนี้', exact: true }).click();
-    await expect(form.locator('img')).toHaveCount(config.key === 'education' ? 1 : 3);
+    await expect(form.locator('img')).toHaveCount(config.key === 'education' ? 1 : config.key === 'certificate' ? 2 : 3);
     const sources = await form.locator('img').evaluateAll(images => images.map(image => image.getAttribute('src')));
     const cropped = sources.at(-1)!; expect(cropped).toMatch(/^data:image\//);
     const bytes = Buffer.from(cropped.split(',')[1], 'base64');

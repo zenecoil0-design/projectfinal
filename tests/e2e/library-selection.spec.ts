@@ -21,6 +21,11 @@ async function fixtures(page: Page, config: Section) {
   const state = { mode: 'ready' as Mode, release: () => {} };
   const names = [`${config.label}ชื่อยาวไม่มีช่องว่าง`.repeat(3), 'รายการแนวนอน', 'รายการไม่มีรูปและไม่มีTags'];
   const ids = ['a', 'b', 'c'].map(suffix => `${config.section}-${suffix}`);
+  // The RPC mock validates source existence just like the SQL contract. Seed
+  // the additional fixture IDs; a GET-only browser override is not persistence.
+  await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${config.plural}`, {
+    data: ids.slice(1).map((id, index) => ({ id, user_id: user.id, [config.titleKey]: names[index + 1] })),
+  });
   const pictures = await page.evaluate(() => [[80, 160], [160, 80]].map(([width, height]) => {
     const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#2563eb'; ctx.fillRect(0, 0, width, height);

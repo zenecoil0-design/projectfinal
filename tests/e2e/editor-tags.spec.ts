@@ -18,6 +18,9 @@ test.beforeEach(async ({ context, request }) => {
 
 async function fixtures(page: Page, config: Config, failure: 'tags' | 'relations' | 'both' | 'empty') {
   const state = { fail: failure !== 'empty', hold: false, release: () => {}, tagReads: 0, relationReads: 0, mainReads: 0 };
+  await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${config.plural}`, {
+    data: ['b', 'c'].map(suffix => ({ id: `${config.section}-${suffix}`, user_id: user.id, [config.title]: `ITEM ${suffix}` })),
+  });
   await page.route(`**/rest/v1/user_library_${config.plural}?**`, route => {
     state.mainReads++;
     return route.fulfill({ json: ['a', 'b', 'c'].map(suffix => ({ id: `${config.section}-${suffix}`, [config.title]: `ITEM ${suffix}`, level: 'มัธยมศึกษา', description: 'รายละเอียด', gpa: null })) });

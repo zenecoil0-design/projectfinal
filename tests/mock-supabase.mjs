@@ -51,7 +51,13 @@ createServer(async (req,res) => {
     return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(rows.map(row=>({id:row.id}))) : 'null');
   }
   if(req.method==='GET' && url.searchParams.get('select')?.includes('portfolios!inner')) return res.end(JSON.stringify(rows.map(row=>({...row,portfolios:database.portfolios.find(p=>p.id===row.portfolio_id)}))));
-  if(req.method==='PATCH') { rows.forEach(row=>Object.assign(row,body,table==='portfolios'?{updated_at:'2026-10-21T00:00:00Z'}:{})); return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] ?? null : rows) : 'null'); }
+  if(req.method==='PATCH') {
+    if(req.headers.accept?.includes('vnd.pgrst.object+json') && rows.length!==1) {
+      res.statusCode=406; return res.end(JSON.stringify({code:'PGRST116',message:'Expected one returned row'}));
+    }
+    rows.forEach(row=>Object.assign(row,body,table==='portfolios'?{updated_at:'2026-10-21T00:00:00Z'}:{}));
+    return res.end(req.headers.prefer?.includes('return=representation') ? JSON.stringify(req.headers.accept?.includes('vnd.pgrst.object+json') ? rows[0] : rows) : 'null');
+  }
   if(req.method==='POST' && req.headers.prefer?.includes('resolution=merge-duplicates')) {
     const keys=(url.searchParams.get('on_conflict')??'id').split(',');
     const existing=(database[table]??[]).find(row=>keys.every(key=>row[key]===body[key]));

@@ -110,9 +110,23 @@ export default function LibraryDeleteDialog({ kind, ownerId, item, onClose, onDe
     setOperationBusy(busy);
     return () => setOperationBusy(false);
   }, [busy, setOperationBusy]);
+  useLayoutEffect(() => {
+    const element = dialog.current;
+    if (!busy && element && (document.activeElement === element || !element.contains(document.activeElement))) {
+      element.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+    }
+  }, [busy]);
   const close = () => { if (!lock.current && !busy) callbacks.current.onClose(); };
   return <dialog ref={dialog} aria-labelledby="library-delete-title" aria-describedby="library-delete-description"
     onCancel={event => { event.preventDefault(); close(); }}
+    onKeyDown={event => {
+      if (event.key !== 'Tab') return;
+      const controls = dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+      if (!controls?.length) { event.preventDefault(); return; }
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }}
     className="fixed inset-0 m-auto max-h-[calc(100dvh-32px)] w-[min(520px,calc(100vw-32px))] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl backdrop:bg-slate-950/60">
     <h2 id="library-delete-title" className="text-lg font-bold">ลบรายการจากคลัง</h2>
     <p id="library-delete-description" className="mt-3 break-words text-sm leading-7">รายการ: {item.title} การลบจากคลังจะนำรายการนี้ออกจากทุกพอร์ตของคุณที่อ้างถึง รวมหมวดที่ซ่อนอยู่</p>

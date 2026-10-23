@@ -20,6 +20,7 @@ for (const [kind, plural] of sections) {
       await db.query(`INSERT INTO user_library_${kind}_tags VALUES($1,$2)`, [LA,tag]);
       if (kind !== 'education') await db.query(`INSERT INTO user_library_${kind}_images(${kind}_id,image_url) VALUES($1,'kept-in-storage.png')`, [LA]);
       await asUser(db,B);
+      assert.equal((await db.query(`SELECT 1 FROM user_library_${plural} WHERE id=$1`, [LA])).rows.length,0);
       assert.equal((await db.query(`DELETE FROM user_library_${plural} WHERE id=$1 RETURNING id`, [LA])).rows.length,0);
       await db.exec('RESET ROLE'); await asUser(db,A);
       await db.query('SELECT replace_portfolio_selection($1,$2,$3::uuid[])', [PA,kind,[]]);
@@ -28,6 +29,7 @@ for (const [kind, plural] of sections) {
       assert.equal((await db.query(`SELECT 1 FROM portfolio_${plural} WHERE portfolio_id=$1`,[second])).rows.length,1);
       await asUser(db,A);
       assert.equal((await db.query(`DELETE FROM user_library_${plural} WHERE id=$1 RETURNING id`,[LA])).rows.length,1);
+      assert.equal((await db.query(`UPDATE user_library_${plural} SET title='late manual save' WHERE id=$1 RETURNING id`,[LA])).rows.length,0);
       await assert.rejects(db.query('SELECT replace_portfolio_selection($1,$2,$3::uuid[])',[PA,kind,[LA]]), /not found|access denied/);
       await db.exec('RESET ROLE');
       assert.equal((await db.query(`SELECT 1 FROM portfolio_${plural} WHERE ${kind}_id=$1`,[LA])).rows.length,0);
