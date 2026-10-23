@@ -6,7 +6,12 @@ WITH relations AS (
          pg_get_userbyid(c.relowner) AS owner, c.relacl
   FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'public'
-    AND c.relname IN ('portfolios', 'portfolio_section_visibility')
+    AND c.relkind = 'r'
+    AND c.relname IN ('portfolios', 'portfolio_section_visibility',
+      'user_library_educations', 'user_library_activities', 'user_library_certificates',
+      'portfolio_educations', 'portfolio_activities', 'portfolio_certificates',
+      'user_library_activity_images', 'user_library_certificate_images', 'user_tags',
+      'user_library_education_tags', 'user_library_activity_tags', 'user_library_certificate_tags')
 ), roles AS (
   SELECT oid, rolname, rolsuper, rolbypassrls FROM pg_roles
   WHERE rolname IN ('anon', 'authenticated')
@@ -22,7 +27,7 @@ SELECT jsonb_build_object(
     FROM relations r JOIN pg_attribute a ON a.attrelid = r.oid
     LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
     WHERE a.attnum > 0 AND NOT a.attisdropped
-      AND (r.relname = 'portfolio_section_visibility' OR a.attname IN ('id','user_id'))), '[]'::jsonb),
+      AND (r.relname <> 'portfolios' OR a.attname IN ('id','user_id'))), '[]'::jsonb),
   'constraints', COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'table', r.relname, 'name', c.conname, 'kind', c.contype,
     'definition', pg_get_constraintdef(c.oid), 'validated', c.convalidated))
@@ -32,7 +37,9 @@ SELECT jsonb_build_object(
     'definition', pg_get_indexdef(i.indexrelid)))
     FROM relations r JOIN pg_index i ON i.indrelid = r.oid), '[]'::jsonb),
   'policies', COALESCE((SELECT jsonb_agg(to_jsonb(p)) FROM pg_policies p
-    WHERE p.schemaname = 'public' AND p.tablename IN ('portfolios','portfolio_section_visibility')), '[]'::jsonb),
+    WHERE p.schemaname = 'public' AND p.tablename IN (SELECT relname FROM relations)), '[]'::jsonb),
+  'storage_policies', COALESCE((SELECT jsonb_agg(to_jsonb(p)) FROM pg_policies p
+    WHERE p.schemaname = 'storage' AND p.tablename = 'objects'), '[]'::jsonb),
   'roles', COALESCE((SELECT jsonb_agg(jsonb_build_object(
     'name', rolname, 'superuser', rolsuper, 'bypass_rls', rolbypassrls,
     'public_usage', has_schema_privilege(oid, 'public', 'USAGE'),

@@ -1,7 +1,7 @@
 # UI regression and submission scope — 2026-10-23
 
-Repository: `zenecoil0-design/projectfinal`  
-Branch: `codex/portfolio-next-phase`  
+Repository: `zenecoil0-design/projectfinal`
+Branch: `codex/portfolio-next-phase`
 Starting local/remote HEAD: `8fb2a4763588bbb6e954b74f59c10e3b7228f5af`; clean checkout.
 
 ## A — Tests following the current UI
