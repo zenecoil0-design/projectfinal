@@ -25,8 +25,10 @@ Read AGENTS/core requirements and the installed Next.js 16.2.9 client-component 
 | A production build | `NEXT_TELEMETRY_DISABLED=1 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key npm run build -- --webpack`: PASS |
 | A focused browser | `playwright test tests/e2e/profile-age.spec.ts --reporter=line`: **1/1 PASS (6.2s)** |
 | A publish | **7f0f68a590700fec731357d01ae825ba589a98d9**, tree `ab76b93b8dbeb8cf98943e8cad0053cc172e20bf`; fetched and full-tree compared before B |
-| B final unit | Same unit command: **4/4 PASS**, separate rerun |
-| B final browser | **12/12 PASS in one run (35.4s)**: age 9 + existing Profile/Accordion regression 3 |
+| B initial unit | Same unit command: **4/4 PASS**, separate rerun |
+| B initial browser | **12/12 PASS in one run (35.4s)**: age 9 + existing Profile/Accordion regression 3 |
+| B initial publish | **f3f41a29e1da7f2d570a5e81fae365df2c136a1a**; the scoped age plan addendum passed publication review |
+| B final strict-format check | Rebuild PASS; unit **4/4 PASS** including trailing newline/spaces; production browser **12/12 PASS in one run (38.9s)** including the newline legacy fixture; full-repo tsc and scoped lint PASS afterward/on this matching build |
 | Full repository types | `node_modules/.bin/tsc --noEmit --incremental false`: PASS after build and final test edits |
 | Scoped lint | ESLint on age helper, ProfileForm, ProfilePreview and both new test files: 0 errors, two existing no-img-element warnings |
 | Whitespace / docs | `git diff --check` and report/plan link checks; committed range checked before publishing |
@@ -39,7 +41,7 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/workspace/scratch/c9bc59bd45e7/browser-runt
 
 Tests use fixed reference dates/clock times, never an expected age that expires with the execution date. Unit subprocesses cover America/Los_Angeles, UTC and Asia/Bangkok. Browser tests demonstrate the same instant uses June 14 in Los Angeles versus June 15 in Bangkok. Coverage includes before/on/after birthday, year boundary, age zero, Feb 29/leap centuries, empty/invalid/future dates, all three templates, unchanged legacy payload, failed save/retry/reload, dirty/leave/export guards, portfolio switch, mobile panel and crop/draft regression.
 
-Production application source did not change during B, so B reused A's matching build. No skipped/weakened assertions, new dependency or application source changes after build. The build retains the existing middleware deprecation warning. No browser failure was observed in these two runs.
+B initially reused A's matching production build. A final strict-format audit then found that JavaScript's regex end anchor can match before a trailing newline. Added an exact ten-character guard and newline/space regression cases, including the loaded legacy browser fixture, then rebuilt. The final rerun results are recorded below. No skipped/weakened assertions or new dependency. The build retains the existing middleware deprecation warning. No browser failure was observed in the recorded completed runs.
 
 Opened screenshots of the changed form area at desktop 1440px and mobile 390px: date input and age output fit their containers; mobile Preview/form switching retains the same age and dirty birthday. Screenshots are local Playwright artifacts under `profile-age-desktop-mobile-*/profile-age-{1440,390}.png`, not claimed as published images.
 

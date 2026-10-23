@@ -1,5 +1,6 @@
 /** Calendar age using the reference Date's local day; never parse a date-only value as UTC. */
 export function calculateAge(birthday: string, referenceDate: Date): number | null {
+  if (birthday.length !== 10) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthday);
   if (!match || !Number.isFinite(referenceDate.getTime())) return null;
 

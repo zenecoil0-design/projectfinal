@@ -26,7 +26,7 @@ test('Feb 29 advances on Feb 29 in leap years and March 1 in ordinary years', ()
 
 test('empty, malformed, impossible, future dates and invalid references have no displayable age', () => {
   const reference = on(2040, 6, 15);
-  for (const value of ['', ' ', 'wrong', '2000-6-15', '2000-06-15T00:00:00Z', '0000-01-01',
+  for (const value of ['', ' ', 'wrong', '2000-6-15', '2000-06-15\n', '2000-06-15 ', ' 2000-06-15', '2000-06-15T00:00:00Z', '0000-01-01',
     '2000-00-01', '2000-13-01', '2000-01-00', '2000-04-31', '2001-02-29', '1900-02-29',
     '2040-06-16', '2041-01-01']) {
     assert.equal(calculateAge(value, reference), null, value);

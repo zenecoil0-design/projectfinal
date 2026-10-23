@@ -58,7 +58,7 @@ test('Feb 29 follows leap-year anniversaries and March 1 in a normal year', asyn
 test('unavailable ages have one dash without a year suffix in all templates; loading never rewrites stored birthdays', async ({ page, request }) => {
   let writes = 0;
   page.on('request', request => { if (request.url().includes('/rest/v1/profiles') && ['POST', 'PATCH'].includes(request.method())) writes++; });
-  for (const birthday of [null, '', '2001-02-29', 'invalid', '2040-06-15']) {
+  for (const birthday of [null, '', '2001-02-29', 'invalid', '2000-06-15\n', '2040-06-15']) {
     await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: { date_of_birth: birthday } });
     await ready(page);
     for (const template of ['classic', 'modern', 'minimal']) {
