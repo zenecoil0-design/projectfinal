@@ -1,5 +1,4 @@
 "use client";
-import { FaGraduationCap } from "react-icons/fa";
 import { useEducationStore } from "@/store/useEducationStore";
 import PaginatedSection from "./PaginatedSection";
 export default function EducationPreview() {
@@ -13,8 +12,7 @@ export default function EducationPreview() {
               >
                 {/* LOGO */}
 
-                <div className="education-logo flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                  {education.logoUrl ? (
+                {education.logoUrl && <div className="education-logo flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <img
                       src={
                         education.logoUrl
@@ -24,10 +22,7 @@ export default function EducationPreview() {
                       }
                       className="h-full w-full object-contain p-2"
                     />
-                  ) : (
-                    <FaGraduationCap className="text-2xl text-slate-300" />
-                  )}
-                </div>
+                </div>}
 
                 {/* CONTENT */}
 
@@ -42,15 +37,14 @@ export default function EducationPreview() {
                       "ชื่อสถานศึกษา"}
                   </h3>
 
-                  <p className="mt-1 text-sm text-slate-600">
+                  {education.level.trim() && <p className="mt-1 text-sm text-slate-600">
                     <span className="font-semibold">
                       ระดับการศึกษา:
                     </span>{" "}
-                    {education.level ||
-                      "-"}
-                  </p>
+                    {education.level}
+                  </p>}
 
-                  {education.studyPlan && (
+                  {education.studyPlan.trim() && (
                     <p className="mt-1 text-sm text-slate-600">
                       <span className="font-semibold">
                         แผนการเรียน /
@@ -62,7 +56,7 @@ export default function EducationPreview() {
                     </p>
                   )}
 
-                  {education.gpa && (
+                  {education.gpa.trim() && (
                     <p className="mt-1 text-sm text-slate-600">
                       <span className="font-semibold">
                         GPAX:
@@ -73,17 +67,15 @@ export default function EducationPreview() {
                     </p>
                   )}
 
-                  {(education.startYear ||
-                    education.endYear) && (
+                  {(education.startYear.trim() ||
+                    education.endYear.trim()) && (
                     <p className="mt-1 text-sm text-slate-500">
                       <span className="font-semibold">
-                        ช่วงปีการศึกษา:
+                        {education.startYear.trim() && education.endYear.trim() ? "ช่วงปีการศึกษา:" : education.startYear.trim() ? "ปีเริ่มต้น:" : "ปีสิ้นสุด:"}
                       </span>{" "}
-                      {education.startYear ||
-                        "?"}{" "}
-                      -{" "}
-                      {education.endYear ||
-                        "ปัจจุบัน"}
+                      {education.startYear.trim() && education.startYear}
+                      {education.startYear.trim() && education.endYear.trim() && " - "}
+                      {education.endYear.trim() && education.endYear}
                     </p>
                   )}
                 </div>

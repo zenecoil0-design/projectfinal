@@ -1,5 +1,4 @@
 "use client";
-import { FaImage } from "react-icons/fa";
 import { useActivityStore } from "@/store/useActivityStore";
 import PaginatedSection from "./PaginatedSection";
 export default function ActivityPreview() {
@@ -27,7 +26,7 @@ export default function ActivityPreview() {
                               }
                             </h3>
 
-                            {activity.organization && (
+                            {activity.organization.trim() && (
                               <p className="mt-1 text-sm font-semibold text-slate-500">
                                 {
                                   activity.organization
@@ -36,7 +35,7 @@ export default function ActivityPreview() {
                             )}
                           </div>
 
-                          {activity.activityDate && (
+                          {activity.activityDate.trim() && (
                             <span className="shrink-0 text-xs font-semibold text-slate-400">
                               {
                                 activity.activityDate
@@ -45,7 +44,7 @@ export default function ActivityPreview() {
                           )}
                         </div>
 
-                        {activity.description && (
+                        {activity.description.trim() && (
                           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               activity.description
@@ -56,7 +55,7 @@ export default function ActivityPreview() {
                         {/* IMAGES */}
 
                         {activity.images.length >
-                          0 ? (
+                          0 && (
                           <div
                             className={`document-images mt-4 grid gap-3 ${
                               activity.images.length ===
@@ -87,16 +86,6 @@ export default function ActivityPreview() {
                                   </div>
                                 )
                               )}
-                          </div>
-                        ) : (
-                          <div className="document-no-image mt-4 flex h-28 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-slate-300">
-                            <div className="text-center">
-                              <FaImage className="mx-auto" />
-
-                              <p className="mt-1 text-xs">
-                                ไม่มีรูปประกอบ
-                              </p>
-                            </div>
                           </div>
                         )}
                       </article>

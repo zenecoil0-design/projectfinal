@@ -1,5 +1,4 @@
 "use client";
-import { FaImage } from "react-icons/fa";
 import { useCertificateStore } from "@/store/useCertificateStore";
 import PaginatedSection from "./PaginatedSection";
 export default function CertificatePreview() {
@@ -27,7 +26,7 @@ export default function CertificatePreview() {
                               }
                             </h3>
 
-                            {certificate.issuedBy && (
+                            {certificate.issuedBy.trim() && (
                               <p className="mt-1 text-sm font-semibold text-slate-500">
                                 {
                                   certificate.issuedBy
@@ -36,7 +35,7 @@ export default function CertificatePreview() {
                             )}
                           </div>
 
-                          {certificate.issuedDate && (
+                          {certificate.issuedDate.trim() && (
                             <span className="shrink-0 text-xs font-semibold text-slate-400">
                               {
                                 certificate.issuedDate
@@ -45,7 +44,7 @@ export default function CertificatePreview() {
                           )}
                         </div>
 
-                        {certificate.description && (
+                        {certificate.description.trim() && (
                           <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               certificate.description
@@ -54,7 +53,7 @@ export default function CertificatePreview() {
                         )}
 
                         {certificate.images.length >
-                          0 ? (
+                          0 && (
                           <div
                             className={`document-images mt-4 grid gap-3 ${
                               certificate.images.length ===
@@ -85,16 +84,6 @@ export default function CertificatePreview() {
                                   </div>
                                 )
                               )}
-                          </div>
-                        ) : (
-                          <div className="document-no-image mt-4 flex h-28 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-white text-slate-300">
-                            <div className="text-center">
-                              <FaImage className="mx-auto" />
-
-                              <p className="mt-1 text-xs">
-                                ไม่มีรูปเกียรติบัตร
-                              </p>
-                            </div>
                           </div>
                         )}
                       </article>
