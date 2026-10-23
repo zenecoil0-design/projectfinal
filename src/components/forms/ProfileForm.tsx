@@ -1,5 +1,6 @@
 "use client";
 import CropInput from "@/components/images/CropInput";
+import { calculateAge } from "@/lib/age";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
 import { EditorFormIssue, formLoadError, formSaveError } from "@/lib/editor/form-errors";
@@ -1027,47 +1028,6 @@ export default function ProfileForm({
   // AGE
   // =====================================================
 
-  const calculateAge =
-    (
-      birthdayString:
-        string
-    ) => {
-      if (
-        !birthdayString
-      ) {
-        return "-";
-      }
-
-      const today =
-        new Date();
-
-      const birthDate =
-        new Date(
-          birthdayString
-        );
-
-      let age =
-        today.getFullYear() -
-        birthDate.getFullYear();
-
-      const monthDifference =
-        today.getMonth() -
-        birthDate.getMonth();
-
-      if (
-        monthDifference <
-          0 ||
-        (monthDifference ===
-          0 &&
-          today.getDate() <
-            birthDate.getDate())
-      ) {
-        age--;
-      }
-
-      return age;
-    };
-
   // =====================================================
   // LOADING
   // =====================================================
@@ -1277,8 +1237,9 @@ export default function ProfileForm({
 
               <output aria-labelledby="profile-age-label" className="flex min-h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-base font-semibold text-slate-600 sm:text-sm">
                 {calculateAge(
-                  store.birthday
-                )}
+                  store.birthday,
+                  new Date()
+                ) ?? "—"}
               </output>
             </div>
           </div>

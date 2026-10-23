@@ -1,6 +1,7 @@
 "use client";
 import Paper from "./Paper";
 import { PageNumber } from "./PageLayout";
+import { calculateAge } from "@/lib/age";
 
 import { useProfileStore } from "@/store/useProfileStore";
 import { FaFacebook, FaLine, FaInstagram } from "react-icons/fa";
@@ -8,18 +9,7 @@ import { FaFacebook, FaLine, FaInstagram } from "react-icons/fa";
 export default function ProfilePreview() {
   const profileStore = useProfileStore();
 
-  // ฟังก์ชันคำนวณอายุอัตโนมัติจากวันเกิด
-  const calculateAge = (birthdayString: string) => {
-    if (!birthdayString) return "-";
-    const today = new Date();
-    const birthDate = new Date(birthdayString);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
+  const age = calculateAge(profileStore.birthday, new Date());
 
   const renderSocialIcon = (platform: string) => {
     switch (platform) {
@@ -53,8 +43,8 @@ export default function ProfilePreview() {
         <div className="grid grid-cols-2 gap-x-8 gap-y-2">
           <div><span className="font-semibold text-slate-600">ชื่อ - นามสกุล :</span> {profileStore.firstName} {profileStore.lastName}</div>
           <div><span className="font-semibold text-slate-600">ชื่อเล่น :</span> {profileStore.nickname}</div>
-          <div><span className="font-semibold text-slate-600">วันเกิด :</span> {profileStore.birthday}</div>
-          <div><span className="font-semibold text-slate-600">อายุ :</span> {calculateAge(profileStore.birthday)} ปี</div>
+          <div><span className="font-semibold text-slate-600">วันเกิด :</span> {profileStore.birthday || "—"}</div>
+          <div><span className="font-semibold text-slate-600">อายุ :</span> {age === null ? "—" : `${age} ปี`}</div>
           <div><span className="font-semibold text-slate-600">สัญชาติ :</span> {profileStore.nationality}</div>
           <div><span className="font-semibold text-slate-600">เชื้อชาติ :</span> {profileStore.ethnicity}</div>
           <div><span className="font-semibold text-slate-600">ศาสนา :</span> {profileStore.religion}</div>
