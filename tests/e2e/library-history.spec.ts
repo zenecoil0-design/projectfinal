@@ -111,7 +111,7 @@ test('unsupported Navigation API warns explicitly and existing close/beforeunloa
 test('after leaving the library, Home/Dashboard/Editor history and clean guards work normally', async ({ page }) => {
   await history(page); await draft(page); await blockedTraversal(page, 'back');
   await confirmation(page).getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true }).click(); await expect(page).toHaveURL(/\/$/);
-  await page.getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
+  await page.getByRole('banner').getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
   await page.locator('article[data-portfolio-id=a]').getByRole('link').click(); await expect(page).toHaveURL(/editor\?portfolio=a$/);
   await expect(page.getByText('Portfolio A', { exact: true })).toBeVisible(); await expect(confirmation(page)).toHaveCount(0);
   await page.goBack(); await expect(page).toHaveURL(/dashboard$/); await page.goBack(); await expect(page).toHaveURL(/\/$/);

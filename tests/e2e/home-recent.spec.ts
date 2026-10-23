@@ -206,7 +206,7 @@ for (const phase of ['auth', 'list', 'retry'] as const) for (const destination o
       await recent(page).getByRole('button', { name: 'ตรวจสอบบัญชีอีกครั้ง', exact: true }).click();
       await expect(recent(page).getByRole('heading', { name: 'NEW OWNER' })).toBeVisible(); expect(nextReads).toBe(1);
     } else {
-      await page.getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
+      await page.getByRole('banner').getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
       await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
     }
     release(); await expect.poll(() => settled).toBe(true); await settledFrame(page);
@@ -249,7 +249,9 @@ test('Home retry failure/success and same-owner refresh preserve mounted create 
   const hold = () => { gate = new Promise<void>(resolve => { release = resolve; }); }; hold();
   page.on('request', r => { if (new URL(r.url()).pathname === '/auth/v1/user') auth++; });
   await page.route('**/rest/v1/portfolios?**', async route => {
-    if (route.request().method() !== 'GET') return route.continue();
+    // This failure injection belongs to RecentPortfolios, not the Editor read
+    // that follows the confirmed create at the end of this test.
+    if (route.request().method() !== 'GET' || new URL(route.request().url()).searchParams.get('limit') !== '3') return route.continue();
     const attempt = ++reads; if (attempt > 1) await gate;
     if (attempt <= 2) return route.fulfill({ status: 500, json: { message: internal } });
     return route.fulfill({ response: await route.fetch() });

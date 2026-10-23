@@ -23,14 +23,14 @@ test('mobile create portfolio dialog has readable text and touch-sized close con
   await page.getByRole('main').getByRole('button', { name: 'เริ่มสร้าง Portfolio', exact: true }).click();
   const nameInput = name(page);
   await expect(nameInput).toBeVisible();
-  expect(await nameInput.evaluate(input => getComputedStyle(input).fontSize)).toBe('16px');
+  await expect(nameInput).toHaveCSS('font-size', '16px');
   const close = modal(page).getByRole('button', { name: 'ปิดกล่องสร้างพอร์ต' });
   const size = await close.boundingBox();
   expect(size).not.toBeNull();
   expect(size!.width).toBeGreaterThanOrEqual(44);
   expect(size!.height).toBeGreaterThanOrEqual(44);
   await page.setViewportSize({ width: 1440, height: 900 });
-  expect(await nameInput.evaluate(input => getComputedStyle(input).fontSize)).toBe('14px');
+  await expect(nameInput).toHaveCSS('font-size', '14px');
 });
 
 test('confirmed create sends the captured trimmed payload and opens only its returned ID', async ({ page }) => {
@@ -102,12 +102,13 @@ for (const failure of ['backend', 'network'] as const) {
 type Caller = 'dashboard' | 'sidebar' | 'recent';
 function trigger(page: Page, caller: Caller) {
   return caller === 'sidebar' ? page.locator('aside').getByRole('button', { name: 'สร้าง', exact: true })
-    : page.getByRole('button', { name: caller === 'recent' ? 'สร้างผลงานใหม่' : 'สร้าง Portfolio ใหม่', exact: false });
+    : caller === 'recent' ? page.getByRole('region', { name: 'พอร์ตล่าสุด', exact: true }).getByRole('button', { name: 'สร้างผลงานใหม่', exact: false })
+    : page.getByRole('button', { name: 'สร้าง Portfolio ใหม่', exact: false });
 }
 async function openCaller(page: Page, caller: Caller, history = false) {
   await page.setViewportSize({ width: 1440, height: 900 });
   if (caller === 'dashboard') {
-    if (history) { await page.goto('/'); await page.getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); }
+    if (history) { await page.goto('/'); await page.getByRole('banner').getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); }
     else await page.goto('/dashboard');
     await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
   } else {

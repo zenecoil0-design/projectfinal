@@ -39,13 +39,16 @@ test('mobile auth inputs use readable 16px font without changing desktop sizing'
   for (const route of ['/login', '/register']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(route);
-    const mobile = await page.locator('main input').evaluateAll(inputs =>
-      inputs.map(input => getComputedStyle(input).fontSize));
-    expect(mobile.length).toBe(route === '/login' ? 2 : 4);
-    expect(mobile).toEqual(Array(mobile.length).fill('16px'));
+    const inputs = page.locator('main input');
+    const count = route === '/login' ? 2 : 4;
+    await expect(inputs).toHaveCount(count);
+    for (let index = 0; index < count; index++) {
+      await expect(inputs.nth(index)).toHaveCSS('font-size', '16px');
+    }
     await page.setViewportSize({ width: 1440, height: 900 });
-    const desktop = await page.locator('main input').evaluateAll(inputs =>
-      inputs.map(input => getComputedStyle(input).fontSize));
-    expect(desktop).toEqual(Array(mobile.length).fill('14px'));
+    await expect(inputs).toHaveCount(count);
+    for (let index = 0; index < count; index++) {
+      await expect(inputs.nth(index)).toHaveCSS('font-size', '14px');
+    }
   }
 });
