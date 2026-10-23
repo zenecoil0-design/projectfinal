@@ -91,8 +91,9 @@ test('Minimal without photos stays compact; genuine long preface overflow is sti
   await expect(page.locator('.minimal-cover')).toBeAttached();
   await expect(page.locator('.minimal-cover img')).toHaveCount(0);
   await page.getByRole('button', { name: 'ดูตัวอย่าง', exact: true }).click();
-  await expect(page.locator('main .document-no-image')).toHaveCount(2);
-  for (const placeholder of await page.locator('main .document-no-image').all()) await expect(placeholder).toBeHidden();
+  await expect(page.locator('main .document-no-image')).toHaveCount(0);
+  await expect(page.locator('main .activity-card h3')).toHaveText('Saved Activity');
+  await expect(page.locator('main .certificate-card h3')).toHaveText('Saved Certificate');
   await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
   await page.route('**/rest/v1/prefaces?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: 'a', content: 'ข้อความยาวมาก '.repeat(3000), signature_name: 'A' }] }));
   await page.reload();

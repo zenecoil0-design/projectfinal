@@ -18,6 +18,8 @@ body { font-family: "Noto Sans Thai", Arial, sans-serif; }
   flex-shrink: 0;
 }
 .portfolio-page > * { flex-shrink: 0; }
+/* Match inherited A4 line metrics in the body-level measurement portal too. */
+[data-template] .document-card { line-height: 1.6; }
 
 .paper-frame { position: relative; flex-shrink: 0; margin-bottom: 24px; }
 .paper-frame > .portfolio-page { margin: 0; }
