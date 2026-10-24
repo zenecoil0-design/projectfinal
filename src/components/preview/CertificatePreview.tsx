@@ -55,6 +55,7 @@ export default function CertificatePreview() {
                         {certificate.images.length >
                           0 && (
                           <div
+                            data-image-count={certificate.images.length}
                             className={`document-images mt-4 grid gap-3 ${
                               certificate.images.length ===
                               1

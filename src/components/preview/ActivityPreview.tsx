@@ -57,6 +57,7 @@ export default function ActivityPreview() {
                         {activity.images.length >
                           0 && (
                           <div
+                            data-image-count={activity.images.length}
                             className={`document-images mt-4 grid gap-3 ${
                               activity.images.length ===
                               1

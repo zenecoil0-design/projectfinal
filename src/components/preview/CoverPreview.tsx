@@ -34,7 +34,7 @@ export default function CoverPreview() {
     <div className="formal-cover-body">
       <div className="formal-cover-photo">
         {coverStore.coverImage ? (
-          <img src={coverStore.coverImage} alt="รูปนักเรียนบนหน้าปก" />
+          <img src={coverStore.coverImage} alt="รูปหน้าปก" />
         ) : (
           <span>รูปหน้าปก</span>
         )}
