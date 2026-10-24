@@ -107,3 +107,263 @@
   border-bottom: 70px solid #1b4778;
   border-left: 70px solid transparent;
 }
+
+
+/* Formal Academic inner pages: deliberately restrained navy/blue-gray and white.
+   All pagination-dependent document-card dimensions apply both in the live
+   preview and in the offscreen measurement portal under [data-template]. */
+.portfolio-page[data-template="classic"]:not(.formal-cover) {
+  background: #fff;
+  color: #243449;
+  border: 1px solid #d9e1eb;
+  border-radius: 0;
+  box-shadow: 0 6px 24px rgb(17 45 78 / 9%);
+}
+.portfolio-page[data-template="classic"]:not(.formal-cover)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 100%;
+  background: linear-gradient(#1b4778 0 66px, #dce6f1 66px 100%);
+  pointer-events: none;
+}
+.portfolio-page[data-template="classic"]:not(.formal-cover) > div:first-child {
+  border-bottom-color: #b9c9d9;
+}
+.portfolio-page[data-template="classic"]:not(.formal-cover) > div:first-child h2 {
+  color: #193e70;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.portfolio-page[data-template="classic"] .document-page-number {
+  color: #254776;
+}
+.portfolio-page[data-template="classic"] > div:last-child {
+  border-color: #c3d0df;
+}
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:first-child,
+.portfolio-page[data-template="classic"][data-page-section="toc"] > div:first-child {
+  justify-content: center;
+  align-items: center;
+  border-bottom: 0;
+  margin-bottom: 34px;
+}
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:first-child h2,
+.portfolio-page[data-template="classic"][data-page-section="toc"] > div:first-child h2 {
+  font-size: 32px;
+  margin-bottom: 0;
+  padding: 0 22px 12px;
+  border-bottom: 2px solid #244e80;
+  line-height: 1.5;
+}
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:nth-child(2) {
+  padding: 0 12px;
+  color: #334155;
+  line-height: 1.9;
+}
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:nth-child(2) p {
+  line-height: 1.9;
+  white-space: pre-line;
+}
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:last-child {
+  color: #334155;
+  margin-top: 42px;
+  border: 0;
+  text-align: right;
+}
+.portfolio-page[data-template="classic"][data-page-section="toc"] {
+  padding-top: 70px;
+}
+.portfolio-page[data-template="classic"] .toc-entry {
+  padding: 17px 0;
+  border-bottom: 1px solid #e1e7ef;
+  color: #254776;
+}
+.portfolio-page[data-template="classic"] .toc-title,
+.portfolio-page[data-template="classic"] .toc-number {
+  font-size: 17px;
+  font-weight: 500;
+}
+.portfolio-page[data-template="classic"] .toc-entry::after {
+  border-color: #aebfd1;
+}
+/* Student profile: group headings and thin table rules echo the Canva plan.
+   Existing DOM and its three top-level sections remain unchanged. */
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:first-child {
+  align-items: flex-start;
+  min-height: 165px;
+  border-bottom: 0;
+  margin-bottom: 14px;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:first-child h2 {
+  display: inline-block;
+  padding: 10px 17px;
+  border-left: 9px solid #194577;
+  background: #edf2f7;
+  font-size: 28px;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:first-child > div {
+  width: 115px;
+  height: 135px;
+  border: 1px solid #bacadd;
+  border-radius: 7px;
+  background: #edf2f7;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) {
+  gap: 13px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > .grid {
+  gap: 0;
+  border: 1px solid #b4c4d5;
+  border-top: 23px solid #dce5f0;
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > .grid > div {
+  min-width: 0;
+  padding: 7px 5px;
+  border-bottom: 1px solid #d6e0ea;
+  overflow-wrap: anywhere;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > div:not(.grid) {
+  border: 1px solid #b4c4d5;
+  border-radius: 4px;
+  padding: 0 12px 10px;
+  gap: 8px;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > div:not(.grid) h3 {
+  display: block;
+  margin: 0 -12px 5px;
+  padding: 5px 12px;
+  background: #dce5f0;
+  color: #1b4778;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] .profile-social-row {
+  min-width: 0;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] .profile-social-row > span:last-child {
+  overflow-wrap: anywhere;
+}
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:last-child {
+  color: #7a8aa0;
+}
+/* Paginated sections. Card geometry must also apply to detached measurement
+   portal: scope to [data-template] rather than .portfolio-page. */
+.portfolio-page[data-template="classic"][data-page-section="education"] > div:first-child,
+.portfolio-page[data-template="classic"][data-page-section="activity"] > div:first-child,
+.portfolio-page[data-template="classic"][data-page-section="certificate"] > div:first-child {
+  justify-content: flex-start;
+  padding: 8px 15px 12px;
+  border-bottom: 1px solid #c1cedd;
+  background: #edf2f7;
+}
+.portfolio-page[data-template="classic"][data-page-section="education"] > div:first-child h2,
+.portfolio-page[data-template="classic"][data-page-section="activity"] > div:first-child h2,
+.portfolio-page[data-template="classic"][data-page-section="certificate"] > div:first-child h2 {
+  font-size: 26px;
+  line-height: 1.35;
+}
+[data-template="classic"] .document-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #b9c9d9;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: none;
+  color: #243449;
+}
+[data-template="classic"] .document-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #193e70;
+  overflow-wrap: anywhere;
+}
+[data-template="classic"] .document-card p {
+  color: #405269;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+[data-template="classic"] .document-card-heading {
+  flex-wrap: wrap;
+  gap: 9px;
+}
+[data-template="classic"] .document-card-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+[data-template="classic"] .document-card-heading > div > span,
+[data-template="classic"] .education-card > div > span {
+  display: inline-block;
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #264e7e;
+  font-size: 12px;
+}
+[data-template="classic"] .document-card-heading > span {
+  color: #657994;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+[data-template="classic"] .education-card {
+  min-height: 164px;
+  gap: 18px;
+  align-items: center;
+}
+[data-template="classic"] .education-logo {
+  height: 118px;
+  width: 118px;
+  border: 1px solid #c5d3e1;
+  border-radius: 5px;
+  box-shadow: none;
+}
+[data-template="classic"] .education-logo img { padding: 6px; }
+[data-template="classic"] .education-card.without-logo {
+  padding-left: 23px;
+}
+[data-template="classic"] .activity-card .document-images,
+[data-template="classic"] .certificate-card .document-images {
+  gap: 11px;
+  margin-top: 18px;
+}
+[data-template="classic"] .document-images > div {
+  min-width: 0;
+  background: #f7f9fc;
+  border: 1px solid #cad6e3;
+  border-radius: 4px;
+}
+[data-template="classic"] .document-images img {
+  object-fit: contain;
+  width: 100%;
+  max-height: 185px;
+}
+[data-template="classic"] .activity-card .document-images[data-image-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+[data-template="classic"] .activity-card .document-images[data-image-count="1"] > div {
+  width: min(100%, 390px);
+}
+[data-template="classic"] .activity-card .document-images[data-image-count="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+[data-template="classic"] .activity-card .document-images[data-image-count="4"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+[data-template="classic"] .certificate-card .document-images[data-image-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+[data-template="classic"] .certificate-card .document-images[data-image-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
