@@ -18,6 +18,33 @@ const sections = [
 const deletion = (page:Page) => page.getByRole('dialog',{name:'ลบรายการจากคลัง',exact:true});
 const confirmDelete = (page:Page) => deletion(page).getByRole('button',{name:'ลบจากคลังและทุกพอร์ต',exact:true});
 const api = 'http://127.0.0.1:54321/rest/v1';
+for (const section of sections) test(`${section.kind}: failed tag removal retains draft until retry confirms save`, async ({page,request}) => {
+  const relation = `user_library_${section.kind}_tags`;
+  await request.post(`${api}/user_tags`, {data:{id:'tag-review',user_id:owner,name:'Review tag'}});
+  await request.post(`${api}/${relation}`, {data:{[`${section.kind}_id`]:`${section.kind}-a`,tag_id:'tag-review'}});
+  const card = await open(page,section);
+  await card.getByRole('button',{name:/แก้ไข/}).click();
+  const form = page.locator('main div[role=dialog]');
+  await form.getByRole('button',{name:/Review tag/}).click();
+  let fail = true, attempts = 0;
+  await page.route(`**/rest/v1/${relation}?**`, route => {
+    if(route.request().method() !== 'DELETE') return route.continue();
+    attempts++;
+    return fail ? route.fulfill({status:500,json:{message:'TAG_DELETE_FAILED'}}) : route.continue();
+  });
+  let alerts = 0;
+  page.on('dialog', async dialog => { alerts++; await dialog.accept(); });
+  await form.getByRole('button',{name:/^บันทึก/}).click();
+  await expect.poll(()=>alerts).toBe(1);
+  await expect(form).toBeVisible();
+  await expect(form.getByRole('button',{name:'Review tag',exact:true})).toHaveAttribute('aria-pressed','false');
+  expect(await (await request.get(`${api}/${relation}`)).json()).toHaveLength(1);
+  fail = false;
+  await form.getByRole('button',{name:/^บันทึก/}).click();
+  await expect(form).toHaveCount(0);
+  expect(await (await request.get(`${api}/${relation}`)).json()).toHaveLength(0);
+  expect(attempts).toBe(2);
+});
 const gate = () => { let release = () => {}; const waiting = new Promise<void>(resolve => { release = resolve; }); return { waiting, release }; };
 async function accountEvent(page:Page) {
   await page.evaluate(user => {

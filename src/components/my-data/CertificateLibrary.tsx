@@ -736,7 +736,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
 
       await uploadImages(id);
 
-      await supabase
+      const { error: deleteTagsError } = await supabase
         .from(
           "user_library_certificate_tags"
         )
@@ -745,6 +745,9 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
           "certificate_id",
           id
         );
+
+      if (deleteTagsError) throw deleteTagsError;
+      if (!saveCurrent()) return;
 
       if (
         selectedTagIds.length
