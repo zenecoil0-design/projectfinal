@@ -29,6 +29,26 @@ export default function CoverPreview() {
     <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>PORTFOLIO</span></div>
   </Paper>;
 
+  if (template === "classic") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page formal-cover">
+    <div className="formal-cover-rail" aria-hidden="true" />
+    <div className="formal-cover-body">
+      <div className="formal-cover-photo">
+        {coverStore.coverImage ? (
+          <img src={coverStore.coverImage} alt="รูปนักเรียนบนหน้าปก" />
+        ) : (
+          <span>รูปหน้าปก</span>
+        )}
+      </div>
+      <p className="formal-cover-subtitle">แฟ้มสะสมผลงาน</p>
+      <h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1>
+      <div className="formal-cover-details">
+        <p><strong>ชื่อ</strong><span>{fullName || "ชื่อ - นามสกุล"}</span></p>
+        <p><strong>ชื่อโรงเรียน</strong><span>{coverStore.schoolName || "ชื่อโรงเรียน"}</span></p>
+      </div>
+    </div>
+    <div className="formal-cover-corner" aria-hidden="true" />
+  </Paper>;
+
   return (
     <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col items-center justify-between p-16 mx-auto my-auto border border-slate-300">
       

@@ -1,0 +1,109 @@
+/* Formal Academic: approved A4 Classic cover. One user photo, no repeated backdrop.
+   Restrict selectors to the Classic template so modern/minimal/PDF measurements stay isolated. */
+.portfolio-page.formal-cover[data-template="classic"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 82px 70px 74px;
+  background: #fff;
+  border: 1px solid #cad6e5;
+  border-radius: 0;
+  color: #173766;
+  box-shadow: 0 8px 26px rgb(20 42 68 / 10%);
+}
+.formal-cover-rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 19px;
+  background: #1b4778;
+}
+.formal-cover-rail::after {
+  content: "";
+  position: absolute;
+  top: 105px;
+  left: 19px;
+  width: 0;
+  height: 0;
+  border-top: 36px solid #1b4778;
+  border-right: 30px solid transparent;
+}
+.formal-cover-body {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+}
+.formal-cover-photo {
+  display: flex;
+  width: 280px;
+  height: 280px;
+  margin-top: 88px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 3px solid #d4deea;
+  border-radius: 50%;
+  background: #edf2f7;
+  box-shadow: 0 0 0 8px #fff, 0 0 0 9px #e5edf5;
+}
+.formal-cover-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.formal-cover-photo span { color: #6b7e93; font-size: 16px; }
+.formal-cover-subtitle {
+  margin-top: 60px;
+  color: #51677e;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+.formal-cover-body h1 {
+  max-width: 100%;
+  margin-top: 8px;
+  font-family: "Noto Sans Thai", Arial, sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #143563;
+  overflow-wrap: anywhere;
+}
+.formal-cover-details {
+  width: 100%;
+  max-width: 530px;
+  margin-top: 70px;
+  text-align: left;
+}
+.formal-cover-details p {
+  display: flex;
+  gap: 14px;
+  min-height: 56px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid #b9c9da;
+  font-size: 20px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.formal-cover-details strong {
+  min-width: 132px;
+  color: #1b4778;
+  font-weight: 700;
+}
+.formal-cover-details span { min-width: 0; flex: 1; color: #243c5a; }
+.formal-cover-corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-bottom: 70px solid #1b4778;
+  border-left: 70px solid transparent;
+}
