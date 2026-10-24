@@ -75,7 +75,7 @@ function ActionDialog({ portfolio, trigger, onClose, onConfirmed, onSubmit, onVe
   }, []);
 
   const close = () => {
-    if (lifetime.current.busy) return;
+    if (!lifetime.current.alive || lifetime.current.busy) return;
     lifetime.current.alive = false;
     ++lifetime.current.generation;
     onClose();
