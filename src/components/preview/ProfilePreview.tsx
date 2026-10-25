@@ -1,5 +1,5 @@
 "use client";
-import Paper from "./Paper";
+import Paper, { useTemplate } from "./Paper";
 import { PageNumber } from "./PageLayout";
 import { calculateAge } from "@/lib/age";
 
@@ -10,6 +10,7 @@ const hasText = (value: string) => value.trim().length > 0;
 
 export default function ProfilePreview() {
   const profileStore = useProfileStore();
+  const template = useTemplate();
 
   const age = calculateAge(profileStore.birthday, new Date());
   const socials = profileStore.socials.filter(social => hasText(social.link));
@@ -25,6 +26,44 @@ export default function ProfilePreview() {
       default: return null;
     }
   };
+
+  if (template === "modern") return <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page creative-profile">
+    <div className="creative-profile-left">
+      <div className="creative-profile-photo">
+        {profileStore.profileImage
+          ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" />
+          : <span>PROFILE PHOTO</span>}
+      </div>
+      <h3>Contact</h3>
+      <div className="creative-profile-contact">
+        {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong>{profileStore.phone}</p>}
+        {hasText(profileStore.email) && <p><strong>อีเมล</strong>{profileStore.email}</p>}
+        {socials.map(social => <p key={social.id}><strong>{social.platform}</strong>{social.link}</p>)}
+        {!hasContact && <p>ข้อมูลติดต่อ</p>}
+      </div>
+      <h3>Address</h3>
+      <p className="creative-profile-address">{profileStore.address || "ที่อยู่"}</p>
+    </div>
+    <div className="creative-profile-right">
+      <div className="creative-profile-heading"><p>ABOUT ME</p><h2>Profile</h2></div>
+      <div className="creative-profile-information">
+        <p><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
+        <p><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
+        <p><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
+        <p><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
+        <p><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
+        <p><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
+        <p><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
+        <p><strong>ชื่อโรงเรียน</strong><span>{profileStore.school}</span></p>
+        <p><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
+        <p><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
+        {hasText(profileStore.skills) && <p><strong>ความสามารถพิเศษ</strong><span>{profileStore.skills}</span></p>}
+        {hasText(profileStore.motto) && <p><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
+        {customFields.map(field => <p key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
+      </div>
+    </div>
+    <PageNumber />
+  </Paper>;
 
   return (
     <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page bg-white shadow-2xl rounded-sm relative overflow-hidden flex flex-col justify-between p-16 mx-auto my-auto border border-slate-300 text-slate-800">

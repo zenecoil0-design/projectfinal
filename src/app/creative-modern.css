@@ -172,3 +172,44 @@
   padding-top: 17px;
   border-top: 1px solid #a4c6d355;
 }
+
+/* Two-column profile from user's Canva arrangement: photo and contact left,
+   personal and academic details right. Preserve every stored information field. */
+.portfolio-page.creative-profile[data-template="modern"] {
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+  column-gap: 34px;
+  padding: 76px 60px 66px;
+}
+.creative-profile-left, .creative-profile-right { min-width: 0; }
+.creative-profile-left { padding-top: 14px; }
+.creative-profile-photo {
+  width: 218px;
+  height: 296px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg,#e3edf0,#b5ccd6);
+  border: 5px solid #fff;
+  outline: 1px solid #c5d8e0;
+}
+.creative-profile-photo img { width: 100%; height: 100%; object-fit: cover; }
+.creative-profile-photo span { display: grid; height: 100%; place-items: center; color: #46677a; font-size: 13px; }
+.creative-profile-left h3 {
+  margin-top: 39px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #bdd0d9;
+  color: #153c51;
+  font-size: 24px;
+  font-weight: 700;
+}
+.creative-profile-contact { margin-top: 17px; }
+.creative-profile-contact p { margin-bottom: 13px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.creative-profile-contact strong { display: block; font-size: 11px; font-weight: 700; color: #567484; }
+.creative-profile-address { margin-top: 15px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.creative-profile-heading { padding-bottom: 17px; margin-bottom: 25px; border-bottom: 1px solid #b9cbd6; }
+.creative-profile-heading p { color: #78929f; font-size: 12px; font-weight: 600; letter-spacing: 2px; }
+.creative-profile-heading h2 { font-size: 48px; line-height: 1.18; color: #153c51; }
+.creative-profile-information { display: flex; flex-direction: column; gap: 14px; }
+.creative-profile-information p { display: flex; flex-wrap: wrap; gap: 6px 10px; border-bottom: 1px solid #e2eaee; padding-bottom: 5px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.creative-profile-information strong { min-width: 108px; max-width: 160px; font-weight: 600; color: #456578; }
+.creative-profile-information span { min-width: 0; flex: 1; color: #243b49; }
