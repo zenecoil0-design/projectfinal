@@ -29,5 +29,16 @@ test('late error rolls back new portfolio and receipt before same-key retry',asy
  await asUser(db,A);
  await assert.rejects(db.query("SELECT perform_portfolio_action($1,'duplicate',$2,'Copy')",[request,PA]),/injected failure/);
  assert.equal((await db.query('TABLE portfolios')).rows.length,1);assert.equal((await db.query('TABLE portfolio_action_receipts')).rows.length,0);
+ await db.exec('RESET ROLE; DROP TRIGGER fail_copy ON portfolio_section_visibility');
+ await asUser(db,A);
+ const recovered=(await db.query<{r:{status:string;portfolio_id:string}}>("SELECT perform_portfolio_action($1,'duplicate',$2,'Copy') r",[request,PA])).rows[0].r;
+ assert.equal(recovered.status,'confirmed');
+ assert.notEqual(recovered.portfolio_id,PA);
+ assert.equal((await db.query('TABLE portfolios')).rows.length,2);
+ assert.equal((await db.query('TABLE portfolio_action_receipts')).rows.length,1);
+ const replay=(await db.query<{r:unknown}>("SELECT perform_portfolio_action($1,'duplicate',$2,'Copy') r",[request,PA])).rows[0].r;
+ assert.deepEqual(replay,recovered);
+ assert.equal((await db.query('TABLE portfolios')).rows.length,2);
+
  }finally{await db.close();}
 });

@@ -9,3 +9,7 @@ SECURITY DEFINER is limited to this operation because receipts must not be writa
 Recovery validation: two PGlite test groups passed on reconstructed code (copy/replay/ownership/delete preservation and late-failure rollback); scoped lint and diff checks passed. This is a narrower checkpoint than the lost five-test suite. Full copy-field coverage, anon/account tests, true concurrent PostgreSQL/PostgREST acceptance, hosted advisors and installation acceptance remain pending. No claim of production readiness or UI integration.
 
 Next work: finish backend regression coverage, persistent client request recovery, connect Dashboard to the dialogs, production mock/browser checks. Keep the feature unavailable in the real Dashboard until installation and acceptance. Storage cleanup and visibility hosted integration remain open.
+
+## Follow-up 2026-10-25
+
+Section Visibility is now installed; see SECTION_VISIBILITY_HOSTED_INSTALLATION.md for the installation/history mapping and remaining acceptance. Strengthened late-failure test to remove the injected failure, retry the same request key successfully, then replay and confirm exactly one copy and one receipt. Both PGlite test groups passed in this round. This does not establish concurrent real PostgreSQL acceptance or Dashboard integration. Portfolio actions remain prepared-only.
