@@ -213,3 +213,211 @@
 .creative-profile-information p { display: flex; flex-wrap: wrap; gap: 6px 10px; border-bottom: 1px solid #e2eaee; padding-bottom: 5px; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .creative-profile-information strong { min-width: 108px; max-width: 160px; font-weight: 600; color: #456578; }
 .creative-profile-information span { min-width: 0; flex: 1; color: #243b49; }
+
+
+/* Intro & contents: airy editorial document treatment, same footer/TOC coordinator. */
+.portfolio-page[data-template="modern"][data-page-section="preface"] > div:first-child,
+.portfolio-page[data-template="modern"][data-page-section="toc"] > div:first-child {
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  margin-bottom: 34px;
+}
+.portfolio-page[data-template="modern"][data-page-section="preface"] > div:first-child h2,
+.portfolio-page[data-template="modern"][data-page-section="toc"] > div:first-child h2 {
+  margin: 0;
+  border-bottom: 2px solid #1d5268;
+  padding: 5px 22px 12px;
+  font-size: 34px;
+}
+.portfolio-page[data-template="modern"][data-page-section="preface"] > div:nth-child(2) {
+  padding: 12px;
+  line-height: 1.9;
+}
+.portfolio-page[data-template="modern"][data-page-section="preface"] > div:nth-child(2) p {
+  line-height: 1.9;
+  color: #344e5d;
+}
+.portfolio-page[data-template="modern"][data-page-section="toc"] .toc-entry {
+  padding: 17px 0;
+  border-bottom: 1px solid #dbe5e8;
+  color: #17445b;
+}
+.portfolio-page[data-template="modern"][data-page-section="toc"] .toc-entry::after {
+  border-color: #b5cbd3;
+}
+.portfolio-page[data-template="modern"][data-page-section="toc"] .toc-title,
+.portfolio-page[data-template="modern"][data-page-section="toc"] .toc-number {
+  font-size: 18px;
+}
+/* Section headings retain Thai data-section labels for TOC and accessibility. */
+.portfolio-page[data-template="modern"][data-page-section="education"] > div:first-child,
+.portfolio-page[data-template="modern"][data-page-section="activity"] > div:first-child,
+.portfolio-page[data-template="modern"][data-page-section="certificate"] > div:first-child {
+  justify-content: center;
+  border-bottom: 0;
+  padding-bottom: 18px;
+  margin-bottom: 28px;
+}
+.portfolio-page[data-template="modern"][data-page-section="education"] > div:first-child h2,
+.portfolio-page[data-template="modern"][data-page-section="activity"] > div:first-child h2,
+.portfolio-page[data-template="modern"][data-page-section="certificate"] > div:first-child h2 {
+  font-size: 32px;
+  text-align: center;
+  border-bottom: 2px solid #bfd4dc;
+  padding-bottom: 14px;
+}
+/* Same geometry in pagination measurement portal and actual A4 pages. */
+[data-template="modern"] .document-card {
+  background: #fff;
+  border: 1px solid #cbd9e0;
+  border-radius: 2px;
+  padding: 17px;
+  color: #1e4254;
+  box-shadow: none;
+  min-width: 0;
+}
+[data-template="modern"] .document-card h3 {
+  font-size: 17px;
+  color: #153c51;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+[data-template="modern"] .document-card p {
+  color: #4d6979;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+[data-template="modern"] .document-card-heading { flex-wrap: wrap; gap: 9px; }
+[data-template="modern"] .document-card-heading > div { min-width: 0; flex: 1; }
+[data-template="modern"] .document-card-heading > div > span,
+[data-template="modern"] .education-card > div > span {
+  border: 0;
+  background: transparent;
+  color: #426e82;
+  padding: 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+[data-template="modern"] .document-card-heading > span {
+  max-width: 100%;
+  color: #688595;
+  overflow-wrap: anywhere;
+}
+/* Education: round school emblem on left, details as clean rows on right. */
+[data-template="modern"] .education-card {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  min-height: 184px;
+  padding: 18px;
+  border: 0;
+  border-bottom: 1px solid #bfd1d8;
+  background: transparent;
+}
+[data-template="modern"] .education-logo {
+  width: 136px;
+  height: 136px;
+  flex-shrink: 0;
+  border: 1px solid #9ebbc9;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px #fff, 0 0 0 6px #d5e4e9;
+  background: #e9f0f3;
+}
+[data-template="modern"] .education-logo img {
+  padding: 10px;
+  object-fit: contain;
+}
+[data-template="modern"] .education-card > div:last-child { gap: 2px; }
+[data-template="modern"] .education-card.without-logo { padding-left: 19px; }
+/* Activities: images ABOVE title, organization, date and description as in
+   the supplied 1/2/3/4-image wireframes; cards still pack as whole records. */
+[data-template="modern"] .activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-color: #b6cad4;
+  padding: 19px;
+}
+[data-template="modern"] .activity-card .document-images {
+  order: -1;
+  margin: 0 0 5px;
+  gap: 10px;
+}
+[data-template="modern"] .activity-card .document-card-heading { order: 0; }
+[data-template="modern"] .activity-card > p { order: 1; margin-top: 0; }
+[data-template="modern"] .activity-card .document-images[data-image-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+[data-template="modern"] .activity-card .document-images[data-image-count="1"] > div {
+  width: min(100%, 390px);
+}
+[data-template="modern"] .activity-card .document-images[data-image-count="2"] {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+}
+[data-template="modern"] .activity-card .document-images[data-image-count="3"] {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+}
+[data-template="modern"] .activity-card .document-images[data-image-count="4"] {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+}
+[data-template="modern"] .activity-card .document-images > div {
+  border: 1px solid #d4e0e5;
+  background: #f2f7f9;
+  border-radius: 2px;
+  min-width: 0;
+}
+[data-template="modern"] .activity-card .document-images img {
+  max-height: 165px;
+  object-fit: contain;
+}
+/* Certificate: source photos remain on left, metadata on right. */
+[data-template="modern"] .certificate-card {
+  display: grid;
+  grid-template-columns: 210px minmax(0,1fr);
+  gap: 0 23px;
+  align-items: center;
+  min-height: 208px;
+}
+[data-template="modern"] .certificate-card .document-images {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  margin: 0;
+  gap: 8px;
+}
+[data-template="modern"] .certificate-card .document-card-heading {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+[data-template="modern"] .certificate-card > p {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 4px;
+}
+[data-template="modern"] .certificate-card .document-images > div {
+  min-width: 0;
+  min-height: 80px;
+  border: 1px solid #d5e0e6;
+  border-radius: 2px;
+  background: #f5f8fa;
+}
+[data-template="modern"] .certificate-card .document-images img {
+  width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+}
+[data-template="modern"] .certificate-card .document-images[data-image-count="2"] img {
+  max-height: 105px;
+}
+[data-template="modern"] .certificate-card:not(:has(.document-images)) {
+  grid-template-columns: minmax(0,1fr);
+}
+[data-template="modern"] .certificate-card:not(:has(.document-images)) .document-card-heading,
+[data-template="modern"] .certificate-card:not(:has(.document-images)) > p {
+  grid-column: 1;
+}
