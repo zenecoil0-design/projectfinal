@@ -29,6 +29,8 @@ import { createClient } from "@/lib/supabase/client";
 import CreatePortfolioModal from "@/components/portfolio/CreatePortfolioModal";
 import RenamePortfolioDialog, { type RenamedPortfolio } from "@/components/portfolio/RenamePortfolioDialog";
 
+import PortfolioActionsPanel from "@/components/portfolio/PortfolioActionsPanel";
+
 type PortfolioRow = DashboardPortfolio;
 
 export default function DashboardPage() {
@@ -41,6 +43,7 @@ export default function DashboardPage() {
   const [email, setEmail] =
     useState("");
   const owner = useRef<string | null>(null);
+  const [verifiedOwner,setVerifiedOwner]=useState<string|null>(null);
   const targetLock = useRef(false);
   const retryList = useRef<(() => Promise<void>) | null>(null);
   const confirmedNames = useRef(new Map<string, RenamedPortfolio>());
@@ -88,7 +91,7 @@ export default function DashboardPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const nextOwner = session?.user.id ?? null;
       if (event === "SIGNED_OUT" || (observedUser !== undefined && nextOwner !== observedUser)) {
-        valid = false; owner.current = null; targetLock.current = false;
+        valid = false; setVerifiedOwner(null); owner.current = null; targetLock.current = false;
         confirmedNames.current.clear(); ++requestId;
         setRenameTarget(null); setPortfolios([]); setRenameStatus(""); setSessionChanged(true); setIsLoading(false);
       }
@@ -121,7 +124,7 @@ export default function DashboardPage() {
         if (!current()) return;
         if (error) throw error;
         if (!user) { router.replace("/login"); return; }
-        owner.current = user.id; observedUser = user.id;
+        owner.current = user.id; setVerifiedOwner(user.id); observedUser = user.id;
         setUsername(user.user_metadata?.username || user.user_metadata?.full_name || "ผู้ใช้งาน");
         setEmail(user.email || ""); setIsLoading(false);
         await loadList();
@@ -414,6 +417,10 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {process.env.NEXT_PUBLIC_PORTFOLIO_ACTIONS_ENABLED === "true" && listPhase === "success" && verifiedOwner && <PortfolioActionsPanel key={verifiedOwner} ownerId={verifiedOwner} portfolios={portfolios} onConfirmed={(action,id)=>{
+            if(action==='duplicate') router.push(`/editor?portfolio=${encodeURIComponent(id)}`);
+            else {setPortfolios(items=>items.filter(item=>item.id!==id));setRenameStatus('ลบพอร์ตแล้ว รายการในคลังยังอยู่');}
+          }}/>}
           {/* PORTFOLIOS */}
           {renameStatus && <p role="status" className="mt-6 text-sm font-semibold text-emerald-700">{renameStatus}</p>}
 
