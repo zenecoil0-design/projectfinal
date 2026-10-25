@@ -8,13 +8,13 @@ import { useEditorSession } from "./EditorSession";
 export default function TemplatePicker({ portfolioId, value, onSaved, onBusy }: {
   portfolioId: string; value: string; onSaved: (key: string) => void; onBusy: (busy: boolean) => void;
 }) {
-  const { exporting } = useEditorSession();
+  const { exporting, isExporting, appearanceBusy } = useEditorSession();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const change = async (key: string) => {
-    if (busy || exporting || key === value) return;
+    if (busy || isExporting() || appearanceBusy || key === value) return;
     setBusy(true); onBusy(true); setMessage("");
     try {
       const supabase = createClient();
@@ -33,7 +33,7 @@ export default function TemplatePicker({ portfolioId, value, onSaved, onBusy }: 
   };
   return <div className="flex flex-wrap items-center gap-2 text-xs">
     <label htmlFor="portfolio-template" className="font-semibold text-slate-700">เทมเพลต</label>
-    <select id="portfolio-template" value={value} disabled={busy || exporting} onChange={event => void change(event.target.value)} className="min-h-11 max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm">
+    <select id="portfolio-template" value={value} disabled={busy || exporting || appearanceBusy} onChange={event => void change(event.target.value)} className="min-h-11 max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm">
       <option value="classic">Classic</option>
       <option value="modern">Modern University · ฟ้า–น้ำเงิน–ขาว</option>
       <option value="minimal">Gallery Editorial · ภาพใหญ่–ตัวอักษรเด่น</option>

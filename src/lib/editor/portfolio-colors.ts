@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 /** text=null means a readable automatic document-body color; never affect contrast text on dark bands. */
 export type PortfolioColors = { primary: string; secondary: string; text: string | null };
 export type PortfolioTemplate = "classic" | "modern" | "minimal";
@@ -69,6 +70,8 @@ export function resolvedTextColor(colors: PortfolioColors, template: string): st
 export function parsePortfolioColors(raw: string | null, template: string): PortfolioColors {
   const defaults = defaultColors(template);
   if (!raw) return defaults;
+  const legacy = normalizeHex(raw);
+  if (legacy) return { ...defaults, primary: legacy };
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return defaults;
@@ -99,4 +102,11 @@ export function contrastRatio(first: string, second: string): number {
   };
   const a = luminance(first), b = luminance(second);
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+export function portfolioThemeStyle(colors: PortfolioColors | null, template: string): CSSProperties {
+ const palette = colors ?? defaultColors(template);
+ return { "--portfolio-primary": palette.primary, "--portfolio-secondary": palette.secondary,
+ "--portfolio-text": resolvedTextColor(palette, template), "--portfolio-on-primary": contrastInk(palette.primary),
+ "--portfolio-on-secondary": contrastInk(palette.secondary) } as CSSProperties;
 }

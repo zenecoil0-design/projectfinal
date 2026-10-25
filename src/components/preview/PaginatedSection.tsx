@@ -1,15 +1,17 @@
 "use client";
-import Paper, { useTemplate } from "./Paper";
+import Paper, { useTemplate, PortfolioColorsContext } from "./Paper";
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { packPages } from "@/lib/editor/pagination";
+import { portfolioThemeStyle } from "@/lib/editor/portfolio-colors";
 import type { Section } from "@/lib/editor/section-state";
 import { PageNumber, usePageMeasurements } from "./PageLayout";
 
 export default function PaginatedSection({ sectionId, title, cards }: { sectionId: Section; title: string; cards: ReactNode[] }) {
   const client = useSyncExternalStore(subscribeClient, () => true, () => false);
   const template = useTemplate();
+  const colors = useContext(PortfolioColorsContext);
   const measurement = useRef<HTMLDivElement>(null);
   const registerMeasurement = usePageMeasurements();
   const [pages, setPages] = useState<number[][]>([cards.map((_, index) => index)]);
@@ -28,7 +30,7 @@ export default function PaginatedSection({ sectionId, title, cards }: { sectionI
   }, [cards, template, client, registerMeasurement]);
   return <>
     {/* Same 666px content width as A4, outside export/accessibility trees. */}
-    {client && createPortal(<div data-template={template} aria-hidden="true" className="pointer-events-none fixed left-[-10000px] top-0 invisible w-[794px] px-16" ref={measurement}>
+    {client && createPortal(<div data-template={template} style={portfolioThemeStyle(colors, template)} aria-hidden="true" className="portfolio-measurement pointer-events-none fixed left-[-10000px] top-0 invisible w-[794px] px-16" ref={measurement}>
       {cards.map((card, index) => <div key={index}>{card}</div>)}
     </div>, document.body)}
     {pages.map((indices, pageIndex) => <Paper sectionId={sectionId} key={pageIndex} data-section={title} className="portfolio-page relative mb-10 flex flex-col bg-white p-16 text-slate-800 shadow-2xl">

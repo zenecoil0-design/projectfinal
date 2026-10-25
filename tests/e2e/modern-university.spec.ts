@@ -42,7 +42,7 @@ test('Modern University preserves image-count metadata, original entries and tem
   await expect(page.locator('.formal-cover')).toBeAttached();
   await expect(page.locator('.creative-cover')).toHaveCount(0);
   await template.selectOption('minimal');
-  await expect(page.locator('.minimal-cover')).toBeAttached();
+  await expect(page.locator('.gallery-cover')).toBeAttached();
   await expect(page.locator('.creative-cover')).toHaveCount(0);
 });
 

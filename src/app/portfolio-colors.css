@@ -20,14 +20,14 @@
 .portfolio-page[data-template="classic"][data-page-section="certificate"] > div:first-child { background: var(--portfolio-secondary); }
 .portfolio-page[data-template="modern"].creative-cover { background: var(--portfolio-primary); }
 .portfolio-page[data-template="modern"] .creative-cover-content { background: var(--portfolio-primary); color: var(--portfolio-on-primary); }
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-title h1,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name h2,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name h3,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-title p,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name > p,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-top,
-.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-bottom,
-.portfolio-page[data-template="modern"] .creative-cover .creative-cover-detail > span { color: var(--portfolio-on-primary) !important; }
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-title h1,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-name h2,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-name h3,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-title p,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-name > p,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-top,
+.portfolio-page[data-template="modern"].creative-cover .editorial-cover-bottom,
+.portfolio-page[data-template="modern"].creative-cover .creative-cover-detail > span { color: var(--portfolio-on-primary) !important; }
 .portfolio-page[data-template="modern"] .creative-cover-title-rule { background: var(--portfolio-on-primary); }
 .portfolio-page[data-template="modern"] .creative-cover-media { background: var(--portfolio-secondary); }
 .portfolio-page[data-template="modern"]:not(.creative-cover)::before { background: linear-gradient(135deg, transparent 52%, var(--portfolio-secondary) 52% 74%, var(--portfolio-primary) 74%); }
@@ -64,3 +64,8 @@
 .portfolio-page[data-template="minimal"][data-page-section="preface"] > div:nth-child(2) p {
   color: var(--portfolio-text);
 }
+
+[data-template="modern"] { --creative-navy: var(--portfolio-primary); --creative-deep: var(--portfolio-primary); --creative-ink: var(--portfolio-text); --creative-rule: var(--portfolio-secondary); }
+[data-template="minimal"] { --minimal-ink: var(--portfolio-text); --minimal-accent: var(--portfolio-primary); --minimal-rule: var(--portfolio-secondary); }
+[data-template] .document-card, [data-template] .document-card p { color: var(--portfolio-text); }
+.portfolio-page[data-template="minimal"] .gallery-cover-author h2 { color: var(--portfolio-text); }

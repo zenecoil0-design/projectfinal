@@ -18,8 +18,9 @@ import {
 import FormContainer from "@/components/layout/FormContainer";
 
 import { PreviewViewport, TemplateContext, PortfolioColorsContext } from "@/components/preview/Paper";
+import { usePortfolioAppearance } from "@/components/editor/usePortfolioAppearance";
 import PortfolioColorPicker from "@/components/editor/PortfolioColorPicker";
-import { defaultColors, parsePortfolioColors, type PortfolioColors } from "@/lib/editor/portfolio-colors";
+import { defaultColors } from "@/lib/editor/portfolio-colors";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
 import ContentsPreview from "@/components/preview/ContentsPreview";
@@ -30,7 +31,7 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 
 import { createClient } from "@/lib/supabase/client";
 
-import { EditorSession, EditorStatus, ReadyPreview } from "@/components/editor/EditorSession";
+import { EditorSession, EditorStatus, ReadyPreview, useEditorSession } from "@/components/editor/EditorSession";
 import TemplatePicker from "@/components/editor/TemplatePicker";
 import ExportButton from "@/components/editor/ExportButton";
 import { SectionVisibilityProvider, VisibilityPreview, VisibleSection, VisibilityStatus } from "@/components/editor/SectionVisibility";
@@ -54,6 +55,7 @@ function EditorRoute() {
 
 function EditorContent() {
   const router = useRouter();
+  const { clearDraftState } = useEditorSession();
   const searchParams = useSearchParams();
 
   const portfolioId =
@@ -61,8 +63,8 @@ function EditorContent() {
 
   const desktop = useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => true);
   const [templateBusy, setTemplateBusy] = useState(false);
-  const [colors, setColors] = useState<PortfolioColors>(() => defaultColors("classic"));
-  const [colorOwner, setColorOwner] = useState<string | null>(null);
+  const appearance = usePortfolioAppearance();
+  const { initialize: initializeColors, invalidate: invalidateColors } = appearance;
   const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
     useState<number | null>(1);
@@ -95,6 +97,7 @@ function EditorContent() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT" || (loadedUserId && session?.user.id && session.user.id !== loadedUserId)) {
         cancelled = true;
+        invalidateColors(); clearDraftState();
         resetEditorStores();
         setPortfolio(null);
         setIsLoading(false);
@@ -144,7 +147,7 @@ function EditorContent() {
         } = await supabase
           .from("portfolios")
           .select(
-            "id, title, template_key"
+            "id, title, template_key, theme_color"
           )
           .eq(
             "id",
@@ -165,6 +168,7 @@ function EditorContent() {
           );
         }
 
+        initializeColors(data.id, user.id, data.theme_color ?? null, data.template_key || "classic");
         setPortfolio({
           id: data.id,
           ownerId: user.id,
@@ -191,27 +195,12 @@ function EditorContent() {
     };
 
     loadPortfolio();
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    return () => { cancelled = true; invalidateColors(); subscription.unsubscribe(); };
   }, [
     portfolioId,
     router,
+    initializeColors, invalidateColors, clearDraftState,
   ]);
-
-  // Color choices are local to the current portfolio in this browser, never shared between accounts.
-  useEffect(() => {
-    if (!portfolio) return;
-    const key = "portfolio-colors:v1:" + portfolio.ownerId + ":" + portfolio.id;
-    let initial = defaultColors(portfolio.template_key);
-    try {
-      initial = parsePortfolioColors(window.localStorage.getItem(key), portfolio.template_key);
-    } catch { /* Local storage can be unavailable. */ }
-    setColors(initial);
-    setColorOwner(key);
-  }, [portfolio?.id, portfolio?.ownerId]);
-  useEffect(() => {
-    if (!portfolio || colorOwner !== "portfolio-colors:v1:" + portfolio.ownerId + ":" + portfolio.id) return;
-    try { window.localStorage.setItem(colorOwner, JSON.stringify(colors)); } catch { /* Storage can be unavailable. */ }
-  }, [colors, colorOwner, portfolio?.id, portfolio?.ownerId]);
 
   // =====================================================
   // PREVIEW SCROLL
@@ -352,7 +341,7 @@ function EditorContent() {
               onNext={
                 handleNext
               }
-              finalPanel={<><PortfolioColorPicker template={portfolio.template_key} colors={colors} onChange={setColors} onReset={() => setColors(defaultColors(portfolio.template_key))} /><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h3 className="mb-2 text-sm font-bold text-slate-800">ดาวน์โหลด Portfolio</h3><p className="mb-3 text-xs leading-5 text-slate-600">ตรวจสอบสีบน Preview แล้วจึงดาวน์โหลด PDF</p><ExportButton container={previewContainerRef} title={portfolio.title} busy={templateBusy} /></div></>}
+              finalPanel={<><PortfolioColorPicker template={portfolio.template_key} colors={appearance.colors} onChange={appearance.change} onReset={() => appearance.change(defaultColors(portfolio.template_key))} disabled={appearance.disabled || templateBusy} dirty={appearance.dirty} message={appearance.message} saving={appearance.busy} onSave={appearance.save} /><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h3 className="mb-2 text-sm font-bold text-slate-800">ดาวน์โหลด Portfolio</h3><p className="mb-3 text-xs leading-5 text-slate-600">ตรวจสอบสีบน Preview แล้วจึงดาวน์โหลด PDF</p><ExportButton container={previewContainerRef} title={portfolio.title} busy={templateBusy} /></div></>}
             />
           </div>
         </aside>
@@ -366,7 +355,7 @@ function EditorContent() {
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
           <ReadyPreview><VisibilityPreview>
-          <TemplateContext.Provider value={portfolio.template_key}><PortfolioColorsContext.Provider value={colors}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
+          <TemplateContext.Provider value={portfolio.template_key}><PortfolioColorsContext.Provider value={appearance.colors}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
             {/* PAGE 1 */}
 
             <div

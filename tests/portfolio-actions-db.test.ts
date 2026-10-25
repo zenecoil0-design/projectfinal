@@ -60,7 +60,8 @@ test('copy preserves every populated section field and ordered shared references
    const keys=Object.keys(row);
    await db.query(`INSERT INTO ${table}(portfolio_id,${keys.join(',')}) SELECT $1,${keys.join(',')} FROM jsonb_populate_record(NULL::${table},$2::jsonb)`,[PA,JSON.stringify(row)]);
   }
-  await db.query("UPDATE portfolios SET template_key='minimal',theme_color='#123456' WHERE id=$1",[PA]);
+  const palette = JSON.stringify({primary:"#A13A50",secondary:"#ABCDEF",text:"#703344"});
+  await db.query("UPDATE portfolios SET template_key='minimal',theme_color=$2 WHERE id=$1",[PA,palette]);
   await db.query("INSERT INTO portfolio_section_visibility VALUES($1,'profile',false),($1,'toc',false)",[PA]);
   const tables=[...Object.keys(fixtures),'portfolio_activities','portfolio_certificates','portfolio_educations','portfolio_section_visibility'];
   const snapshot=async(id:string)=>Promise.all(tables.map(async table=>(await db.query(`SELECT to_jsonb(t)-'id'-'portfolio_id' AS value FROM ${table} t WHERE portfolio_id=$1 ORDER BY (to_jsonb(t)-'id'-'portfolio_id')::text`,[id])).rows));
@@ -71,7 +72,7 @@ test('copy preserves every populated section field and ordered shared references
   const copied=(await db.query<{r:{portfolio_id:string}}>("SELECT perform_portfolio_action($1,'duplicate',$2,'Copy') r",[request,PA])).rows[0].r.portfolio_id;
   await db.exec('RESET ROLE');
   assert.deepEqual(await snapshot(copied),original);
-  assert.deepEqual((await db.query('SELECT template_key,theme_color FROM portfolios WHERE id=$1',[copied])).rows,[{template_key:'minimal',theme_color:'#123456'}]);
+  assert.deepEqual((await db.query('SELECT template_key,theme_color FROM portfolios WHERE id=$1',[copied])).rows,[{template_key:'minimal',theme_color:palette}]);
   await db.query("UPDATE covers SET first_name='Independent' WHERE portfolio_id=$1",[copied]);
   assert.deepEqual(await snapshot(PA),original);
   await asUser(db,A);

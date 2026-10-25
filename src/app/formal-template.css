@@ -367,3 +367,5 @@
 [data-template="classic"] .certificate-card .document-images[data-image-count="2"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+.portfolio-measurement[data-template="classic"] { border: 1px solid transparent; }

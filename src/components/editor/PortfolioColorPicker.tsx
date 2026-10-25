@@ -1,26 +1,27 @@
 "use client";
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { automaticTextColor, contrastRatio, hexToHsv, hsvToHex, normalizeHex, resolvedTextColor, type PortfolioColors } from "@/lib/editor/portfolio-colors";
 
 const samples = ["#303F9F", "#1D416D", "#3479B8", "#167D98", "#277455", "#A13A50", "#77449B", "#D89B45", "#232B38", "#E4D7C6"];
 
-function Spectrum({ value, setColor }: { value: string; setColor: (value: string) => void }) {
+function Spectrum({ value, setColor, disabled }: { disabled: boolean; value: string; setColor: (value: string) => void }) {
   const area = useRef<HTMLDivElement>(null);
   const color = hexToHsv(value);
   const pointer = (event: PointerEvent<HTMLDivElement>) => {
+    if (disabled) return;
     const rect = area.current?.getBoundingClientRect();
     if (!rect?.width || !rect.height) return;
     setColor(hsvToHex({ h: color.h, s: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)), v: 1 - Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)) }));
   };
   const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
     const increment: Record<string, [number, number]> = { ArrowLeft: [-0.02, 0], ArrowRight: [0.02, 0], ArrowUp: [0, 0.02], ArrowDown: [0, -0.02] };
-    if (!increment[event.key]) return;
+    if (disabled || !increment[event.key]) return;
     event.preventDefault();
     const [ds, dv] = increment[event.key];
     setColor(hsvToHex({ h: color.h, s: Math.max(0, Math.min(1, color.s + ds)), v: Math.max(0, Math.min(1, color.v + dv)) }));
   };
   return <>
-    <div ref={area} role="group" tabIndex={0} aria-label="จานเลือกความสดและความสว่างของสี ใช้ปุ่มลูกศรได้" onKeyDown={keyboard}
+    <div ref={area} role="group" tabIndex={disabled ? -1 : 0} aria-disabled={disabled} aria-label="จานเลือกความสดและความสว่างของสี ใช้ปุ่มลูกศรได้" onKeyDown={keyboard}
       onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }}
       onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) pointer(event); }}
       onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
@@ -33,14 +34,14 @@ function Spectrum({ value, setColor }: { value: string; setColor: (value: string
   </>;
 }
 
-export default function PortfolioColorPicker({ template, colors, onChange, onReset }: { template: string; colors: PortfolioColors; onChange: (colors: PortfolioColors) => void; onReset: () => void }) {
+export default function PortfolioColorPicker({ template, colors, onChange, onReset, disabled = false, dirty = false, saving = false, message = "", onSave }: { disabled?: boolean; dirty?: boolean; saving?: boolean; message?: string; onSave?: () => void; template: string; colors: PortfolioColors; onChange: (colors: PortfolioColors) => void; onReset: () => void }) {
   const [selected, setSelected] = useState<"primary" | "secondary" | "text">("primary");
   const value = selected === "text" ? resolvedTextColor(colors, template) : colors[selected];
-  const [hexText, setHexText] = useState(value);
+  const [hexDraft, setHexDraft] = useState<{value: string; role: string; text: string} | null>(null);
+  const hexText = hexDraft?.value === value && hexDraft.role === selected ? hexDraft.text : value;
   const [eyedropperError, setEyedropperError] = useState("");
-  useEffect(() => setHexText(value), [value, selected]);
-  const update = (hex: string) => { const safe = normalizeHex(hex); if (safe) onChange({ ...colors, [selected]: safe }); };
-  const changeHex = (text: string) => { setHexText(text); if (normalizeHex(text)) update(text); };
+  const update = (hex: string) => { if (disabled) return; const safe = normalizeHex(hex); if (safe) onChange({ ...colors, [selected]: safe }); };
+  const changeHex = (text: string) => { setHexDraft({ value: normalizeHex(text) ?? value, role: selected, text }); if (normalizeHex(text)) update(text); };
   const eyedropper = async () => {
     type EyeDropperApi = new () => { open: () => Promise<{ sRGBHex: string }> };
     const ctor = (window as Window & { EyeDropper?: EyeDropperApi }).EyeDropper;
@@ -48,6 +49,7 @@ export default function PortfolioColorPicker({ template, colors, onChange, onRes
     try { update((await new ctor().open()).sRGBHex); setEyedropperError(""); } catch { /* User dismissed the OS picker. */ }
   };
   return <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="ปรับสีหลัก สีรอง และสีตัวอักษร">
+    <fieldset disabled={disabled} className="min-w-0 space-y-4">
     <h3 className="text-base font-bold text-slate-900">ปรับสี Portfolio</h3>
     <p className="text-sm leading-6 text-slate-600">เลือกสีหลัก สีรอง หรือสีตัวอักษร แล้วลากจุดในจานสีหรือพิมพ์ HEX เพื่อดูผลใน Preview ทันที</p>
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="เลือกประเภทสี">
@@ -55,17 +57,20 @@ export default function PortfolioColorPicker({ template, colors, onChange, onRes
         <span className="h-8 w-8 shrink-0 rounded-md border border-slate-200" style={{ backgroundColor: key === "text" ? resolvedTextColor(colors, template) : colors[key] }} /><span className="min-w-0 break-words font-semibold">{key === "primary" ? "สีหลัก" : key === "secondary" ? "สีรอง" : "สีตัวอักษร"}<span className="block text-[11px] font-normal text-slate-600">{key === "text" && colors.text === null ? "อัตโนมัติ" : colors[key]}</span></span>
       </button>)}
     </div>
-    {template === "minimal" && <p className="rounded-lg bg-blue-50 p-2 text-xs text-blue-800">Minimal ใช้สีแบบเรียบง่าย องค์ประกอบบางส่วนคงสีขาว–เทาเพื่อให้อ่านชัด</p>}
+    {template === "minimal" && <p className="rounded-lg bg-blue-50 p-2 text-xs text-blue-800">Gallery Editorial ใช้สีแบบเรียบง่าย องค์ประกอบบางส่วนคงสีขาว–เทาเพื่อให้อ่านชัด</p>}
     {selected === "text" && <div className="space-y-2"><label className="flex min-h-11 items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={colors.text === null} onChange={event => onChange({ ...colors, text: event.target.checked ? null : automaticTextColor(template) })} className="h-5 w-5" />ปรับสีตัวอักษรอัตโนมัติ (แนะนำ)</label><p className="text-xs text-slate-500">เปลี่ยนสีเนื้อหา แต่ข้อความบนแถบสีหลักจะยังปรับให้ตัดกับพื้นหลังเสมอ</p></div>}
-    <Spectrum value={value} setColor={update} />
+    <Spectrum disabled={disabled} value={value} setColor={update} />
     <div className="flex flex-wrap gap-2" aria-label="ชุดสีแนะนำ">{samples.map(color => <button key={color} type="button" onClick={() => update(color)} aria-label={"เลือกสี " + color} aria-pressed={value === color} className="h-9 w-9 rounded-full border-2 border-white shadow-[0_0_0_1px_#CBD5E1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" style={{ backgroundColor: color }} />)}</div>
     <div className="flex items-end gap-2">
-      <div className="min-w-0 flex-1"><label htmlFor="portfolio-color-hex" className="mb-1 block text-sm font-semibold text-slate-700">รหัสสี HEX</label><input id="portfolio-color-hex" value={hexText} maxLength={7} onChange={event => changeHex(event.target.value)} onBlur={() => { if (!normalizeHex(hexText)) setHexText(value); }} aria-invalid={!normalizeHex(hexText)} spellCheck={false} placeholder="#303F9F" className="min-h-11 w-full rounded-lg border border-slate-300 px-3 font-mono text-base focus-visible:outline-2 focus-visible:outline-blue-600" />{!normalizeHex(hexText) && <p role="alert" className="mt-1 text-xs text-red-700">ใส่รหัส HEX 6 หลัก เช่น #303F9F</p>}</div>
+      <div className="min-w-0 flex-1"><label htmlFor="portfolio-color-hex" className="mb-1 block text-sm font-semibold text-slate-700">รหัสสี HEX</label><input id="portfolio-color-hex" value={hexText} maxLength={7} onChange={event => changeHex(event.target.value)} onBlur={() => setHexDraft(null)} aria-invalid={!normalizeHex(hexText)} spellCheck={false} placeholder="#303F9F" className="min-h-11 w-full rounded-lg border border-slate-300 px-3 font-mono text-base focus-visible:outline-2 focus-visible:outline-blue-600" />{!normalizeHex(hexText) && <p role="alert" className="mt-1 text-xs text-red-700">ใส่รหัส HEX 6 หลัก เช่น #303F9F</p>}</div>
       <button type="button" onClick={() => void eyedropper()} title="ดูดสีจากหน้าจอ" aria-label="ดูดสีจากหน้าจอ" className="min-h-11 rounded-lg border border-slate-300 px-4 text-lg focus-visible:outline-2 focus-visible:outline-blue-600">⌖</button>
     </div>
     {eyedropperError && <p role="status" className="text-xs text-amber-700">{eyedropperError}</p>}
     {selected === "text" && colors.text !== null && contrastRatio(colors.text, "#FFFFFF") < 4.5 && <p role="status" className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">สีตัวอักษรนี้มีความคมชัดต่ำบนพื้นขาว ควรเลือกสีเข้มขึ้นหรือเปิดโหมดอัตโนมัติ</p>}
     <button type="button" onClick={onReset} className="min-h-11 rounded-lg border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50">คืนค่าสีเริ่มต้น</button>
-    <p className="text-xs leading-5 text-slate-500">ระบบจำสีในเบราว์เซอร์นี้แยกตาม Portfolio สีจะไม่ซิงค์ไปอุปกรณ์อื่น</p>
+    <button type="button" onClick={onSave} disabled={disabled || !dirty} className="min-h-11 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white disabled:opacity-40">{saving ? "กำลังบันทึกสี…" : "บันทึกสีพอร์ต"}</button>
+    </fieldset>
+    <p className="text-xs text-slate-500">กดบันทึกสีเพื่อเก็บไว้กับพอร์ตก่อนดาวน์โหลด PDF</p>
+    {message && <p role="status" className="text-sm text-slate-700">{message}</p>}
   </section>;
 }

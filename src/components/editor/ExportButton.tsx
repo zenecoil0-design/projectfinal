@@ -9,7 +9,7 @@ import { useSectionVisibility } from "./SectionVisibility";
 type PendingPdf = { blob: Blob; filename: string };
 
 export default function ExportButton({ container, title, busy = false }: { container: RefObject<HTMLElement | null>; title: string; busy?: boolean }) {
-  const { status, dirty, exporting, setExporting } = useEditorSession();
+  const { status, dirty, exporting, setExporting, appearanceDirty, appearanceBusy, isAppearanceBlocked } = useEditorSession();
   const visibility = useSectionVisibility();
   const [message, setMessage] = useState("");
   const [count, setCount] = useState(0);
@@ -68,7 +68,7 @@ export default function ExportButton({ container, title, busy = false }: { conta
     finally { finish(); }
   };
   const download = async () => {
-    if (!container.current || inFlight.current || exporting || busy || !ready || dirty.length > 0 || !visibility.canExport()) return;
+    if (!container.current || inFlight.current || exporting || busy || !ready || dirty.length > 0 || isAppearanceBlocked() || !visibility.canExport()) return;
     inFlight.current = true;
     const ticket = ++lifetime.current.revision;
     const current = () => mounted.current && lifetime.current.revision === ticket;
@@ -92,7 +92,8 @@ export default function ExportButton({ container, title, busy = false }: { conta
   };
   return <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
     <span className="text-slate-500">{count} หน้า</span>
-    <button ref={trigger} type="button" onClick={download} disabled={busy || !ready || exporting || dirty.length > 0 || visibility.phase !== "ready"} className="rounded-lg bg-blue-600 px-3 py-2 font-bold text-white disabled:opacity-40">{exporting ? "กำลังส่งออก…" : "ดาวน์โหลด PDF"}</button>
+    <button ref={trigger} type="button" onClick={download} disabled={appearanceDirty || appearanceBusy || busy || !ready || exporting || dirty.length > 0 || visibility.phase !== "ready"} className="rounded-lg bg-blue-600 px-3 py-2 font-bold text-white disabled:opacity-40">{exporting ? "กำลังส่งออก…" : "ดาวน์โหลด PDF"}</button>
+    {appearanceDirty && <span>บันทึกสีก่อนส่งออก</span>}
     {dirty.length > 0 && <span>บันทึกทุกหมวดก่อนส่งออก</span>}
     {visibility.phase !== "ready" && <span>รอยืนยันการแสดงหมวดก่อนส่งออก</span>}
     {message && <p role="status" className="max-w-md">{message}</p>}

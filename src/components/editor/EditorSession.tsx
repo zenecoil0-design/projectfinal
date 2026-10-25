@@ -12,6 +12,11 @@ const SessionContext = createContext<{
   tagStatus: Record<TagSection, Status>;
   reportTags: (section: TagSection, status: Status) => void;
   dirty: Section[];
+  appearanceDirty: boolean;
+  appearanceBusy: boolean;
+  reportAppearance: (dirty: boolean, busy: boolean) => void;
+  isAppearanceBlocked: () => boolean;
+  clearDraftState: () => void;
   exporting: boolean;
   isExporting: () => boolean;
   setExporting: (value: boolean) => void;
@@ -30,8 +35,16 @@ export function EditorSession({ children }: { children: ReactNode }) {
   const exportingRef = useRef(false);
   const setExporting = useCallback((next: boolean) => { exportingRef.current = next; updateExporting(next); }, []);
   const isExporting = useCallback(() => exportingRef.current, []);
+  const [appearance, setAppearance] = useState({ dirty: false, busy: false });
+  const appearanceRef = useRef(appearance);
+  const reportAppearance = useCallback((dirty: boolean, busy: boolean) => {
+    appearanceRef.current = { dirty, busy };
+    setAppearance(previous => previous.dirty === dirty && previous.busy === busy ? previous : { dirty, busy });
+  }, []);
+  const isAppearanceBlocked = useCallback(() => appearanceRef.current.dirty || appearanceRef.current.busy, []);
   const [dirty, setDirty] = useState<Section[]>([]);
   const baselines = useRef<Partial<Record<Section, string>>>({});
+  const clearDraftState = useCallback(() => { baselines.current = {}; setDirty([]); reportAppearance(false, false); }, [reportAppearance]);
   const refreshDirty = useCallback(() => {
     const next = sections.filter(section => baselines.current[section] !== undefined && baselines.current[section] !== sectionSnapshot(section));
     setDirty(previous => previous.join() === next.join() ? previous : next);
@@ -51,7 +64,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
   }, [refreshDirty]);
 
   useEffect(() => {
-    if (!dirty.length && !exporting) return;
+    if (!dirty.length && !appearance.dirty && !appearance.busy && !exporting) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
@@ -61,7 +74,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
       if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download") || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
       const destination = new URL(anchor.href, window.location.href);
       if (destination.pathname === location.pathname && destination.search === location.search) return;
-      if (exporting) { event.preventDefault(); event.stopPropagation(); return; }
+      if (exporting || appearance.busy) { event.preventDefault(); event.stopPropagation(); return; }
       if (!window.confirm("มีข้อมูลที่ยังไม่บันทึก ต้องการออกจากหน้านี้และทิ้งการแก้ไขหรือไม่?")) {
         event.preventDefault();
         event.stopPropagation();
@@ -73,9 +86,9 @@ export function EditorSession({ children }: { children: ReactNode }) {
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", onClick, true);
     };
-  }, [dirty, exporting]);
+  }, [dirty, exporting, appearance]);
 
-  const value = useMemo(() => ({ status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved }), [status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved]);
+  const value = useMemo(() => ({ clearDraftState, appearanceDirty: appearance.dirty, appearanceBusy: appearance.busy, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved }), [clearDraftState, appearance, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
