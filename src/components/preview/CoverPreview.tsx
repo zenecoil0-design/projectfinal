@@ -8,14 +8,25 @@ export default function CoverPreview() {
 
   const fullName = [coverStore.firstName.trim(), coverStore.lastName.trim()].filter(Boolean).join(" ");
   const template = useTemplate();
-  if (template === "minimal") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page minimal-cover">
-    <div className="minimal-cover-heading"><p>แฟ้มสะสมผลงาน</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
-    {coverStore.coverImage && <div className="minimal-cover-portrait"><img src={coverStore.coverImage} alt="รูปหน้าปก" /></div>}
-    <div className="minimal-cover-author">
-      {fullName && <><p>จัดทำโดย</p><h2>{fullName}</h2></>}
-      {coverStore.schoolName && <h3>{coverStore.schoolName}</h3>}
+  if (template === "minimal") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page minimal-cover gallery-cover">
+    <div className="gallery-cover-photo" aria-label="พื้นที่รูปภาพหน้าปก">
+      {coverStore.coverImage ? <img src={coverStore.coverImage} alt="รูปหน้าปก" /> : <span>รูปผู้สมัคร</span>}
     </div>
-    <div className="minimal-cover-footer">PORTFOLIO / แฟ้มสะสมผลงาน</div>
+    <div className="gallery-cover-head">
+      <span>STUDENT PORTFOLIO</span>
+      <span>UNIVERSITY APPLICATION</span>
+    </div>
+    <div className="gallery-cover-title">
+      <p>แฟ้มสะสมผลงาน</p>
+      <h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1>
+      <span className="gallery-cover-rule" aria-hidden="true" />
+    </div>
+    <div className="gallery-cover-author">
+      <p className="gallery-cover-label">จัดทำโดย / PREPARED BY</p>
+      <h2>{fullName || "ชื่อ - นามสกุล"}</h2>
+      <p>{coverStore.schoolName || "ชื่อโรงเรียน"}</p>
+    </div>
+    <div className="gallery-cover-edge" aria-hidden="true" />
   </Paper>;
   if (template === "modern") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page editorial-cover creative-cover">
     <div className="creative-cover-media">

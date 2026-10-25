@@ -1,0 +1,135 @@
+/* Gallery Editorial, template_key=minimal. The approved direction uses one tall
+   student photo on the right and clear editorial typography on the left.
+   Scoped only to minimal; colors inherit inline per-page portfolio tokens. */
+.portfolio-page[data-template="minimal"].gallery-cover {
+  --gallery-primary: var(--portfolio-primary, #15434b);
+  --gallery-secondary: var(--portfolio-secondary, #e7eff0);
+  --gallery-text: var(--portfolio-text, #23343b);
+  position: relative;
+  display: block;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #fafafa;
+  border: 0;
+  color: var(--gallery-text);
+}
+.gallery-cover-photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 54%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gallery-secondary);
+  overflow: hidden;
+}
+.gallery-cover-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.gallery-cover-photo span {
+  color: var(--gallery-text);
+  font-size: 18px;
+}
+.gallery-cover-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, #ffffffa6 0%, transparent 23%);
+}
+.gallery-cover-head {
+  position: absolute;
+  top: 65px;
+  left: 65px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--gallery-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.6px;
+}
+.gallery-cover-title {
+  position: absolute;
+  z-index: 3;
+  top: 320px;
+  left: 65px;
+  width: 625px;
+  max-width: calc(100% - 112px);
+}
+.gallery-cover-title p {
+  width: fit-content;
+  margin-bottom: 10px;
+  padding: 5px 9px;
+  background: #fffffff2;
+  color: var(--gallery-primary);
+  font-size: 15px;
+  letter-spacing: 3px;
+}
+.gallery-cover-title h1 {
+  display: inline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 12px 0 0;
+  background: #ffffffec;
+  color: var(--gallery-primary);
+  font-family: "Noto Sans Thai", Arial, sans-serif;
+  font-size: 69px;
+  font-weight: 800;
+  letter-spacing: -2.3px;
+  line-height: 1.37;
+  overflow-wrap: anywhere;
+}
+.gallery-cover-rule {
+  display: block;
+  width: 88px;
+  height: 5px;
+  margin-top: 33px;
+  background: var(--gallery-primary);
+}
+.gallery-cover-author {
+  position: absolute;
+  z-index: 3;
+  bottom: 84px;
+  left: 65px;
+  width: 335px;
+  max-width: calc(100% - 130px);
+  padding: 24px 19px 26px 0;
+  background: #fffffff5;
+  overflow-wrap: anywhere;
+}
+.gallery-cover-author .gallery-cover-label {
+  margin-bottom: 14px;
+  color: var(--gallery-primary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+}
+.gallery-cover-author h2 {
+  color: var(--gallery-text);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.gallery-cover-author > p:last-child {
+  margin-top: 13px;
+  color: var(--gallery-text);
+  font-size: 17px;
+  line-height: 1.6;
+}
+.gallery-cover-edge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  height: 112px;
+  background: var(--gallery-primary);
+}
+/* The next commits add page styles here; do not alter Classic or Modern. */
