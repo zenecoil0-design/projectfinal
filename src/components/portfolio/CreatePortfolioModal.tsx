@@ -44,9 +44,9 @@ const templates: {
   },
   {
     key: "modern",
-    name: "Emerald Editorial",
+    name: "Modern University",
     description:
-      "โทนเขียวเข้ม–ครีม จัดหน้าสไตล์นิตยสาร ใช้ได้ครบทุกหมวด",
+      "โทนฟ้า–น้ำเงิน–ขาว ภาพใหญ่และจัดวางข้อมูลทันสมัยสำหรับสมัครมหาวิทยาลัย",
   },
   {
     key: "minimal",

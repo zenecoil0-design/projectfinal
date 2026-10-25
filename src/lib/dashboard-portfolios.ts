@@ -31,7 +31,7 @@ export function formatPortfolioDate(value: string | null): string {
 /** Display template names consistently without rewriting legacy template keys. */
 export function portfolioTemplateName(key: string | null): string {
   switch (key) {
-    case "modern": return "Emerald Editorial";
+    case "modern": return "Modern University";
     case "minimal": return "Minimal";
     case "classic":
     case null: return "Classic";

@@ -63,7 +63,7 @@ test('same-turn double click inserts once and pending snapshot cannot be edited 
   });
   await submit(page).evaluate(button => { if (!(button instanceof HTMLButtonElement)) throw new Error('Expected create button'); button.click(); button.click(); });
   await expect.poll(() => inserts).toBe(1); await expect(name(page)).toBeDisabled();
-  for (const text of [/Classic/, /Emerald Editorial/, /Minimal/]) await expect(modal(page).getByRole('button', { name: text })).toBeDisabled();
+  for (const text of [/Classic/, /Modern University/, /Minimal/]) await expect(modal(page).getByRole('button', { name: text })).toBeDisabled();
   await expect(modal(page).getByRole('button', { name: 'ยกเลิก', exact: true })).toBeDisabled();
   await expect(modal(page).getByRole('button', { name: 'ปิดกล่องสร้างพอร์ต', exact: true })).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(modal(page)).toBeVisible(); await expect(modal(page).getByRole('status')).toBeVisible();
@@ -155,7 +155,7 @@ for (const caller of ['dashboard', 'sidebar', 'recent'] as const) for (const pha
       await expect(modal(page)).toHaveCount(0);
       if (caller !== 'dashboard') {
         await trigger(page, caller).click(); await expect(name(page)).toHaveValue('');
-        await expect(modal(page).getByRole('button', { name: /Emerald Editorial/ })).toHaveAttribute('aria-pressed', 'true');
+        await expect(modal(page).getByRole('button', { name: /Modern University/ })).toHaveAttribute('aria-pressed', 'true');
         await name(page).fill('new account draft');
       } else await expect(page.getByText('บัญชีผู้ใช้เปลี่ยนแล้ว', { exact: false })).toBeVisible();
     } else {
@@ -179,7 +179,7 @@ test('verified owner mismatch without an auth event discards old draft before an
   await page.route('**/auth/v1/user', route => route.fulfill({ json: { ...user, id: 'other-owner' } }));
   await submit(page).click(); await expect(modal(page)).toHaveCount(0); expect(inserts).toBe(0);
   await trigger(page, 'recent').click(); await expect(name(page)).toHaveValue('');
-  await expect(modal(page).getByRole('button', { name: /Emerald Editorial/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(modal(page).getByRole('button', { name: /Modern University/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Home error round closes/reopens without carrying its error; retained draft can be retried', async ({ page }) => {

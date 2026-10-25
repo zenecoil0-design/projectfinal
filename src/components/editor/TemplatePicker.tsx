@@ -35,7 +35,7 @@ export default function TemplatePicker({ portfolioId, value, onSaved, onBusy }: 
     <label htmlFor="portfolio-template" className="font-semibold text-slate-700">เทมเพลต</label>
     <select id="portfolio-template" value={value} disabled={busy || exporting} onChange={event => void change(event.target.value)} className="min-h-11 max-w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm">
       <option value="classic">Classic</option>
-      <option value="modern">Emerald Editorial · เขียว–ครีม</option>
+      <option value="modern">Modern University · ฟ้า–น้ำเงิน–ขาว</option>
       <option value="minimal">Minimal</option>
       {!["classic", "modern", "minimal"].includes(value) && <option value={value}>รูปแบบเดิม</option>}
     </select>
