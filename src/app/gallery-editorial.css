@@ -631,3 +631,6 @@
 [data-template="minimal"] .gallery-certificate-issuer { font-weight: 600; }
 [data-template="minimal"] .gallery-certificate-date { opacity: .75; }
 [data-template="minimal"] .gallery-certificate-description { border-top: 2px solid var(--portfolio-primary); margin-top: 15px !important; padding-top: 12px; }
+
+[data-template="minimal"] .gallery-education-card[data-has-image="false"] { grid-template-columns: 104px minmax(0, 1fr); }
+[data-template="minimal"] .gallery-certificate-card:not(:has(.gallery-certificate-media)) { grid-template-columns: 1fr; }

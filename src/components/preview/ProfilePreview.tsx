@@ -32,7 +32,7 @@ export default function ProfilePreview() {
       <div className="gallery-profile-photo">
         {profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" /> : <span>รูปประวัติส่วนตัว</span>}
       </div>
-      <h3>CONTACT / ติดต่อ</h3>
+      {hasContact && <><h3>CONTACT / ติดต่อ</h3>
       <div className="gallery-profile-contact">
         {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong><span>{profileStore.phone}</span></p>}
         {hasText(profileStore.email) && <p><strong>อีเมล</strong><span>{profileStore.email}</span></p>}
@@ -42,8 +42,7 @@ export default function ProfilePreview() {
           <span className="capitalize">{social.platform}:</span>
           <span>{social.link}</span>
         </p>)}
-        {!hasContact && <p>ข้อมูลติดต่อ</p>}
-      </div>
+      </div></>}
       {hasText(profileStore.skills) && <section className="gallery-profile-side-extra"><h3>SKILLS / ความสามารถ</h3><p>{profileStore.skills}</p></section>}
     </aside>
     <div className="gallery-profile-main">
@@ -78,15 +77,13 @@ export default function ProfilePreview() {
           ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" />
           : <span>PROFILE PHOTO</span>}
       </div>
-      <h3>Contact</h3>
+      {(hasText(profileStore.phone) || hasText(profileStore.email) || socials.length > 0) && <><h3>Contact</h3>
       <div className="creative-profile-contact">
         {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong>{profileStore.phone}</p>}
         {hasText(profileStore.email) && <p><strong>อีเมล</strong>{profileStore.email}</p>}
         {socials.map(social => <p key={social.id}><strong>{social.platform}</strong>{social.link}</p>)}
-        {!hasContact && <p>ข้อมูลติดต่อ</p>}
-      </div>
-      <h3>Address</h3>
-      <p className="creative-profile-address">{profileStore.address || "ที่อยู่"}</p>
+      </div></>}
+      {hasText(profileStore.address) && <><h3>Address</h3><p className="creative-profile-address">{profileStore.address}</p></>}
     </div>
     <div className="creative-profile-right">
       <div className="creative-profile-heading"><p>ABOUT ME</p><h2>Profile</h2></div>

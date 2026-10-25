@@ -6,14 +6,12 @@ export default function EducationPreview() {
   const educations = useEducationStore(state => state.educations);
   const template = useTemplate();
   return <PaginatedSection sectionId="education" title="ประวัติการศึกษา" cards={educations.map((education, index) => (template === "minimal" ? (
-    <article key={education.id} className="document-card education-card gallery-education-card" data-gallery-entry="education">
+    <article key={education.id} className="document-card education-card gallery-education-card" data-gallery-entry="education" data-has-image={Boolean(education.logoUrl)}>
       <div className="gallery-education-timeline">
         <span className="gallery-education-step">EDU. {String(index + 1).padStart(2, "0")}</span>
         <strong>{[education.startYear.trim(), education.endYear.trim()].filter(Boolean).join(" – ") || `ช่วงที่ ${index + 1}`}</strong>
       </div>
-      <div className="gallery-education-image">
-        {education.logoUrl ? <img src={education.logoUrl} alt={`สถานศึกษา ${education.schoolName}`} /> : <span>EDUCATION</span>}
-      </div>
+      {education.logoUrl && <div className="gallery-education-image"><img src={education.logoUrl} alt={`สถานศึกษา ${education.schoolName}`} /></div>}
       <div className="gallery-education-copy">
         <span className="gallery-education-kicker">EDUCATION HISTORY</span>
         <h3>{education.schoolName || "ชื่อสถานศึกษา"}</h3>

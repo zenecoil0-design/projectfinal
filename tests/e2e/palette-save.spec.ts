@@ -75,3 +75,21 @@ test('account change discards late save UI and releases the return-home guard',a
  await expect(page.getByText('บันทึกสีพอร์ตแล้ว',{exact:true})).toHaveCount(0);
  await page.getByRole('link',{name:'กลับหน้าแรก',exact:true}).click();await expect(page).toHaveURL('http://127.0.0.1:3000/');
 });
+
+test('black and gray retain selected hue; blank contact groups are absent',async({page})=>{
+ await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+ await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ for(const hex of ['#000000','#888888','#FFFFFF']){
+  await page.getByLabel('รหัสสี HEX').fill(hex);
+  await page.getByRole('slider',{name:'เลือกเฉดสี'}).fill('180');
+  await expect(page.getByRole('slider',{name:'เลือกเฉดสี'})).toHaveValue('180');
+  const spectrum=page.getByRole('group',{name:/จานเลือกความสด/});const box=await spectrum.boundingBox();
+  await spectrum.click({position:{x:box!.width*.8,y:box!.height*.2}});
+  await expect(page.getByRole('slider',{name:'เลือกเฉดสี'})).toHaveValue('180');
+  await expect(page.getByLabel('รหัสสี HEX')).not.toHaveValue(hex);
+ }
+ for(const template of ['modern','minimal']){
+  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);
+  await expect(page.locator('main .creative-profile-contact, main .creative-profile-address, main .gallery-profile-contact')).toHaveCount(0);
+ }
+});

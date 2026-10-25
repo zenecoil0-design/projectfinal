@@ -7,18 +7,22 @@ const samples = ["#303F9F", "#1D416D", "#3479B8", "#167D98", "#277455", "#A13A50
 function Spectrum({ value, setColor, disabled }: { disabled: boolean; value: string; setColor: (value: string) => void }) {
   const area = useRef<HTMLDivElement>(null);
   const color = hexToHsv(value);
+  const [lastHue, setLastHue] = useState(color.h);
+  const hue = color.s === 0 || color.v === 0 ? lastHue : color.h;
   const pointer = (event: PointerEvent<HTMLDivElement>) => {
     if (disabled) return;
     const rect = area.current?.getBoundingClientRect();
     if (!rect?.width || !rect.height) return;
-    setColor(hsvToHex({ h: color.h, s: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)), v: 1 - Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)) }));
+    setLastHue(hue);
+    setColor(hsvToHex({ h: hue, s: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)), v: 1 - Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)) }));
   };
   const keyboard = (event: KeyboardEvent<HTMLDivElement>) => {
     const increment: Record<string, [number, number]> = { ArrowLeft: [-0.02, 0], ArrowRight: [0.02, 0], ArrowUp: [0, 0.02], ArrowDown: [0, -0.02] };
     if (disabled || !increment[event.key]) return;
     event.preventDefault();
     const [ds, dv] = increment[event.key];
-    setColor(hsvToHex({ h: color.h, s: Math.max(0, Math.min(1, color.s + ds)), v: Math.max(0, Math.min(1, color.v + dv)) }));
+    setLastHue(hue);
+    setColor(hsvToHex({ h: hue, s: Math.max(0, Math.min(1, color.s + ds)), v: Math.max(0, Math.min(1, color.v + dv)) }));
   };
   return <>
     <div ref={area} role="group" tabIndex={disabled ? -1 : 0} aria-disabled={disabled} aria-label="จานเลือกความสดและความสว่างของสี ใช้ปุ่มลูกศรได้" onKeyDown={keyboard}
@@ -26,11 +30,11 @@ function Spectrum({ value, setColor, disabled }: { disabled: boolean; value: str
       onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) pointer(event); }}
       onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }}
       className="relative h-40 cursor-crosshair touch-none overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-      style={{ backgroundColor: "hsl(" + color.h + " 100% 50%)", backgroundImage: "linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,transparent)" }}>
+      style={{ backgroundColor: "hsl(" + hue + " 100% 50%)", backgroundImage: "linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,transparent)" }}>
       <span aria-hidden="true" className="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white shadow-[0_0_0_1px_#0F172A,0_1px_7px_#0008]" style={{ left: (color.s * 100) + "%", top: ((1 - color.v) * 100) + "%" }} />
     </div>
     <label htmlFor="portfolio-hue" className="block text-sm font-semibold text-slate-700">แถบสีรุ้ง</label>
-    <input id="portfolio-hue" type="range" min={0} max={359} value={Math.round(color.h)} aria-label="เลือกเฉดสี" onChange={event => setColor(hsvToHex({ ...color, h: Number(event.target.value) }))} className="block h-4 w-full cursor-pointer appearance-none rounded-full accent-white" style={{ background: "linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)" }} />
+    <input id="portfolio-hue" type="range" min={0} max={359} value={Math.round(hue)} aria-label="เลือกเฉดสี" onChange={event => { const next = Number(event.target.value); setLastHue(next); setColor(hsvToHex({ ...color, h: next })); }} className="block h-4 w-full cursor-pointer appearance-none rounded-full accent-white" style={{ background: "linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)" }} />
   </>;
 }
 
@@ -59,7 +63,7 @@ export default function PortfolioColorPicker({ template, colors, onChange, onRes
     </div>
     {template === "minimal" && <p className="rounded-lg bg-blue-50 p-2 text-xs text-blue-800">Gallery Editorial ใช้สีแบบเรียบง่าย องค์ประกอบบางส่วนคงสีขาว–เทาเพื่อให้อ่านชัด</p>}
     {selected === "text" && <div className="space-y-2"><label className="flex min-h-11 items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={colors.text === null} onChange={event => onChange({ ...colors, text: event.target.checked ? null : automaticTextColor(template) })} className="h-5 w-5" />ปรับสีตัวอักษรอัตโนมัติ (แนะนำ)</label><p className="text-xs text-slate-500">เปลี่ยนสีเนื้อหา แต่ข้อความบนแถบสีหลักจะยังปรับให้ตัดกับพื้นหลังเสมอ</p></div>}
-    <Spectrum disabled={disabled} value={value} setColor={update} />
+    <Spectrum key={selected} disabled={disabled} value={value} setColor={update} />
     <div className="flex flex-wrap gap-2" aria-label="ชุดสีแนะนำ">{samples.map(color => <button key={color} type="button" onClick={() => update(color)} aria-label={"เลือกสี " + color} aria-pressed={value === color} className="h-9 w-9 rounded-full border-2 border-white shadow-[0_0_0_1px_#CBD5E1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" style={{ backgroundColor: color }} />)}</div>
     <div className="flex items-end gap-2">
       <div className="min-w-0 flex-1"><label htmlFor="portfolio-color-hex" className="mb-1 block text-sm font-semibold text-slate-700">รหัสสี HEX</label><input id="portfolio-color-hex" value={hexText} maxLength={7} onChange={event => changeHex(event.target.value)} onBlur={() => setHexDraft(null)} aria-invalid={!normalizeHex(hexText)} spellCheck={false} placeholder="#303F9F" className="min-h-11 w-full rounded-lg border border-slate-300 px-3 font-mono text-base focus-visible:outline-2 focus-visible:outline-blue-600" />{!normalizeHex(hexText) && <p role="alert" className="mt-1 text-xs text-red-700">ใส่รหัส HEX 6 หลัก เช่น #303F9F</p>}</div>

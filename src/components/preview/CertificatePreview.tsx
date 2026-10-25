@@ -7,11 +7,11 @@ export default function CertificatePreview() {
   const template = useTemplate();
   return <PaginatedSection sectionId="certificate" title="เกียรติบัตร" cards={certificates.map((certificate, index) => (template === "minimal" ? (
     <article key={certificate.id} className="document-card certificate-card gallery-certificate-card" data-gallery-entry="certificate">
-      <div className="gallery-certificate-media document-images" data-image-count={certificate.images.length}>
-        {certificate.images.length ? certificate.images.map((url, imageIndex) => <div key={certificate.id + "-" + imageIndex} className="gallery-certificate-image">
+      {certificate.images.length > 0 && <div className="gallery-certificate-media document-images" data-image-count={certificate.images.length}>
+        {certificate.images.map((url, imageIndex) => <div key={certificate.id + "-" + imageIndex} className="gallery-certificate-image">
           <img src={url} alt={`เกียรติบัตร ${imageIndex + 1}`} />
-        </div>) : <div className="gallery-certificate-placeholder">CERTIFICATE</div>}
-      </div>
+        </div>)}
+      </div>}
       <div className="gallery-certificate-info">
         <span className="gallery-certificate-index">CERTIFICATE / {String(index + 1).padStart(2, "0")}</span>
         <h3>{certificate.title}</h3>

@@ -54,7 +54,7 @@ test('Gallery section cards have distinct structures and retain zero-image recor
   const certificate = page.locator('main [data-template="minimal"] .gallery-certificate-card').first();
   await expect(education).toBeAttached();
   await expect(education.locator('.gallery-education-timeline')).toBeAttached();
-  await expect(education.locator('.gallery-education-image')).toBeAttached();
+  await expect(education.locator('.gallery-education-image')).toHaveCount(0);
   await expect(education.locator('.gallery-education-copy')).toBeAttached();
   await expect(activity).toBeAttached();
   await expect(activity.locator('.gallery-activity-info')).toBeAttached();
@@ -66,7 +66,8 @@ test('Gallery section cards have distinct structures and retain zero-image recor
   }
   for (const card of await page.locator('main [data-template="minimal"] .gallery-certificate-card').all()) {
     const images = await card.locator('img').count();
-    await expect(card.locator('.gallery-certificate-media')).toHaveAttribute('data-image-count', String(images));
+    if (images) await expect(card.locator('.gallery-certificate-media')).toHaveAttribute('data-image-count', String(images));
+    else await expect(card.locator('.gallery-certificate-media')).toHaveCount(0);
   }
 });
 
