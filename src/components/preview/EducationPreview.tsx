@@ -1,9 +1,28 @@
 "use client";
 import { useEducationStore } from "@/store/useEducationStore";
 import PaginatedSection from "./PaginatedSection";
+import { useTemplate } from "./Paper";
 export default function EducationPreview() {
   const educations = useEducationStore(state => state.educations);
-  return <PaginatedSection sectionId="education" title="ประวัติการศึกษา" cards={educations.map((education, index) => (
+  const template = useTemplate();
+  return <PaginatedSection sectionId="education" title="ประวัติการศึกษา" cards={educations.map((education, index) => (template === "minimal" ? (
+    <article key={education.id} className="document-card education-card gallery-education-card" data-gallery-entry="education">
+      <div className="gallery-education-timeline">
+        <span className="gallery-education-step">EDU. {String(index + 1).padStart(2, "0")}</span>
+        <strong>{[education.startYear.trim(), education.endYear.trim()].filter(Boolean).join(" – ") || `ช่วงที่ ${index + 1}`}</strong>
+      </div>
+      <div className="gallery-education-image">
+        {education.logoUrl ? <img src={education.logoUrl} alt={`สถานศึกษา ${education.schoolName}`} /> : <span>EDUCATION</span>}
+      </div>
+      <div className="gallery-education-copy">
+        <span className="gallery-education-kicker">EDUCATION HISTORY</span>
+        <h3>{education.schoolName || "ชื่อสถานศึกษา"}</h3>
+        {education.level.trim() && <p><strong>ระดับการศึกษา</strong><span>{education.level}</span></p>}
+        {education.studyPlan.trim() && <p><strong>แผนการเรียน / สาขา</strong><span>{education.studyPlan}</span></p>}
+        {education.gpa.trim() && <p><strong>GPAX</strong><span>{education.gpa}</span></p>}
+      </div>
+    </article>
+  ) : (
               <div
                 key={
                   education.id
@@ -80,5 +99,5 @@ export default function EducationPreview() {
                   )}
                 </div>
               </div>
-  ))} />;
+  )))} />;
 }

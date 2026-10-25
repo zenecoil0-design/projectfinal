@@ -421,3 +421,75 @@
 [data-template="minimal"] .certificate-card:not(:has(.document-images)) { grid-template-columns: minmax(0, 1fr); }
 [data-template="minimal"] .certificate-card:not(:has(.document-images)) .document-card-heading,
 [data-template="minimal"] .certificate-card:not(:has(.document-images)) > p { grid-column: 1; }
+
+/* Gallery Editorial — actual THREE-COLUMN school timeline cards, shared by
+   the offscreen height measurer and all A4 Preview/PDF pages. */
+[data-template="minimal"] .education-card.gallery-education-card {
+  display: grid;
+  grid-template-columns: 104px 145px minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  min-height: 170px;
+  margin: 0;
+  padding: 17px 0;
+  border: 0;
+  border-bottom: 1px solid #dce5e6;
+  background: transparent;
+}
+[data-template="minimal"] .gallery-education-card::before { display: none; }
+[data-template="minimal"] .gallery-education-timeline {
+  position: relative;
+  min-width: 0;
+  min-height: 120px;
+  align-self: stretch;
+  padding: 14px 10px 8px 18px;
+  border-left: 2px solid var(--portfolio-primary, #466b73);
+  color: var(--portfolio-text, #202a2d);
+}
+[data-template="minimal"] .gallery-education-timeline::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: -6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--portfolio-primary, #466b73);
+}
+[data-template="minimal"] .gallery-education-step {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--portfolio-primary, #466b73);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+}
+[data-template="minimal"] .gallery-education-timeline strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+[data-template="minimal"] .gallery-education-image {
+  display: flex;
+  width: 145px;
+  min-height: 126px;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f2;
+  border: 1px solid #e1e7e7;
+  color: var(--portfolio-primary, #466b73);
+}
+[data-template="minimal"] .gallery-education-image img {
+  width: 100%;
+  max-height: 126px;
+  object-fit: contain;
+}
+[data-template="minimal"] .gallery-education-image span { font-size: 12px; letter-spacing: .7px; }
+[data-template="minimal"] .gallery-education-copy { min-width: 0; }
+[data-template="minimal"] .gallery-education-kicker { font-size: 10px; color: var(--portfolio-primary); font-weight: 700; letter-spacing: 1.6px; }
+[data-template="minimal"] .gallery-education-copy h3 { margin: 5px 0 9px; color: var(--portfolio-text); font-size: 17px; font-weight: 700; line-height: 1.55; }
+[data-template="minimal"] .gallery-education-copy p { display: grid; grid-template-columns: 98px minmax(0, 1fr); gap: 9px; margin: 5px 0; color: var(--portfolio-text); font-size: 12px; line-height: 1.5; }
+[data-template="minimal"] .gallery-education-copy strong { font-weight: 600; }
+[data-template="minimal"] .gallery-education-copy p span { min-width: 0; overflow-wrap: anywhere; }
