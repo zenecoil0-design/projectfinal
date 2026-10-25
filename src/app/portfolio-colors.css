@@ -1,0 +1,42 @@
+/* Color roles apply only to A4 document pages. Every PDF clone carries
+   variables inline on the cloned sheet (Paper), so export matches Preview. */
+.portfolio-page[data-template="classic"].formal-cover .formal-cover-rail { background: var(--portfolio-primary); }
+.portfolio-page[data-template="classic"].formal-cover .formal-cover-rail::after { border-top-color: var(--portfolio-primary); }
+.portfolio-page[data-template="classic"].formal-cover .formal-cover-corner { border-bottom-color: var(--portfolio-primary); }
+.portfolio-page[data-template="classic"].formal-cover h1,
+.portfolio-page[data-template="classic"].formal-cover .formal-cover-details strong { color: var(--portfolio-primary); }
+.portfolio-page[data-template="classic"].formal-cover .formal-cover-photo { background: var(--portfolio-secondary); }
+.portfolio-page[data-template="classic"]:not(.formal-cover)::before { background: linear-gradient(var(--portfolio-primary) 0 66px,var(--portfolio-secondary) 66px 100%); }
+.portfolio-page[data-template="classic"]:not(.formal-cover) > div:first-child h2,
+.portfolio-page[data-template="classic"] .document-card h3,
+.portfolio-page[data-template="classic"] .toc-entry,
+.portfolio-page[data-template="classic"] .document-page-number,
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > div:not(.grid) h3 { color: var(--portfolio-primary); }
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:first-child h2 { border-left-color: var(--portfolio-primary); background: var(--portfolio-secondary); }
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > .grid { border-top-color: var(--portfolio-secondary); }
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) > div:not(.grid) h3,
+.portfolio-page[data-template="classic"][data-page-section="education"] > div:first-child,
+.portfolio-page[data-template="classic"][data-page-section="activity"] > div:first-child,
+.portfolio-page[data-template="classic"][data-page-section="certificate"] > div:first-child { background: var(--portfolio-secondary); }
+.portfolio-page[data-template="modern"].creative-cover { background: var(--portfolio-primary); }
+.portfolio-page[data-template="modern"] .creative-cover-content { background: var(--portfolio-primary); color: var(--portfolio-on-primary); }
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-title h1,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name h2,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name h3,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-title p,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-name > p,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-top,
+.portfolio-page[data-template="modern"] .creative-cover .editorial-cover-bottom,
+.portfolio-page[data-template="modern"] .creative-cover .creative-cover-detail > span { color: var(--portfolio-on-primary) !important; }
+.portfolio-page[data-template="modern"] .creative-cover-title-rule { background: var(--portfolio-on-primary); }
+.portfolio-page[data-template="modern"] .creative-cover-media { background: var(--portfolio-secondary); }
+.portfolio-page[data-template="modern"]:not(.creative-cover)::before { background: linear-gradient(135deg, transparent 52%, var(--portfolio-secondary) 52% 74%, var(--portfolio-primary) 74%); }
+.portfolio-page[data-template="modern"]:not(.creative-cover)::after { background: linear-gradient(135deg, transparent 54%, var(--portfolio-secondary) 54% 72%, var(--portfolio-primary) 72%); opacity: .45; }
+.portfolio-page[data-template="modern"]:not(.creative-cover) > div:first-child h2,
+.portfolio-page[data-template="modern"] .creative-profile-heading h2,
+.portfolio-page[data-template="modern"] .creative-profile-left h3,
+.portfolio-page[data-template="modern"] .document-card h3,
+.portfolio-page[data-template="modern"] .toc-entry,
+.portfolio-page[data-template="modern"] .document-page-number { color: var(--portfolio-primary); }
+.portfolio-page[data-template="modern"] .education-logo { border-color: var(--portfolio-primary); }
+.portfolio-page[data-template="minimal"] { --minimal-accent: var(--portfolio-primary); --minimal-rule: var(--portfolio-secondary); }

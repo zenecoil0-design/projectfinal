@@ -2,6 +2,7 @@
 @import "./minimal-template.css";
 @import "./formal-template.css";
 @import "./creative-modern.css";
+@import "./portfolio-colors.css";
 
 body { font-family: "Noto Sans Thai", Arial, sans-serif; }
 
