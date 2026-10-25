@@ -44,3 +44,44 @@ test('Gallery Editorial remains scoped when the other two templates are selected
   await expect(page.locator('main .formal-cover')).toBeAttached();
   await expect(page.locator('main .gallery-cover')).toHaveCount(0);
 });
+
+test('Gallery section cards have distinct structures and retain zero-image records', async ({ page }) => {
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
+  const education = page.locator('main [data-template="minimal"] .gallery-education-card').first();
+  const activity = page.locator('main [data-template="minimal"] .gallery-activity-card').first();
+  const certificate = page.locator('main [data-template="minimal"] .gallery-certificate-card').first();
+  await expect(education).toBeAttached();
+  await expect(education.locator('.gallery-education-timeline')).toBeAttached();
+  await expect(education.locator('.gallery-education-image')).toBeAttached();
+  await expect(education.locator('.gallery-education-copy')).toBeAttached();
+  await expect(activity).toBeAttached();
+  await expect(activity.locator('.gallery-activity-info')).toBeAttached();
+  await expect(certificate).toBeAttached();
+  await expect(certificate.locator('.gallery-certificate-info')).toBeAttached();
+  for (const card of await page.locator('main [data-template="minimal"] .gallery-activity-card').all()) {
+    const images = await card.locator('img').count();
+    await expect(card).toHaveAttribute('data-image-count', String(images));
+  }
+  for (const card of await page.locator('main [data-template="minimal"] .gallery-certificate-card').all()) {
+    const images = await card.locator('img').count();
+    await expect(card.locator('.gallery-certificate-media')).toHaveAttribute('data-image-count', String(images));
+  }
+});
+
+test('Gallery A4 card structure is consistent with measurement portal', async ({ page }) => {
+  await page.goto('/editor?portfolio=a');
+  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
+  for (const section of ['education', 'activity', 'certificate']) {
+    const preview = page.locator(`main [data-template="minimal"][data-page-section="${section}"] .document-card`).first();
+    const measurement = page.locator(`body > [data-template="minimal"] [data-gallery-entry="${section}"]`).first();
+    await expect(preview).toBeAttached();
+    await expect(measurement).toBeAttached();
+    const size = await preview.evaluate(el => ({ width: (el as HTMLElement).offsetWidth, height: (el as HTMLElement).offsetHeight }));
+    const measured = await measurement.evaluate(el => ({ width: (el as HTMLElement).offsetWidth, height: (el as HTMLElement).offsetHeight }));
+    expect(measured.width).toBe(size.width);
+    expect(Math.abs(measured.height - size.height)).toBeLessThanOrEqual(1);
+  }
+});
