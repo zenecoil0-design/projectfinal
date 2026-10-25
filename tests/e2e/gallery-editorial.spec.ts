@@ -12,8 +12,6 @@ test('Gallery Editorial renders a one-photo cover, a real sidebar profile and im
   await page.goto('/editor?portfolio=a');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
-  const sheets = page.locator('main [data-portfolio-page][data-template="minimal"]');
-  const cover = sheets.filter({ has: page.locator('[data-page-section="cover"]') });
   const coverPage = page.locator('main [data-portfolio-page][data-page-section="cover"]');
   await expect(coverPage).toHaveClass(/gallery-cover/);
   await expect(coverPage.locator('.gallery-cover-photo')).toBeAttached();
