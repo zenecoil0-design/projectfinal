@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useLayoutEffect, useRef } from "react";
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from "react";
 import { VisibilityControl } from "@/components/editor/SectionVisibility";
 import { FaChevronDown } from "react-icons/fa";
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -26,9 +26,10 @@ type Props = {
   visible: boolean;
   onStepChange: (step: number | null) => void;
   onNext: (fromStep: number) => void;
+  finalPanel?: ReactNode;
 };
 
-export default function FormContainer({ currentStep, visible, onStepChange, onNext }: Props) {
+export default function FormContainer({ currentStep, visible, onStepChange, onNext, finalPanel }: Props) {
   const { status, tagStatus, dirty } = useEditorSession();
   const scroller = useRef<HTMLDivElement>(null);
   const navigation = useRef({ step: currentStep, revision: 0 });
@@ -38,7 +39,7 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
     navigation.current = { step: currentStep, revision: navigation.current.revision + 1 };
     const container = scroller.current;
     if (!container || !visible || currentStep === null) return;
-    const header = container.querySelector<HTMLButtonElement>("#editor-heading-" + steps[currentStep - 1].section);
+    const header = container.querySelector<HTMLButtonElement>("#editor-heading-" + (currentStep === 7 ? "colors" : steps[currentStep - 1]?.section));
     if (!header) return;
     // A successful save may fold the focused submit button. Keep keyboard focus visible.
     const focused = document.activeElement;
@@ -84,6 +85,10 @@ export default function FormContainer({ currentStep, visible, onStepChange, onNe
           <h2 className="mb-2 text-sm font-bold text-slate-800">สารบัญอัตโนมัติ</h2><VisibilityControl section="toc" />
         </section>}</Fragment>;
       })}
+      {finalPanel && <section className="min-w-0 rounded-xl border border-slate-200 bg-white">
+        <h2><button type="button" id="editor-heading-colors" aria-expanded={currentStep === 7} aria-controls="editor-panel-colors" onClick={() => onStepChange(currentStep === 7 ? null : 7)} className={"flex min-h-14 w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 " + (currentStep === 7 ? "bg-blue-50 text-blue-800" : "text-slate-800 hover:bg-slate-50")}><span>7. สีและดาวน์โหลด</span><FaChevronDown aria-hidden="true" className={currentStep === 7 ? "rotate-180" : ""} /></button></h2>
+        <div id="editor-panel-colors" role="region" aria-labelledby="editor-heading-colors" hidden={currentStep !== 7} inert={currentStep !== 7} className="space-y-4 px-3 pb-4 pt-3 sm:px-4">{finalPanel}</div>
+      </section>}
     </div>
   </div>;
 }

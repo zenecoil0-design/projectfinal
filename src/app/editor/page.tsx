@@ -17,7 +17,9 @@ import {
 
 import FormContainer from "@/components/layout/FormContainer";
 
-import { PreviewViewport, TemplateContext } from "@/components/preview/Paper";
+import { PreviewViewport, TemplateContext, PortfolioColorsContext } from "@/components/preview/Paper";
+import PortfolioColorPicker from "@/components/editor/PortfolioColorPicker";
+import { defaultColors, type PortfolioColors } from "@/lib/editor/portfolio-colors";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
 import ContentsPreview from "@/components/preview/ContentsPreview";
@@ -59,6 +61,8 @@ function EditorContent() {
 
   const desktop = useSyncExternalStore(subscribeDesktop, desktopSnapshot, () => true);
   const [templateBusy, setTemplateBusy] = useState(false);
+  const [colors, setColors] = useState<PortfolioColors>(() => defaultColors("classic"));
+  const [colorOwner, setColorOwner] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<"form" | "preview">("form");
   const [currentStep, setCurrentStep] =
     useState<number | null>(1);
@@ -193,6 +197,29 @@ function EditorContent() {
     router,
   ]);
 
+  // Color choices are local to the current portfolio in this browser, never shared between accounts.
+  useEffect(() => {
+    if (!portfolio) return;
+    const key = "portfolio-colors:v1:" + portfolio.ownerId + ":" + portfolio.id;
+    let initial = defaultColors(portfolio.template_key);
+    try {
+      const saved = window.localStorage.getItem(key);
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && "primary" in parsed && "secondary" in parsed) {
+          const value = parsed as { primary?: unknown; secondary?: unknown };
+          if (typeof value.primary === "string" && typeof value.secondary === "string" && /^#[0-9A-Fa-f]{6}$/.test(value.primary) && /^#[0-9A-Fa-f]{6}$/.test(value.secondary)) initial = { primary: value.primary, secondary: value.secondary };
+        }
+      }
+    } catch { /* Storage is optional in private browsing. */ }
+    setColors(initial);
+    setColorOwner(key);
+  }, [portfolio?.id, portfolio?.ownerId]);
+  useEffect(() => {
+    if (!portfolio || colorOwner !== "portfolio-colors:v1:" + portfolio.ownerId + ":" + portfolio.id) return;
+    try { window.localStorage.setItem(colorOwner, JSON.stringify(colors)); } catch { /* Storage can be unavailable. */ }
+  }, [colors, colorOwner, portfolio?.id, portfolio?.ownerId]);
+
   // =====================================================
   // PREVIEW SCROLL
   // =====================================================
@@ -202,7 +229,7 @@ function EditorContent() {
   };
 
   const handleNext = (fromStep: number) => {
-    if (fromStep >= 6) return;
+    if (fromStep >= 7) return;
     handleStepChange(fromStep + 1);
   };
 
@@ -305,7 +332,7 @@ function EditorContent() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-2">
         <TemplatePicker portfolioId={portfolio.id} value={portfolio.template_key} onBusy={setTemplateBusy} onSaved={key => setPortfolio(current => current ? { ...current, template_key: key } : null)} />
-        <ExportButton container={previewContainerRef} title={portfolio.title} busy={templateBusy} />
+        <button type="button" onClick={() => { setCurrentStep(7); setMobilePanel("form"); }} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด</button>
       </div>
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">
@@ -332,6 +359,7 @@ function EditorContent() {
               onNext={
                 handleNext
               }
+              finalPanel={<><PortfolioColorPicker template={portfolio.template_key} colors={colors} onChange={setColors} onReset={() => setColors(defaultColors(portfolio.template_key))} /><div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h3 className="mb-2 text-sm font-bold text-slate-800">ดาวน์โหลด Portfolio</h3><p className="mb-3 text-xs leading-5 text-slate-600">ตรวจสอบสีบน Preview แล้วจึงดาวน์โหลด PDF</p><ExportButton container={previewContainerRef} title={portfolio.title} busy={templateBusy} /></div></>}
             />
           </div>
         </aside>
@@ -345,7 +373,7 @@ function EditorContent() {
           className={`${mobilePanel === "preview" ? "block" : "hidden"} md:block min-h-0 min-w-0 overflow-y-auto overflow-x-auto bg-slate-300`}
         >
           <ReadyPreview><VisibilityPreview>
-          <TemplateContext.Provider value={portfolio.template_key}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
+          <TemplateContext.Provider value={portfolio.template_key}><PortfolioColorsContext.Provider value={colors}><PreviewViewport activeSection={currentStep === null ? null : sections[currentStep - 1]} visible={desktop || mobilePanel === "preview"}>
             {/* PAGE 1 */}
 
             <div
@@ -377,7 +405,7 @@ function EditorContent() {
             <VisibleSection section="certificate"><div className="shrink-0"><CertificatePreview /></div></VisibleSection>
 
             <div className="h-8 shrink-0" />
-          </PreviewViewport></TemplateContext.Provider>
+          </PreviewViewport></PortfolioColorsContext.Provider></TemplateContext.Provider>
           </VisibilityPreview></ReadyPreview>
         </main>
       </div>
