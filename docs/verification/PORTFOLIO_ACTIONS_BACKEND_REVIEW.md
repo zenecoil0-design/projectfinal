@@ -13,3 +13,7 @@ Next work: finish backend regression coverage, persistent client request recover
 ## Follow-up 2026-10-25
 
 Section Visibility is now installed; see SECTION_VISIBILITY_HOSTED_INSTALLATION.md for the installation/history mapping and remaining acceptance. Strengthened late-failure test to remove the injected failure, retry the same request key successfully, then replay and confirm exactly one copy and one receipt. Both PGlite test groups passed in this round. This does not establish concurrent real PostgreSQL acceptance or Dashboard integration. Portfolio actions remain prepared-only.
+
+## Copy content and deletion regression
+
+Added a populated six-section fixture and complete row comparisons excluding generated IDs/portfolio IDs. Checks template/color, visibility, shared references, independent copy edit, cascading copy deletion and preservation of original/library/Storage metadata. Three PGlite groups passed in one run; scoped ESLint and diff checks passed. This synthetic schema still uses text for some hosted date/numeric columns and does not establish real Storage API or concurrent PostgreSQL behavior. No hosted action migration or Dashboard change was made.
