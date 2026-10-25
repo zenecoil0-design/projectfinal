@@ -40,3 +40,27 @@
 .portfolio-page[data-template="modern"] .document-page-number { color: var(--portfolio-primary); }
 .portfolio-page[data-template="modern"] .education-logo { border-color: var(--portfolio-primary); }
 .portfolio-page[data-template="minimal"] { --minimal-accent: var(--portfolio-primary); --minimal-rule: var(--portfolio-secondary); }
+
+/* Third optional color: normal document body text; decorative headings stay
+   primary, and inverse/white text on dark color bands stays contrast-safe. */
+.portfolio-page[data-portfolio-page] {
+  color: var(--portfolio-text);
+}
+.portfolio-page[data-template="classic"] .formal-cover-details span,
+.portfolio-page[data-template="classic"] .document-card p,
+.portfolio-page[data-template="classic"][data-page-section="preface"] > div:nth-child(2) p,
+.portfolio-page[data-template="classic"][data-page-section="profile"] > div:nth-child(2) {
+  color: var(--portfolio-text);
+}
+.portfolio-page[data-template="modern"] .creative-profile-information span,
+.portfolio-page[data-template="modern"] .creative-profile-contact p,
+.portfolio-page[data-template="modern"] .creative-profile-address,
+.portfolio-page[data-template="modern"] .document-card p,
+.portfolio-page[data-template="modern"][data-page-section="preface"] > div:nth-child(2) p {
+  color: var(--portfolio-text);
+}
+.portfolio-page[data-template="minimal"] .document-card p,
+.portfolio-page[data-template="minimal"] .minimal-cover-author,
+.portfolio-page[data-template="minimal"][data-page-section="preface"] > div:nth-child(2) p {
+  color: var(--portfolio-text);
+}

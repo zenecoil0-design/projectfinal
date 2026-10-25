@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { defaultColors, hexToHsv, hsvToHex, normalizeHex, type PortfolioColors } from "@/lib/editor/portfolio-colors";
+import { automaticTextColor, contrastRatio, hexToHsv, hsvToHex, normalizeHex, resolvedTextColor, type PortfolioColors } from "@/lib/editor/portfolio-colors";
 
 const samples = ["#303F9F", "#1D416D", "#3479B8", "#167D98", "#277455", "#A13A50", "#77449B", "#D89B45", "#232B38", "#E4D7C6"];
 
@@ -34,8 +34,8 @@ function Spectrum({ value, setColor }: { value: string; setColor: (value: string
 }
 
 export default function PortfolioColorPicker({ template, colors, onChange, onReset }: { template: string; colors: PortfolioColors; onChange: (colors: PortfolioColors) => void; onReset: () => void }) {
-  const [selected, setSelected] = useState<"primary" | "secondary">("primary");
-  const value = colors[selected];
+  const [selected, setSelected] = useState<"primary" | "secondary" | "text">("primary");
+  const value = selected === "text" ? resolvedTextColor(colors, template) : colors[selected];
   const [hexText, setHexText] = useState(value);
   const [eyedropperError, setEyedropperError] = useState("");
   useEffect(() => setHexText(value), [value, selected]);
@@ -47,15 +47,16 @@ export default function PortfolioColorPicker({ template, colors, onChange, onRes
     if (!ctor) { setEyedropperError("เบราว์เซอร์นี้ไม่รองรับหลอดดูดสี"); return; }
     try { update((await new ctor().open()).sRGBHex); setEyedropperError(""); } catch { /* User dismissed the OS picker. */ }
   };
-  return <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="ปรับสีหลักและสีรอง">
+  return <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-3 sm:p-4" aria-label="ปรับสีหลัก สีรอง และสีตัวอักษร">
     <h3 className="text-base font-bold text-slate-900">ปรับสี Portfolio</h3>
-    <p className="text-sm leading-6 text-slate-600">เลือกสีหลักหรือสีรอง แล้วลากจุดในจานสีหรือพิมพ์ HEX เพื่อดูผลใน Preview ทันที</p>
-    <div className="grid grid-cols-2 gap-2" role="group" aria-label="เลือกสีหลักหรือสีรอง">
-      {(["primary", "secondary"] as const).map(key => <button key={key} type="button" aria-pressed={selected === key} onClick={() => setSelected(key)} className={"flex min-h-14 min-w-0 items-center gap-2 rounded-lg border-2 p-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 " + (selected === key ? "border-blue-600 bg-blue-50" : "border-slate-200")}>
-        <span className="h-8 w-8 shrink-0 rounded-md border border-slate-200" style={{ backgroundColor: colors[key] }} /><span className="min-w-0 break-words font-semibold">{key === "primary" ? "สีหลัก" : "สีรอง"}<span className="block text-[11px] font-normal text-slate-600">{colors[key]}</span></span>
+    <p className="text-sm leading-6 text-slate-600">เลือกสีหลัก สีรอง หรือสีตัวอักษร แล้วลากจุดในจานสีหรือพิมพ์ HEX เพื่อดูผลใน Preview ทันที</p>
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="group" aria-label="เลือกประเภทสี">
+      {(["primary", "secondary", "text"] as const).map(key => <button key={key} type="button" aria-pressed={selected === key} onClick={() => setSelected(key)} className={"flex min-h-14 min-w-0 items-center gap-2 rounded-lg border-2 p-2 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 " + (selected === key ? "border-blue-600 bg-blue-50" : "border-slate-200")}>
+        <span className="h-8 w-8 shrink-0 rounded-md border border-slate-200" style={{ backgroundColor: key === "text" ? resolvedTextColor(colors, template) : colors[key] }} /><span className="min-w-0 break-words font-semibold">{key === "primary" ? "สีหลัก" : key === "secondary" ? "สีรอง" : "สีตัวอักษร"}<span className="block text-[11px] font-normal text-slate-600">{key === "text" && colors.text === null ? "อัตโนมัติ" : colors[key]}</span></span>
       </button>)}
     </div>
     {template === "minimal" && <p className="rounded-lg bg-blue-50 p-2 text-xs text-blue-800">Minimal ใช้สีแบบเรียบง่าย องค์ประกอบบางส่วนคงสีขาว–เทาเพื่อให้อ่านชัด</p>}
+    {selected === "text" && <div className="space-y-2"><label className="flex min-h-11 items-center gap-2 text-sm font-medium text-slate-700"><input type="checkbox" checked={colors.text === null} onChange={event => onChange({ ...colors, text: event.target.checked ? null : automaticTextColor(template) })} className="h-5 w-5" />ปรับสีตัวอักษรอัตโนมัติ (แนะนำ)</label><p className="text-xs text-slate-500">เปลี่ยนสีเนื้อหา แต่ข้อความบนแถบสีหลักจะยังปรับให้ตัดกับพื้นหลังเสมอ</p></div>}
     <Spectrum value={value} setColor={update} />
     <div className="flex flex-wrap gap-2" aria-label="ชุดสีแนะนำ">{samples.map(color => <button key={color} type="button" onClick={() => update(color)} aria-label={"เลือกสี " + color} aria-pressed={value === color} className="h-9 w-9 rounded-full border-2 border-white shadow-[0_0_0_1px_#CBD5E1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" style={{ backgroundColor: color }} />)}</div>
     <div className="flex items-end gap-2">
@@ -63,6 +64,7 @@ export default function PortfolioColorPicker({ template, colors, onChange, onRes
       <button type="button" onClick={() => void eyedropper()} title="ดูดสีจากหน้าจอ" aria-label="ดูดสีจากหน้าจอ" className="min-h-11 rounded-lg border border-slate-300 px-4 text-lg focus-visible:outline-2 focus-visible:outline-blue-600">⌖</button>
     </div>
     {eyedropperError && <p role="status" className="text-xs text-amber-700">{eyedropperError}</p>}
+    {selected === "text" && colors.text !== null && contrastRatio(colors.text, "#FFFFFF") < 4.5 && <p role="status" className="rounded-lg bg-amber-50 p-2 text-xs text-amber-800">สีตัวอักษรนี้มีความคมชัดต่ำบนพื้นขาว ควรเลือกสีเข้มขึ้นหรือเปิดโหมดอัตโนมัติ</p>}
     <button type="button" onClick={onReset} className="min-h-11 rounded-lg border border-slate-300 px-3 text-sm font-medium hover:bg-slate-50">คืนค่าสีเริ่มต้น</button>
     <p className="text-xs leading-5 text-slate-500">ระบบจำสีในเบราว์เซอร์นี้แยกตาม Portfolio สีจะไม่ซิงค์ไปอุปกรณ์อื่น</p>
   </section>;

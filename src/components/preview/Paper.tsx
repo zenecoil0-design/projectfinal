@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { PageLayout } from "./PageLayout";
 import { numberedSections } from "@/lib/editor/page-numbers";
-import { contrastInk, type PortfolioColors } from "@/lib/editor/portfolio-colors";
+import { contrastInk, resolvedTextColor, type PortfolioColors } from "@/lib/editor/portfolio-colors";
 import type { Section } from "@/lib/editor/section-state";
 
 export const TemplateContext = createContext("classic");
@@ -45,7 +45,7 @@ export default function Paper({ sectionId, children, style, ...props }: HTMLAttr
   const scale = useContext(ScaleContext);
   const template = useTemplate();
   const colors = useContext(PortfolioColorsContext);
-  const themeStyle = colors ? { "--portfolio-primary": colors.primary, "--portfolio-secondary": colors.secondary, "--portfolio-on-primary": contrastInk(colors.primary), "--portfolio-on-secondary": contrastInk(colors.secondary) } as React.CSSProperties : {};
+  const themeStyle = colors ? { "--portfolio-primary": colors.primary, "--portfolio-secondary": colors.secondary, "--portfolio-on-primary": contrastInk(colors.primary), "--portfolio-on-secondary": contrastInk(colors.secondary), "--portfolio-text": resolvedTextColor(colors, template) } as React.CSSProperties : {};
   return <div className="paper-frame" style={{ width: 794 * scale, height: 1123 * scale }}>
     <div {...props} data-template={template} data-portfolio-page data-page-section={sectionId} data-numbered={numberedSections.has(sectionId)} style={{ ...style, ...themeStyle, transform: `scale(${scale})`, transformOrigin: "top left" }}>{children}</div>
   </div>;

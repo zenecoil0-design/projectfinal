@@ -19,7 +19,7 @@ import FormContainer from "@/components/layout/FormContainer";
 
 import { PreviewViewport, TemplateContext, PortfolioColorsContext } from "@/components/preview/Paper";
 import PortfolioColorPicker from "@/components/editor/PortfolioColorPicker";
-import { defaultColors, type PortfolioColors } from "@/lib/editor/portfolio-colors";
+import { defaultColors, parsePortfolioColors, type PortfolioColors } from "@/lib/editor/portfolio-colors";
 import CoverPreview from "@/components/preview/CoverPreview";
 import PrefacePreview from "@/components/preview/PrefacePreview";
 import ContentsPreview from "@/components/preview/ContentsPreview";
@@ -203,15 +203,8 @@ function EditorContent() {
     const key = "portfolio-colors:v1:" + portfolio.ownerId + ":" + portfolio.id;
     let initial = defaultColors(portfolio.template_key);
     try {
-      const saved = window.localStorage.getItem(key);
-      if (saved) {
-        const parsed: unknown = JSON.parse(saved);
-        if (parsed && typeof parsed === "object" && "primary" in parsed && "secondary" in parsed) {
-          const value = parsed as { primary?: unknown; secondary?: unknown };
-          if (typeof value.primary === "string" && typeof value.secondary === "string" && /^#[0-9A-Fa-f]{6}$/.test(value.primary) && /^#[0-9A-Fa-f]{6}$/.test(value.secondary)) initial = { primary: value.primary, secondary: value.secondary };
-        }
-      }
-    } catch { /* Storage is optional in private browsing. */ }
+      initial = parsePortfolioColors(window.localStorage.getItem(key), portfolio.template_key);
+    } catch { /* Local storage can be unavailable. */ }
     setColors(initial);
     setColorOwner(key);
   }, [portfolio?.id, portfolio?.ownerId]);
