@@ -27,6 +27,50 @@ export default function ProfilePreview() {
     }
   };
 
+  if (template === "minimal") return <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page gallery-profile">
+    <aside className="gallery-profile-sidebar">
+      <div className="gallery-profile-photo">
+        {profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" /> : <span>รูปประวัติส่วนตัว</span>}
+      </div>
+      <h3>CONTACT / ติดต่อ</h3>
+      <div className="gallery-profile-contact">
+        {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong><span>{profileStore.phone}</span></p>}
+        {hasText(profileStore.email) && <p><strong>อีเมล</strong><span>{profileStore.email}</span></p>}
+        {hasText(profileStore.address) && <p><strong>ที่อยู่</strong><span>{profileStore.address}</span></p>}
+        {socials.map(social => <p key={social.id} className="profile-social-row">
+          <span>{renderSocialIcon(social.platform)}</span>
+          <span className="capitalize">{social.platform}:</span>
+          <span>{social.link}</span>
+        </p>)}
+        {!hasContact && <p>ข้อมูลติดต่อ</p>}
+      </div>
+      {hasText(profileStore.skills) && <section className="gallery-profile-side-extra"><h3>SKILLS / ความสามารถ</h3><p>{profileStore.skills}</p></section>}
+    </aside>
+    <div className="gallery-profile-main">
+      <header className="gallery-profile-heading">
+        <span>PERSONAL PROFILE</span>
+        <h2>ข้อมูลส่วนตัว</h2>
+        <p className="gallery-profile-fullname">{[profileStore.firstName, profileStore.lastName].filter(Boolean).join(" ") || "ชื่อ - นามสกุล"}</p>
+      </header>
+      <div className="gallery-profile-fields">
+        <p><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
+        <p><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
+        <p><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
+        <p><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
+        <p><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
+        <p><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
+        <p><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
+        <p><strong>โรงเรียน</strong><span>{profileStore.school}</span></p>
+        <p><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
+        <p><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
+        {hasText(profileStore.motto) && <p><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
+        {customFields.map(field => <p key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
+      </div>
+      <div className="gallery-profile-bottom-rule" aria-hidden="true" />
+    </div>
+    <PageNumber />
+  </Paper>;
+
   if (template === "modern") return <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page creative-profile">
     <div className="creative-profile-left">
       <div className="creative-profile-photo">

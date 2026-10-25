@@ -133,3 +133,84 @@
   background: var(--gallery-primary);
 }
 /* The next commits add page styles here; do not alter Classic or Modern. */
+
+/* A4 student profile: photo and contacts form a left information rail; the
+   applicant's details use ruled editorial rows on the right. */
+.portfolio-page[data-template="minimal"].gallery-profile {
+  display: grid;
+  grid-template-columns: 229px minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  background: #fff;
+  color: var(--portfolio-text, #202a2d);
+}
+.gallery-profile-sidebar {
+  min-width: 0;
+  height: 100%;
+  padding: 68px 24px 76px;
+  background: var(--portfolio-primary, #466b73);
+  color: var(--portfolio-on-primary, #fff);
+  overflow-wrap: anywhere;
+}
+.gallery-profile-photo {
+  display: flex;
+  width: 180px;
+  height: 232px;
+  max-width: 100%;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  background: var(--portfolio-secondary, #d5dfe1);
+  border: 3px solid #ffffffa8;
+  border-radius: 0;
+  color: var(--portfolio-on-secondary, #202a2d);
+}
+.gallery-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gallery-profile-photo span { font-size: 13px; text-align: center; }
+.gallery-profile-sidebar h3 {
+  margin-top: 36px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid currentColor;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  color: inherit;
+}
+.gallery-profile-contact { display: flex; flex-direction: column; gap: 15px; margin-top: 22px; }
+.gallery-profile-contact p { min-width: 0; font-size: 12px; line-height: 1.65; }
+.gallery-profile-contact strong { display: block; font-weight: 700; font-size: 11px; }
+.gallery-profile-contact span { overflow-wrap: anywhere; }
+.gallery-profile-contact .profile-social-row { display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap; }
+.gallery-profile-contact .profile-social-row > span:not(:last-child) { flex-shrink: 0; }
+.gallery-profile-contact .profile-social-row > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.gallery-profile-side-extra h3 { margin-top: 26px; }
+.gallery-profile-side-extra p { margin-top: 11px; font-size: 12px; line-height: 1.65; }
+.gallery-profile-main { min-width: 0; padding: 88px 56px 70px 42px; }
+.gallery-profile-heading { margin-bottom: 32px; border-bottom: 1px solid var(--portfolio-secondary, #d5dfe1); padding-bottom: 20px; }
+.gallery-profile-heading > span { font-size: 12px; letter-spacing: 2.5px; color: var(--portfolio-primary); }
+.gallery-profile-heading h2 { margin-top: 9px; color: var(--portfolio-text); font-size: 40px; font-weight: 750; line-height: 1.3; }
+.gallery-profile-fullname { margin-top: 19px; color: var(--portfolio-text); font-size: 19px; font-weight: 600; line-height: 1.5; }
+.gallery-profile-fields { display: flex; flex-direction: column; gap: 0; }
+.gallery-profile-fields p {
+  display: grid;
+  grid-template-columns: minmax(0, 130px) minmax(0, 1fr);
+  column-gap: 16px;
+  min-width: 0;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid #dfe5e6;
+  line-height: 1.5;
+  font-size: 14px;
+  color: var(--portfolio-text);
+}
+.gallery-profile-fields strong { font-weight: 600; color: inherit; }
+.gallery-profile-fields span { min-width: 0; overflow-wrap: anywhere; }
+.gallery-profile-bottom-rule { width: 78px; height: 3px; margin-top: 35px; background: var(--portfolio-primary); }
+.portfolio-page[data-template="minimal"].gallery-profile .document-page-number { color: var(--portfolio-text); }
+/* Prevent the generic first-child page-header styling from touching the sidebar. */
+.portfolio-page[data-template="minimal"].gallery-profile > div:first-child,
+.portfolio-page[data-template="minimal"].gallery-profile > aside:first-child { border: 0; }
