@@ -1,9 +1,26 @@
 "use client";
 import { useCertificateStore } from "@/store/useCertificateStore";
 import PaginatedSection from "./PaginatedSection";
+import { useTemplate } from "./Paper";
 export default function CertificatePreview() {
   const certificates = useCertificateStore(state => state.certificates);
-  return <PaginatedSection sectionId="certificate" title="เกียรติบัตร" cards={certificates.map((certificate, index) => (
+  const template = useTemplate();
+  return <PaginatedSection sectionId="certificate" title="เกียรติบัตร" cards={certificates.map((certificate, index) => (template === "minimal" ? (
+    <article key={certificate.id} className="document-card certificate-card gallery-certificate-card" data-gallery-entry="certificate">
+      <div className="gallery-certificate-media document-images" data-image-count={certificate.images.length}>
+        {certificate.images.length ? certificate.images.map((url, imageIndex) => <div key={certificate.id + "-" + imageIndex} className="gallery-certificate-image">
+          <img src={url} alt={`เกียรติบัตร ${imageIndex + 1}`} />
+        </div>) : <div className="gallery-certificate-placeholder">CERTIFICATE</div>}
+      </div>
+      <div className="gallery-certificate-info">
+        <span className="gallery-certificate-index">CERTIFICATE / {String(index + 1).padStart(2, "0")}</span>
+        <h3>{certificate.title}</h3>
+        {certificate.issuedBy.trim() && <p className="gallery-certificate-issuer">{certificate.issuedBy}</p>}
+        {certificate.issuedDate.trim() && <p className="gallery-certificate-date">{certificate.issuedDate}</p>}
+        {certificate.description.trim() && <p className="gallery-certificate-description whitespace-pre-line">{certificate.description}</p>}
+      </div>
+    </article>
+  ) : (
                       <article
                         key={
                           certificate.id
@@ -88,5 +105,5 @@ export default function CertificatePreview() {
                           </div>
                         )}
                       </article>
-  ))} />;
+  )))} />;
 }

@@ -565,3 +565,69 @@
 [data-template="minimal"] .gallery-activity-media[data-image-count="1"] img { height: 255px; }
 [data-template="minimal"] .gallery-activity-media[data-image-count="3"] > div:first-child img { height: 185px; }
 [data-template="minimal"] .gallery-activity-card:not(:has(.gallery-activity-media)) { grid-template-columns: 1fr; }
+
+/* Gallery certificates: a deliberate photo / metadata spread, not the
+   generic stacked card, supporting 0/1/2 certificates photos per record. */
+[data-template="minimal"] .certificate-card.gallery-certificate-card {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+  min-height: 235px;
+  padding: 22px 0;
+  border: 0;
+  border-bottom: 1px solid var(--portfolio-secondary);
+}
+[data-template="minimal"] .gallery-certificate-media.document-images {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  margin: 0;
+  gap: 9px;
+  align-items: center;
+}
+[data-template="minimal"] .gallery-certificate-image {
+  min-height: 110px;
+  padding: 8px;
+  background: #f2f4f4;
+  border: 1px solid var(--portfolio-secondary);
+  border-radius: 0;
+}
+[data-template="minimal"] .gallery-certificate-image img {
+  display: block;
+  max-height: 185px;
+  width: 100%;
+  object-fit: contain;
+}
+[data-template="minimal"] .gallery-certificate-media[data-image-count="2"] img { max-height: 125px; }
+[data-template="minimal"] .gallery-certificate-placeholder {
+  display: grid;
+  min-height: 175px;
+  place-items: center;
+  color: var(--portfolio-primary);
+  background: var(--portfolio-secondary);
+  border: 1px solid #dfe6e6;
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+[data-template="minimal"] .gallery-certificate-info {
+  min-width: 0;
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--portfolio-text);
+}
+[data-template="minimal"] .gallery-certificate-index {
+  display: block;
+  margin-bottom: 13px;
+  color: var(--portfolio-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+[data-template="minimal"] .gallery-certificate-info h3 { color: var(--portfolio-text); font-size: 20px; line-height: 1.5; font-weight: 700; }
+[data-template="minimal"] .gallery-certificate-info p { margin-top: 8px; color: var(--portfolio-text); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+[data-template="minimal"] .gallery-certificate-issuer { font-weight: 600; }
+[data-template="minimal"] .gallery-certificate-date { opacity: .75; }
+[data-template="minimal"] .gallery-certificate-description { border-top: 2px solid var(--portfolio-primary); margin-top: 15px !important; padding-top: 12px; }
