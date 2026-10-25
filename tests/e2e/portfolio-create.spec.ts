@@ -15,7 +15,7 @@ async function dashboard(page: Page) {
   await page.goto('/dashboard'); await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
   await page.getByRole('button', { name: 'สร้าง Portfolio ใหม่', exact: false }).click();
 }
-async function draft(page: Page) { await name(page).fill('  พอร์ต Science  '); await modal(page).getByRole('button', { name: /Minimal/ }).click(); }
+async function draft(page: Page) { await name(page).fill('  พอร์ต Science  '); await modal(page).getByRole('button', { name: /Gallery Editorial/ }).click(); }
 
 test('mobile create portfolio dialog has readable text and touch-sized close control', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -50,7 +50,7 @@ test('blank validation does not insert and normal close/reopen keeps editable dr
   for (const value of ['', '   ']) { await name(page).fill(value); await submit(page).click(); await expect(modal(page).getByRole('alert')).toHaveText('กรุณาตั้งชื่อ Portfolio'); }
   expect(inserts).toBe(0); await draft(page); await modal(page).getByRole('button', { name: 'ยกเลิก', exact: true }).click();
   await page.getByRole('button', { name: 'สร้าง Portfolio ใหม่', exact: false }).click();
-  await expect(name(page)).toHaveValue('  พอร์ต Science  '); await expect(modal(page).getByRole('button', { name: /Minimal/ })).toHaveAttribute('aria-pressed', 'true');
+  await expect(name(page)).toHaveValue('  พอร์ต Science  '); await expect(modal(page).getByRole('button', { name: /Gallery Editorial/ })).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('same-turn double click inserts once and pending snapshot cannot be edited or closed', async ({ page }) => {
@@ -63,7 +63,7 @@ test('same-turn double click inserts once and pending snapshot cannot be edited 
   });
   await submit(page).evaluate(button => { if (!(button instanceof HTMLButtonElement)) throw new Error('Expected create button'); button.click(); button.click(); });
   await expect.poll(() => inserts).toBe(1); await expect(name(page)).toBeDisabled();
-  for (const text of [/Classic/, /Modern University/, /Minimal/]) await expect(modal(page).getByRole('button', { name: text })).toBeDisabled();
+  for (const text of [/Classic/, /Modern University/, /Gallery Editorial/]) await expect(modal(page).getByRole('button', { name: text })).toBeDisabled();
   await expect(modal(page).getByRole('button', { name: 'ยกเลิก', exact: true })).toBeDisabled();
   await expect(modal(page).getByRole('button', { name: 'ปิดกล่องสร้างพอร์ต', exact: true })).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(modal(page)).toBeVisible(); await expect(modal(page).getByRole('status')).toBeVisible();
@@ -82,7 +82,7 @@ for (const failure of ['backend', 'network', 'empty', 'malformed'] as const) {
     await submit(page).click(); await expect(modal(page).getByRole('alert')).toHaveText(createResultError);
     await expect(page.locator('body')).not.toContainText(internal); await expect(page).toHaveURL(/dashboard$/);
     await expect(name(page)).toHaveValue('  พอร์ต Science  '); await expect(name(page)).toBeEnabled();
-    await expect(modal(page).getByRole('button', { name: /Minimal/ })).toHaveAttribute('aria-pressed', 'true'); expect(inserts).toBe(1);
+    await expect(modal(page).getByRole('button', { name: /Gallery Editorial/ })).toHaveAttribute('aria-pressed', 'true'); expect(inserts).toBe(1);
     await page.unroute('**/rest/v1/portfolios?**'); await submit(page).click(); await expect(page).toHaveURL(/editor\?portfolio=/); expect(inserts).toBe(2);
   });
 }
@@ -93,7 +93,7 @@ for (const failure of ['backend', 'network'] as const) {
     page.on('request', r => { if (r.method() === 'POST' && new URL(r.url()).pathname === '/rest/v1/portfolios') inserts++; });
     await page.route('**/auth/v1/user', route => failure === 'network' ? route.abort('failed') : route.fulfill({ status: 500, json: { message: internal } }));
     await submit(page).click(); await expect(modal(page).getByRole('alert')).toHaveText(createAuthError, { timeout: 20000 });
-    await expect(name(page)).toHaveValue('  พอร์ต Science  '); await expect(modal(page).getByRole('button', { name: /Minimal/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(name(page)).toHaveValue('  พอร์ต Science  '); await expect(modal(page).getByRole('button', { name: /Gallery Editorial/ })).toHaveAttribute('aria-pressed', 'true');
     expect(inserts).toBe(0); await expect(page).toHaveURL(/dashboard$/); await expect(page.locator('body')).not.toContainText(internal);
     await page.unroute('**/auth/v1/user'); await submit(page).click(); await expect(page).toHaveURL(/editor\?portfolio=/);
   });

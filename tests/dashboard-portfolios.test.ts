@@ -32,7 +32,7 @@ test('valid portfolio dates preserve Thai locale formatting', () => {
 
 test('display name agrees with the template chooser and handles unknown keys without rewriting them', () => {
   assert.equal(portfolioTemplateName('modern'), 'Modern University');
-  assert.equal(portfolioTemplateName('minimal'), 'Minimal');
+  assert.equal(portfolioTemplateName('minimal'), 'Gallery Editorial');
   assert.equal(portfolioTemplateName('classic'), 'Classic');
   assert.equal(portfolioTemplateName(null), 'Classic');
   assert.equal(portfolioTemplateName('future-template'), 'รูปแบบเดิม');

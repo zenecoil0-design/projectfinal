@@ -32,7 +32,7 @@ export function formatPortfolioDate(value: string | null): string {
 export function portfolioTemplateName(key: string | null): string {
   switch (key) {
     case "modern": return "Modern University";
-    case "minimal": return "Minimal";
+    case "minimal": return "Gallery Editorial";
     case "classic":
     case null: return "Classic";
     default: return "รูปแบบเดิม";

@@ -50,9 +50,9 @@ const templates: {
   },
   {
     key: "minimal",
-    name: "Minimal",
+    name: "Gallery Editorial",
     description:
-      "สะอาด โล่ง อ่านง่าย เน้นเนื้อหาเป็นหลัก",
+      "ภาพถ่ายขนาดใหญ่ ตัวอักษรจัดวางแบบนิตยสาร และรายละเอียดที่เรียบง่าย",
   },
 ];
 
