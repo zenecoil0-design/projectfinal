@@ -1,9 +1,26 @@
 "use client";
 import { useActivityStore } from "@/store/useActivityStore";
 import PaginatedSection from "./PaginatedSection";
+import { useTemplate } from "./Paper";
 export default function ActivityPreview() {
   const activities = useActivityStore(state => state.activities);
-  return <PaginatedSection sectionId="activity" title="ผลงานและกิจกรรม" cards={activities.map((activity, index) => (
+  const template = useTemplate();
+  return <PaginatedSection sectionId="activity" title="ผลงานและกิจกรรม" cards={activities.map((activity, index) => (template === "minimal" ? (
+    <article key={activity.id} className="document-card activity-card gallery-activity-card" data-gallery-entry="activity" data-image-count={activity.images.length}>
+      <div className="gallery-activity-info">
+        <span className="gallery-activity-index">{String(index + 1).padStart(2, "0")} / ACTIVITIES & WORKS</span>
+        <h3>{activity.title}</h3>
+        {activity.organization.trim() && <p className="gallery-activity-org">{activity.organization}</p>}
+        {activity.activityDate.trim() && <p className="gallery-activity-date">{activity.activityDate}</p>}
+        {activity.description.trim() && <p className="gallery-activity-description whitespace-pre-line">{activity.description}</p>}
+      </div>
+      {activity.images.length > 0 && <div className="gallery-activity-media document-images" data-image-count={activity.images.length}>
+        {activity.images.map((url, imageIndex) => <div key={activity.id + "-" + imageIndex} className="gallery-activity-image">
+          <img src={url} alt={`รูปประกอบ ${imageIndex + 1}`} />
+        </div>)}
+      </div>}
+    </article>
+  ) : (
                       <article
                         key={
                           activity.id
@@ -90,5 +107,5 @@ export default function ActivityPreview() {
                           </div>
                         )}
                       </article>
-  ))} />;
+  )))} />;
 }
