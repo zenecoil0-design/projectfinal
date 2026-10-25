@@ -17,16 +17,41 @@ export default function CoverPreview() {
     </div>
     <div className="minimal-cover-footer">PORTFOLIO / แฟ้มสะสมผลงาน</div>
   </Paper>;
-  if (template === "modern") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page editorial-cover">
-    <div className="editorial-cover-top"><span>แฟ้มสะสมผลงาน</span><span>SELECTED WORKS</span></div>
-    <div className="editorial-cover-title"><p>INTRODUCING</p><h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1></div>
-    <div className="editorial-cover-art">
-      {coverStore.coverImage && <img className="editorial-backdrop" src={coverStore.coverImage} alt="ภาพพื้นหลังหน้าปก" />}
-      <div className="editorial-portrait">{coverStore.coverImage ? <img src={coverStore.coverImage} alt="รูปหน้าปก" /> : <span>YOUR<br />NEXT<br />CHAPTER.</span>}</div>
-      <span className="editorial-art-caption">LEARNING · CREATIVITY · GROWTH</span>
+  if (template === "modern") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page editorial-cover creative-cover">
+    <div className="creative-cover-media">
+      {coverStore.coverImage ? (
+        <img src={coverStore.coverImage} alt="รูปหน้าปก" />
+      ) : (
+        <div className="creative-cover-placeholder" aria-label="พื้นที่รูปนักเรียน">
+          <span>YOUR PHOTO</span>
+        </div>
+      )}
+      <span className="creative-cover-media-caption">STUDENT PORTFOLIO · APPLICATION</span>
     </div>
-    <div className="editorial-cover-name"><p>จัดทำโดย / PRESENTED BY</p><h2>{fullName || "ชื่อ – นามสกุล"}</h2><h3>{coverStore.schoolName || "ชื่อสถานศึกษา"}</h3></div>
-    <div className="editorial-cover-bottom"><span>ความตั้งใจในทุกก้าวของการเรียนรู้</span><span>PORTFOLIO</span></div>
+    <div className="creative-cover-content">
+      <div className="editorial-cover-top">
+        <span>PORTFOLIO / แฟ้มสะสมผลงาน</span>
+        <span>02 — MODERN</span>
+      </div>
+      <div className="editorial-cover-title">
+        <p>STUDENT APPLICATION</p>
+        <h1>{coverStore.portfolioTitle || "PORTFOLIO"}</h1>
+        <span className="creative-cover-title-rule" aria-hidden="true" />
+      </div>
+      <div className="editorial-cover-name">
+        <p>PROFILE / ข้อมูลผู้สมัคร</p>
+        <div className="creative-cover-detail">
+          <span>ชื่อ</span><h2>{fullName || "ชื่อ - นามสกุล"}</h2>
+        </div>
+        <div className="creative-cover-detail">
+          <span>ชื่อโรงเรียน</span><h3>{coverStore.schoolName || "ชื่อโรงเรียน"}</h3>
+        </div>
+      </div>
+      <div className="editorial-cover-bottom">
+        <span>THE NEXT CHAPTER</span>
+        <span>EDUCATION · EXPERIENCE · GROWTH</span>
+      </div>
+    </div>
   </Paper>;
 
   if (template === "classic") return <Paper sectionId="cover" data-section="หน้าปก" className="portfolio-page formal-cover">

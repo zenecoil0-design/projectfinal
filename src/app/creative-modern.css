@@ -1,0 +1,174 @@
+/* Template 2 — Modern University Portfolio.
+   User-supplied nine-page layout; PDF and viewport share the same A4 CSS.
+   Scope all selectors to modern, without changing Classic or Minimal. */
+[data-template="modern"] {
+  --creative-navy: #153c51;
+  --creative-deep: #0d3045;
+  --creative-ink: #1c3547;
+  --creative-muted: #627a88;
+  --creative-rule: #cbdbe2;
+  --creative-paper: #fffefa;
+  --creative-blue: #b8d6e0;
+  --creative-sand: #e5d9c9;
+  overflow-wrap: anywhere;
+}
+.portfolio-page[data-template="modern"] {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: var(--creative-paper);
+  color: var(--creative-ink);
+  box-shadow: 0 10px 30px #123c5217;
+}
+.portfolio-page[data-template="modern"] h2 { color: var(--creative-navy); letter-spacing: 0; }
+.portfolio-page[data-template="modern"] .document-page-number { color: var(--creative-navy); }
+.portfolio-page[data-template="modern"]:not(.editorial-cover)::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 146px;
+  height: 100px;
+  background: linear-gradient(135deg, transparent 52%, #d0e5e9 52% 74%, #23566d 74%);
+  opacity: .75;
+}
+.portfolio-page[data-template="modern"]:not(.editorial-cover)::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 102px;
+  height: 80px;
+  background: linear-gradient(135deg, transparent 54%, #e9dfd1 54% 72%, #badbe4 72%);
+}
+.portfolio-page[data-template="modern"]:not(.editorial-cover) > div:first-child {
+  border-bottom: 1px solid #b5cad5;
+}
+.portfolio-page[data-template="modern"]:not(.editorial-cover) > div:first-child h2 {
+  color: var(--creative-navy);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.portfolio-page[data-template="modern"]:not(.editorial-cover) > div:last-child {
+  border-color: var(--creative-rule);
+  color: var(--creative-muted);
+}
+.portfolio-page.editorial-cover[data-template="modern"].creative-cover {
+  display: grid;
+  grid-template-columns: 47% 53%;
+  padding: 0;
+  background: var(--creative-deep);
+}
+.creative-cover-media {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(155deg, #b9d5df, #789ba8 52%, #e4ddd0);
+}
+.creative-cover-media > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.creative-cover-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(145deg, transparent 0 51%, #a5c8d3 51% 59%, transparent 59%),
+    linear-gradient(163deg, #e4eff1 0%, #9fbfcb 54%, #2c6a81 100%);
+}
+.creative-cover-placeholder > span {
+  border: 1px solid #f5fafac9;
+  padding: 12px;
+  color: #183e53;
+  font-size: 13px;
+  letter-spacing: 3px;
+}
+.creative-cover-media-caption {
+  position: absolute;
+  bottom: 26px;
+  left: 28px;
+  padding: 9px 13px;
+  background: #ffffffdf;
+  color: #173c52;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+.creative-cover-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 65px 39px 40px;
+  color: #fff;
+}
+.creative-cover .editorial-cover-top,
+.creative-cover .editorial-cover-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  color: #c9dfe6;
+  font-size: 10px;
+  letter-spacing: 1.25px;
+  line-height: 1.6;
+}
+.creative-cover .editorial-cover-top {
+  border-bottom: 1px solid #80a8b855;
+  padding-bottom: 19px;
+}
+.creative-cover .editorial-cover-title { padding: 74px 0 0; }
+.creative-cover .editorial-cover-title p {
+  margin: 0 0 15px;
+  color: #c1dae2;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2.6px;
+}
+.creative-cover .editorial-cover-title h1 {
+  color: #fff;
+  font-size: 43px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  line-height: 1.26;
+  overflow-wrap: anywhere;
+}
+.creative-cover-title-rule {
+  display: block;
+  width: 70px;
+  height: 2px;
+  margin-top: 31px;
+  background: #c4dce3;
+}
+.creative-cover .editorial-cover-name { margin-top: auto; padding-top: 35px; }
+.creative-cover .editorial-cover-name > p {
+  margin-bottom: 23px;
+  color: #c1dae2;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+.creative-cover-detail { padding-bottom: 24px; border-bottom: 1px solid #a4c6d35b; }
+.creative-cover-detail + .creative-cover-detail { padding-top: 24px; }
+.creative-cover-detail > span { display: block; color: #c1dae2; font-size: 13px; }
+.creative-cover-detail h2,
+.creative-cover-detail h3 {
+  margin-top: 8px;
+  color: #fff !important;
+  font-size: 23px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.creative-cover .editorial-cover-bottom {
+  margin-top: 60px;
+  padding-top: 17px;
+  border-top: 1px solid #a4c6d355;
+}
