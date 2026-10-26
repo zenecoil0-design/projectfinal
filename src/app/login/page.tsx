@@ -235,6 +235,8 @@ const nextPath =
           </div>
         </div>
 
+        <Link href="/forgot-password" className="block text-right text-sm font-bold text-blue-700 underline">ลืมรหัสผ่าน?</Link>
+
         {/* Login */}
         <button
           type="submit"
