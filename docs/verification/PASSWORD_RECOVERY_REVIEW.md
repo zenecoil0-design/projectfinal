@@ -30,3 +30,20 @@ Recovery is deliberately browser-bound: open the email link in the browser/devic
 References checked: Supabase password-based auth and resetPasswordForEmail documentation, installed auth-js PKCE implementation, and Supabase changelog (including pending TLS cipher retirement, which requires no change to this modern browser flow).
 
 M11.03/M11.04: application implementation and mock coverage provided, hosted acceptance pending. M11.05 remains pending. Portfolio-actions Docker acceptance remains paused at the user's request; no actions migration or feature enablement occurred here. Autosave, image subsets and library snapshots remain deferred.
+
+## Part B: lifecycle acceptance and recovery of temporary workspace
+
+Part A was published as 48395697e1ccafa95601697aeecd0cc5dda27613 and its complete tree verified before B. B adds expired/consumed-code responses, page refresh with retained login, late getUser/update responses after account change, malformed/wrong-owner responses, keyboard checks and 390px/1440px layout checks. No application source changes in B.
+
+Before the workspace disappeared, the expanded run had 48 passes / 1 failure. The failing assertion expected a generic save error; the installed SDK emits USER_UPDATED with the malformed user, so the owner guard correctly retires the recovery page. The test was split into malformed/wrong-owner cases requiring invalidation, no success and no editable password fields; both passed in a focused run. These are historical results, not the final recovered run.
+
+The temporary B checkout and screenshots disappeared before publication. Part A remained intact remotely. B tests were reconstructed from the recorded changes in a new checkout, and a new production build/test run is required below. No original result files are claimed to be retained.
+
+### Final reconstructed B results
+
+- Fresh production webpack build PASS, full-repository TypeScript PASS, scoped ESLint PASS, diff check PASS.
+- Final production browser run: 49 passed / 1 failed out of 50 in 3.1 minutes. All 17 recovery cases and 3 existing auth accessibility cases passed; the remaining 30 are create regression cases.
+- Failure: existing create blank-validation test timed out waiting five seconds for the Dashboard list. Captured page remained in list-loading state. Focused rerun, with no source/test/timeout changes, passed 1/1 in 5.0 seconds. Do not infer a proven root cause or describe this as a single 50/50 run.
+- Screenshots regenerated and visually inspected at 390x900 and 1440x900: fields, controls and keyboard focus fit the viewport. Screenshot generation remains in the tests; image binaries are not included in this commit.
+- No application source changes after the build. The 66/66 unit/PGlite result above belongs to Part A on the same application source, not a second run in B.
+- This closes local implementation/mock acceptance of recovery, not hosted email delivery, password policy, deployment or real-device acceptance. It does not resume Docker or enable portfolio actions.

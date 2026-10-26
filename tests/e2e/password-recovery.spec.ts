@@ -103,3 +103,66 @@ test('mobile recovery remains readable and reset pending submits only once', asy
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   release(); await expect(page.getByRole('status')).toHaveText('เปลี่ยนรหัสผ่านแล้ว');
 });
+
+for (const code of ['otp_expired', 'flow_state_not_found']) {
+  test(`server-rejected ${code} recovery does not enable password update`, async ({ page }) => {
+    const target = new URL(await requestLink(page)); target.searchParams.set('code', 'expired-synthetic-code');
+    await page.route('**/auth/v1/token?grant_type=pkce', route => route.fulfill({ status: 400, json: { error_code: code, msg: 'RAW_PRIVATE_MARKER' } }));
+    await page.goto(target.toString());
+    await expect(page.locator('main').getByRole('alert')).toContainText('ลิงก์ใช้ไม่ได้');
+    await expect(page).toHaveURL(/\/reset-password$/);
+    await expect(page.locator('body')).not.toContainText('RAW_PRIVATE_MARKER');
+    await expect(page.getByLabel('รหัสผ่านใหม่', { exact: true })).toHaveCount(0);
+  });
+}
+
+test('refresh after consumed recovery needs a new link despite the retained login session', async ({ page }) => {
+  await recovery(page); await page.reload();
+  await expect(page.locator('main').getByRole('alert')).toContainText('ลิงก์ใช้ไม่ได้');
+  await expect(page.getByLabel('รหัสผ่านใหม่', { exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'ขอลิงก์ใหม่' }).click(); await expect(page).toHaveURL(/\/forgot-password$/);
+});
+
+for (const stage of ['verification', 'update']) {
+  test(`late ${stage} after account change cannot update or acknowledge the new session`, async ({ page }) => {
+    await recovery(page); await fill(page); let writes = 0;
+    let started!: () => void; const waiting = new Promise<void>(r => { started = r; });
+    let release!: () => void; const pending = new Promise<void>(r => { release = r; });
+    await page.route('**/auth/v1/user', async route => {
+      const write = route.request().method() === 'PUT'; if (write) writes++;
+      if ((stage === 'update') === write) { started(); await pending; }
+      await route.fulfill({ json: user });
+    });
+    await page.getByRole('button', { name: 'บันทึกรหัสผ่านใหม่' }).click(); await waiting;
+    await page.evaluate(user => {
+      const channel = new BroadcastChannel('sb-127-auth-token');
+      channel.postMessage({ event: 'SIGNED_IN', session: { user: { ...user, id: 'another-owner' } } }); channel.close();
+    }, user);
+    await expect(page.locator('main').getByRole('alert')).toContainText('ลิงก์ใช้ไม่ได้');
+    const response = page.waitForResponse(r => r.url().includes('/auth/v1/user')); release(); await response;
+    await expect(page.getByText('เปลี่ยนรหัสผ่านแล้ว', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('รหัสผ่านใหม่', { exact: true })).toHaveCount(0);
+    expect(writes).toBe(stage === 'update' ? 1 : 0);
+  });
+}
+
+for (const [name, result] of [['malformed', {}], ['wrong-owner', { ...user, id: 'another-owner' }]] as const) {
+  test(`${name} update retires recovery instead of acknowledging success`, async ({ page }) => {
+    await recovery(page); await fill(page);
+    await page.route('**/auth/v1/user', route => route.fulfill({ json: route.request().method() === 'PUT' ? result : user }));
+    await page.getByRole('button', { name: 'บันทึกรหัสผ่านใหม่' }).click();
+    await expect(page.locator('main').getByRole('alert')).toContainText('ลิงก์ใช้ไม่ได้');
+    await expect(page.getByText('เปลี่ยนรหัสผ่านแล้ว', { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel('รหัสผ่านใหม่', { exact: true })).toHaveCount(0);
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`${width}px recovery visual and keyboard verification`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 }); await recovery(page);
+    await page.getByLabel('รหัสผ่านใหม่', { exact: true }).focus(); await page.keyboard.press('Tab');
+    await expect(page.getByLabel('ยืนยันรหัสผ่านใหม่', { exact: true })).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`password-recovery-${width}.png`), fullPage: true });
+  });
+}
