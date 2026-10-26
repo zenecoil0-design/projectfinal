@@ -7,7 +7,7 @@ const reset = () => database = {
   portfolio_section_visibility: [],
   covers: [{id:'cover-a',portfolio_id:'a', title:'ALPHA',first_name:'Alpha',last_name:'Student',school_name:'School A', cover_image_url:'http://127.0.0.1:54321/sample.png'}],
   prefaces:[{id:'preface-a',portfolio_id:'a',content:'คำนำที่บันทึกไว้ของพอร์ต A',signature_name:'Alpha Author'}],
-  profiles:[{id:'profile-a',portfolio_id:'a',first_name:'Alpha',last_name:'Student',social_links:[],custom_fields:[],gpax:null}],
+  profiles:[{id:'profile-a',portfolio_id:'a',age_mode:'auto',manual_age:null,first_name:'Alpha',last_name:'Student',social_links:[],custom_fields:[],gpax:null}],
   user_library_educations:[{id:'education-a',user_id:userId,level:'มัธยมศึกษา',school_name:'Saved School',study_plan:'วิทย์คณิต',gpa:3.5,logo_url:'',start_year:'2023',end_year:'2026'}],
   user_library_activities:[{id:'activity-a',user_id:userId,title:'Saved Activity',description:'รายละเอียดกิจกรรมภาษาไทย',activity_date:'2026-01-01',organization:'School A'}],
   user_library_certificates:[{id:'certificate-a',user_id:userId,title:'Saved Certificate',description:'รายละเอียดเกียรติบัตร',issued_by:'School A',issued_date:'2026-01-01'}],

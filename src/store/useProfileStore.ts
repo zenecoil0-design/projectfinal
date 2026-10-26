@@ -1,3 +1,4 @@
+import type { AgeMode } from "@/lib/age";
 import { create } from "zustand";
 
 export interface SocialMedia {
@@ -20,6 +21,9 @@ interface ProfileState {
   nickname: string;
 
   birthday: string;
+  ageMode: AgeMode;
+  manualAge: string;
+  setAgeMode: (mode: AgeMode) => void;
 
   nationality: string;
   ethnicity: string;
@@ -47,6 +51,7 @@ interface ProfileState {
       | "lastName"
       | "nickname"
       | "birthday"
+      | "manualAge"
       | "nationality"
       | "ethnicity"
       | "religion"
@@ -114,6 +119,8 @@ export const useProfileStore =
     nickname: "",
 
     birthday: "",
+    ageMode: "auto",
+    manualAge: "",
 
     nationality: "",
     ethnicity: "",
@@ -134,6 +141,8 @@ export const useProfileStore =
     motto: "",
 
     customFields: [],
+
+    setAgeMode: (mode) => set({ ageMode: mode }),
 
     setProfile: (
       field,
@@ -166,6 +175,8 @@ export const useProfileStore =
         nickname: "",
 
         birthday: "",
+    ageMode: "auto",
+    manualAge: "",
 
         nationality: "",
         ethnicity: "",

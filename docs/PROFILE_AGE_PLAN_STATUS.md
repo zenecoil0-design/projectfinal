@@ -1,10 +1,9 @@
-# ภาคผนวกสถานะแผน M06.02 — 2026-10-24
+# สถานะอายุ M06.02 — 27 ตุลาคม 2569
 
-สถานะล่าสุดเฉพาะงานวันเกิด/อายุ: **PARTIAL** ไม่ปิด M06 หรือข้อกำหนดอายุทั้งหมด
+สถานะรวม **PARTIAL**
 
-| ขอบเขต | สถานะ | หลักฐาน / งานที่เหลือ |
-| --- | --- | --- |
-| คำนวณอัตโนมัติและแสดงผล | ทำแล้วในขอบเขตรอบนี้ | helper ร่วม ฟอร์ม/Preview สามแบบ; ตรวจวันที่จริง/อนาคต/29 ก.พ.; unit และ production browser mock ผ่าน ดู [รายงาน](verification/PROFILE_AGE_REVIEW.md) |
-| Manual override | TODO | ช่องกรอก โหมด auto/manual และ persistence ยังไม่ทำ |
+- อายุอัตโนมัติ: ทำแล้ว ดู [ผลเดิม](verification/PROFILE_AGE_REVIEW.md)
+- อายุกรอกเอง: โค้ดฟอร์ม/store/Preview/บันทึกและ migration สำหรับทำสำเนาพร้อมแล้ว ผ่าน unit/PGlite และ browser mock ดู [ผลตรวจล่าสุด](verification/MANUAL_AGE_REVIEW.md)
+- ฐานจริง: ยังไม่ติดตั้ง migration รอบนี้ ยังไม่เปิด feature flag และยังไม่ได้ตรวจ save/reload/duplicate ผ่าน API จริง
 
-ภาคผนวกนี้ใช้ประกอบ [แผนรวม](IMPLEMENTATION_PLAN.md) เฉพาะ M06.02 แถว TODO ในแผนรวมยังไม่ได้รวมผลรอบนี้ เพราะ automatic publication review ปฏิเสธไฟล์เต็มที่มีประวัติภายใน/รายละเอียด target จึงเผยแพร่เฉพาะสถานะอายุที่จำเป็นแยกไว้ ไม่เปลี่ยนสถานะงานอื่นหรือผล integration
+ใช้รายการนี้ประกอบแผนรวมเฉพาะ M06.02 ไม่ปิดงานโปรไฟล์ทั้งหมวดหรือแทนผล hosted acceptance

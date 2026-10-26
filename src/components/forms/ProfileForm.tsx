@@ -1,6 +1,6 @@
 "use client";
 import CropInput from "@/components/images/CropInput";
-import { calculateAge } from "@/lib/age";
+import { calculateAge, manualAgeEnabled, parseManualAge } from "@/lib/age";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
 import { EditorFormIssue, formLoadError, formSaveError } from "@/lib/editor/form-errors";
@@ -41,6 +41,8 @@ import {
 
 type ProfileRow = {
   id: string;
+  age_mode?: "auto" | "manual";
+  manual_age?: number | null;
 
   profile_image_url:
     | string
@@ -114,6 +116,29 @@ type ProfileRow = {
     | unknown
     | null;
 };
+
+const profileColumns: string = `
+                  id,
+                  profile_image_url,
+                  first_name,
+                  last_name,
+                  nickname,
+                  date_of_birth,
+                  ${manualAgeEnabled ? "age_mode, manual_age," : ""}
+                  address,
+                  phone,
+                  contact_email,
+                  social_links,
+                  talents,
+                  motto,
+                  nationality,
+                  ethnicity,
+                  religion,
+                  school,
+                  plan,
+                  gpax,
+                  custom_fields
+                `;
 
 const inputClassName = "min-h-11 w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-2 text-base text-slate-800 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 sm:text-sm";
 const labelClassName = "mb-2 block text-sm font-semibold leading-5 text-slate-700";
@@ -357,29 +382,7 @@ export default function ProfileForm({
               .from(
                 "profiles"
               )
-              .select(
-                `
-                  id,
-                  profile_image_url,
-                  first_name,
-                  last_name,
-                  nickname,
-                  date_of_birth,
-                  address,
-                  phone,
-                  contact_email,
-                  social_links,
-                  talents,
-                  motto,
-                  nationality,
-                  ethnicity,
-                  religion,
-                  school,
-                  plan,
-                  gpax,
-                  custom_fields
-                `
-              )
+              .select(profileColumns)
               .eq(
                 "portfolio_id",
                 portfolioId
@@ -392,6 +395,7 @@ export default function ProfileForm({
                 }
               )
               .limit(1)
+              .returns<ProfileRow[]>()
               .maybeSingle();
 
           if (cancelled) return;
@@ -405,6 +409,14 @@ export default function ProfileForm({
 
           const profile =
             data as ProfileRow;
+          if (manualAgeEnabled) {
+            if (!['auto', 'manual'].includes(profile.age_mode ?? '') ||
+                (profile.manual_age != null && parseManualAge(String(profile.manual_age)) === null) ||
+                (profile.age_mode === 'manual' && profile.manual_age == null)) throw new Error('Invalid stored age');
+            store.setAgeMode(profile.age_mode === 'manual' ? 'manual' : 'auto');
+            store.setProfile('manualAge', profile.manual_age == null ? '' : String(profile.manual_age));
+          }
+
 
           store.setProfile(
             "profileImage",
@@ -762,6 +774,10 @@ export default function ProfileForm({
         return;
       }
 
+      if (manualAgeEnabled && ((store.ageMode === 'manual' || store.manualAge !== '') && parseManualAge(store.manualAge) === null)) {
+        setErrorMessage('กรุณากรอกอายุเป็นจำนวนเต็มที่ไม่ติดลบ');
+        return;
+      }
       setIsSaving(
         true
       );
@@ -867,6 +883,7 @@ export default function ProfileForm({
         }
 
         const payload = {
+          ...(manualAgeEnabled ? { age_mode: store.ageMode, manual_age: parseManualAge(store.manualAge) } : {}),
           portfolio_id:
             portfolioId,
 
@@ -1235,12 +1252,17 @@ export default function ProfileForm({
                 อายุ (ปี)
               </p>
 
-              <output aria-labelledby="profile-age-label" className="flex min-h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-base font-semibold text-slate-600 sm:text-sm">
-                {calculateAge(
-                  store.birthday,
-                  new Date()
-                ) ?? "—"}
-              </output>
+              {manualAgeEnabled && <label className="mb-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={store.ageMode === 'manual'} onChange={event => store.setAgeMode(event.target.checked ? 'manual' : 'auto')} />
+                กรอกอายุเอง
+              </label>}
+              {manualAgeEnabled && store.ageMode === 'manual' ? <input aria-labelledby="profile-age-label" type="text" inputMode="numeric" value={store.manualAge}
+                onChange={event => store.setProfile('manualAge', event.target.value)} className={inputClassName} /> :
+                <output aria-labelledby="profile-age-label" className="flex min-h-11 w-full items-center justify-center rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-base font-semibold text-slate-600 sm:text-sm">
+                  {calculateAge(store.birthday, new Date()) ?? "—"}
+                </output>}
+              {manualAgeEnabled && <p className="mt-2 text-xs text-slate-500">{store.ageMode === 'manual' ? 'ใช้ค่าที่กรอก แม้เปลี่ยนวันเกิด' : 'คำนวณจากวันเกิดอัตโนมัติ'}</p>}
+
             </div>
           </div>
 

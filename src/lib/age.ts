@@ -16,3 +16,16 @@ export function calculateAge(birthday: string, referenceDate: Date): number | nu
   if (currentMonth < month || (currentMonth === month && referenceDate.getDate() < day)) age--;
   return age < 0 ? null : age;
 }
+
+export type AgeMode = "auto" | "manual";
+export const manualAgeEnabled = process.env.NEXT_PUBLIC_MANUAL_AGE_ENABLED === "true";
+
+/** PostgreSQL integer range; reject fractions, exponents and signs. */
+export function parseManualAge(value: string): number | null {
+  if (!value || value.trim() !== value || !/^[0-9]+$/.test(value)) return null;
+  const age = Number(value);
+  return Number.isInteger(age) && age >= 0 && age <= 2147483647 ? age : null;
+}
+export function displayedAge(birthday: string, mode: AgeMode, manualAge: string, reference: Date): number | null {
+  return mode === "manual" ? parseManualAge(manualAge) : calculateAge(birthday, reference);
+}

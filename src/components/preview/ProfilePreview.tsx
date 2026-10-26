@@ -1,7 +1,7 @@
 "use client";
 import Paper, { useTemplate } from "./Paper";
 import { PageNumber } from "./PageLayout";
-import { calculateAge } from "@/lib/age";
+import { displayedAge } from "@/lib/age";
 
 import { useProfileStore } from "@/store/useProfileStore";
 import { FaFacebook, FaLine, FaInstagram } from "react-icons/fa";
@@ -12,7 +12,7 @@ export default function ProfilePreview() {
   const profileStore = useProfileStore();
   const template = useTemplate();
 
-  const age = calculateAge(profileStore.birthday, new Date());
+  const age = displayedAge(profileStore.birthday, profileStore.ageMode, profileStore.manualAge, new Date());
   const socials = profileStore.socials.filter(social => hasText(social.link));
   const customFields = profileStore.customFields.filter(field => hasText(field.title) || hasText(field.value));
   const hasContact = hasText(profileStore.phone) || hasText(profileStore.email) || hasText(profileStore.address) || socials.length > 0;
