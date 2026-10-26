@@ -1,3 +1,4 @@
+import { openEditorSection } from './helpers/editor';
 import { test, expect } from '@playwright/test';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -12,7 +13,7 @@ test.beforeEach(async ({ context, request }) => {
 test('palette saves only its field, retries failures and survives cleared browser cache', async ({ page }) => {
  await page.goto('/editor?portfolio=a');
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ await openEditorSection(page, 'colors');
  await page.getByLabel('รหัสสี HEX').fill('#A13A50');
  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF',exact:true})).toBeDisabled();
  let calls=0;
@@ -37,7 +38,7 @@ for(const template of ['classic','modern','minimal'])test(`${template}: saved pa
  await page.goto('/editor?portfolio=a');
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ await openEditorSection(page, 'colors');
  await page.getByLabel('รหัสสี HEX').fill('#A13A50');
  await page.getByRole('button',{name:'บันทึกสีพอร์ต',exact:true}).click();
  await expect(page.getByText('บันทึกสีพอร์ตแล้ว',{exact:true})).toBeVisible();
@@ -62,7 +63,7 @@ for(const template of ['classic','modern','minimal'])test(`${template}: saved pa
 
 test('account change discards late save UI and releases the return-home guard',async({page})=>{
  await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();await page.getByLabel('รหัสสี HEX').fill('#A13A50');
+ await openEditorSection(page, 'colors');await page.getByLabel('รหัสสี HEX').fill('#A13A50');
  let release!:()=>void;const barrier=new Promise<void>(resolve=>release=resolve);
  let start!:()=>void;const started=new Promise<void>(resolve=>start=resolve);
  await page.route('**/rest/v1/portfolios?**',async route=>{
@@ -78,7 +79,7 @@ test('account change discards late save UI and releases the return-home guard',a
 
 test('black and gray retain selected hue; blank contact groups are absent',async({page})=>{
  await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ await openEditorSection(page, 'colors');
  for(const hex of ['#000000','#888888','#FFFFFF']){
   await page.getByLabel('รหัสสี HEX').fill(hex);
   await page.getByRole('slider',{name:'เลือกเฉดสี'}).fill('180');

@@ -314,7 +314,6 @@ function EditorContent() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-4 py-2">
         <TemplatePicker portfolioId={portfolio.id} value={portfolio.template_key} onBusy={setTemplateBusy} onSaved={key => setPortfolio(current => current ? { ...current, template_key: key } : null)} />
-        <button type="button" onClick={() => { setCurrentStep(7); setMobilePanel("form"); }} className="min-h-11 rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด</button>
       </div>
       <EditorStatus />
       <div className="flex gap-2 border-b bg-white p-2 md:hidden">

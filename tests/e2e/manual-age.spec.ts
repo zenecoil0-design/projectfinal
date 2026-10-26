@@ -21,7 +21,7 @@ test('manual persists across save/reload; birthday changes do not override and a
  await page.getByLabel('กรอกอายุเอง').check();await input(page).fill('17');
  await page.getByLabel('วันเกิด',{exact:true}).fill('2001-01-01');
  await expect(preview(page)).toContainText(/อายุ\s*:?\s*17 ปี/);
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ await openEditorSection(page, 'colors');
  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF',exact:true})).toBeDisabled();
  await openEditorSection(page,'profile');
  await save(page).click();await expect(page.locator('#editor-heading-education')).toHaveAttribute('aria-expanded','true');
@@ -68,7 +68,7 @@ test('malformed stored mode blocks profile/export rather than silently replacing
  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a',{data:{age_mode:'unexpected',manual_age:18}});
  await page.goto('/editor?portfolio=a');await openEditorSection(page,'profile');
  await expect(page.locator('#editor-panel-profile [role=alert]')).toContainText('โหลดข้อมูลประวัติส่วนตัวไม่สำเร็จ');
- await page.getByRole('button',{name:'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด'}).click();
+ await openEditorSection(page, 'colors');
  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF',exact:true})).toBeDisabled();
  await openEditorSection(page,'profile');
 });

@@ -218,7 +218,7 @@ test('rename preserves every content table/template/visibility and new Editor ex
   await expect(page.locator('main [data-section="หน้าปก"]')).toContainText('ALPHA');
   await expect(page.locator('main [data-section="ประวัติส่วนตัว"]')).toHaveCount(0);
   await openEditorSection(page, 'education'); await expect(page.locator('#editor-panel-education input[type=checkbox]').first()).toBeChecked();
-  await page.getByRole('button', { name: 'ขั้นตอนสุดท้าย · เลือกสีและดาวน์โหลด', exact: true }).click();
+  await openEditorSection(page, 'colors');
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
   const file = await download; expect(file.suggestedFilename()).toBe('สมัคร-Science-2026.pdf');
   await file.saveAs(testInfo.outputPath('renamed-portfolio.pdf'));
