@@ -9,8 +9,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 async function openAction(page:Page, action:'duplicate'|'delete') {
  await page.goto('/dashboard');
- const panel=page.getByRole('region',{name:'ทำสำเนาหรือลบพอร์ต'});
- await panel.getByLabel('เลือกพอร์ตที่จะจัดการ').selectOption('a');
+ const panel=page.locator('article[data-portfolio-id="a"]');
  await panel.getByRole('button',{name:action==='duplicate'?'ทำสำเนาพอร์ต':'ลบพอร์ต',exact:true}).click();
  return page.getByRole('dialog');
 }
@@ -53,7 +52,7 @@ test('cancel never sends mutation and unavailable persistence prevents mutation'
  let calls=0;await page.route('**/rest/v1/rpc/perform_portfolio_action',route=>{calls++;return route.fulfill({json:null});});
  let dialog=await openAction(page,'delete');await dialog.getByRole('button',{name:'ยกเลิก'}).click();expect(calls).toBe(0);
  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new Error('unavailable');};});
- await page.getByRole('region',{name:'ทำสำเนาหรือลบพอร์ต'}).getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
+ await page.locator('article[data-portfolio-id="a"]').getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
  dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
  await expect(dialog.getByRole('alert')).toBeVisible();expect(calls).toBe(0);
 });
@@ -79,3 +78,43 @@ test('mobile recovery controls fit viewport and confirmed receipt avoids another
  await expect(page.locator('article[data-portfolio-id="a"]')).toHaveCount(0);expect(mutations).toBe(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
+
+for (const width of [1440, 390]) {
+ test(`card icon actions target their own portfolio at ${width}px`, async ({page}) => {
+  await page.setViewportSize({width, height: 1000});
+  await page.goto('/dashboard');
+  const card = page.locator('article[data-portfolio-id="b"]');
+  const group = card.getByRole('group', {name:'จัดการพอร์ต'});
+  await expect(group.getByRole('button', {name:'ทำสำเนาพอร์ต',exact:true})).toBeEnabled();
+  await expect(page.getByRole('combobox')).toHaveCount(0);
+  const controls = group.locator('a, button');
+  await expect(controls).toHaveCount(4);
+  const boxes = await controls.evaluateAll(nodes => nodes.map(node => {
+   const {x,y,width,height}=node.getBoundingClientRect();
+   return {x,y,width,height,icon:!!node.querySelector('svg'),label:node.getAttribute('aria-label')};
+  }));
+  for (const [i,box] of boxes.entries()) {
+   expect(box.width).toBe(44); expect(box.height).toBe(44);
+   expect(box.icon).toBe(true); expect(box.label).toBeTruthy();
+   expect(box.y).toBe(boxes[0].y);
+   if(i) expect(box.x).toBeGreaterThan(boxes[i-1].x+boxes[i-1].width);
+  }
+  await expect(group.getByRole('link')).toHaveAttribute('href','/editor?portfolio=b');
+  const copy = group.getByRole('button',{name:'ทำสำเนาพอร์ต',exact:true});
+  await copy.focus(); await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('ชื่อพอร์ตใหม่')).toHaveValue('Portfolio B สำเนา');
+  await page.keyboard.press('Escape');
+  await expect(copy).toBeFocused();
+  await page.screenshot({path:`test-results/card-actions-${width}.png`,fullPage:true});
+  let source='';
+  await page.route('**/rest/v1/rpc/perform_portfolio_action',async route=>{
+   const r=route.request().postDataJSON();source=r.p_source_id;
+   await route.fulfill({json:{request_id:r.p_request_id,action:r.p_action,source_id:r.p_source_id,title:r.p_title,status:'confirmed',portfolio_id:r.p_source_id}});
+  });
+  await group.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
+  await dialog.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
+  await expect(card).toHaveCount(0); expect(source).toBe('b');
+  await expect(page.locator('article[data-portfolio-id="a"]')).toBeVisible();
+ });
+}

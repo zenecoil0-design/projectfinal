@@ -1,15 +1,15 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { actionStorageKey, clearPending, parseActionReceipt, readPending, savePending, type ActionRequest, type ActionResult } from '@/lib/portfolio-actions';
+import { FaCopy, FaTrashAlt } from 'react-icons/fa';
 import { DuplicatePortfolioDialog, DeletePortfolioDialog } from './PortfolioActionDialog';
 
 type Portfolio = { id: string; title: string | null };
-export default function PortfolioActionsPanel({ownerId, portfolios, onConfirmed}: {
-  ownerId: string; portfolios: Portfolio[];
+export default function PortfolioActionsPanel({ownerId, enabled, children, onConfirmed}: {
+  ownerId: string; enabled: boolean; children: (actions: (portfolio: Portfolio) => ReactNode) => ReactNode;
   onConfirmed: (action: 'duplicate'|'delete', id: string) => void;
 }) {
-  const [selected,setSelected]=useState('');
   const [target,setTarget]=useState<{portfolio:Portfolio;action:'duplicate'|'delete';trigger:HTMLButtonElement}|null>(null);
   const [pending,setPending]=useState<ActionRequest|null>(null);
   const [message,setMessage]=useState('');
@@ -17,6 +17,7 @@ export default function PortfolioActionsPanel({ownerId, portfolios, onConfirmed}
   const [busy,setBusy]=useState(false);
   const alive=useRef(false), lock=useRef(false), epoch=useRef(0);
   useEffect(()=>{
+    if (!enabled || !ownerId) return;
     alive.current=true;
     ++epoch.current;
     const client=createClient();
@@ -28,7 +29,7 @@ export default function PortfolioActionsPanel({ownerId, portfolios, onConfirmed}
     const listener=(event:StorageEvent)=>{if(event.key===actionStorageKey(ownerId))sync();};
     window.addEventListener('storage',listener);
     return()=>{alive.current=false;++epoch.current;subscription.unsubscribe();window.removeEventListener('storage',listener);};
-  },[ownerId]);
+  },[ownerId,enabled]);
 
   // Web Locks coordinate same-origin tabs; server receipts provide idempotency.
   async function execute(mode:'new'|'verify'|'resume', action:'duplicate'|'delete', sourceId:string, title:string):Promise<ActionResult> {
@@ -73,25 +74,29 @@ export default function PortfolioActionsPanel({ownerId, portfolios, onConfirmed}
     } catch {if(current())setMessage('ยังยืนยันผลไม่ได้ คำขอที่ส่งแล้วอาจสำเร็จ กรุณาตรวจสอบผล');return {status:'uncertain'};}
     finally{lock.current=false;if(current())setBusy(false);}
   }
-  const portfolio=portfolios.find(p=>p.id===selected);
-  const button='min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm disabled:opacity-50';
-  return <section aria-label="ทำสำเนาหรือลบพอร์ต" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
-    {message&&<p role="status" className="mb-3 text-sm">{message}</p>}
-    {pending ? <div>
-      <p className="mb-3 text-sm wrap-anywhere">มีคำขอ{pending.action==='duplicate'?'ทำสำเนา':'ลบพอร์ต'}ที่ยังต้องยืนยัน{pending.title?`: ${pending.title}`:''} การปิดหน้านี้ไม่ได้ยกเลิกคำขอ</p>
-      <div className="flex flex-wrap gap-2">
-        <button className={button} disabled={busy} onClick={()=>void execute('verify',pending.action,pending.sourceId,pending.title)}>ตรวจสอบผลคำขอค้าง</button>
-        <button className={button} disabled={busy} onClick={()=>void execute('resume',pending.action,pending.sourceId,pending.title)}>ส่งคำขอเดิมซ้ำ</button>
-      </div>
-    </div> : <div className="flex flex-wrap items-end gap-2">
-      <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">เลือกพอร์ตที่จะจัดการ
-        <select className="min-h-11 w-full rounded-xl border border-slate-300 px-3" value={selected} onChange={e=>setSelected(e.target.value)} disabled={!ready||busy}>
-          <option value="">เลือกพอร์ต</option>{portfolios.map(p=><option key={p.id} value={p.id}>{p.title||'พอร์ตไม่มีชื่อ'}</option>)}
-        </select>
-      </label>
-      {(['duplicate','delete'] as const).map(action=><button key={action} className={button} disabled={!ready||busy||!portfolio} onClick={e=>{if(portfolio&&!lock.current){setMessage('');setTarget({portfolio,action,trigger:e.currentTarget});}}}>{action==='duplicate'?'ทำสำเนาพอร์ต':'ลบพอร์ต'}</button>)}
-    </div>}
+  const button='inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-40 disabled:cursor-not-allowed';
+  const actions = (portfolio: Portfolio) => enabled ? <>
+    {(['duplicate','delete'] as const).map(action => <button key={action} type="button"
+      aria-label={action === 'duplicate' ? 'ทำสำเนาพอร์ต' : 'ลบพอร์ต'} title={action === 'duplicate' ? 'ทำสำเนาพอร์ต' : 'ลบพอร์ต'}
+      className={`${button} ${action === 'delete' ? 'hover:border-red-200 hover:bg-red-50 hover:text-red-600' : ''}`}
+      disabled={!ready || busy || !!pending}
+      onClick={event => { if (!lock.current && !target) { setMessage(''); setTarget({portfolio,action,trigger:event.currentTarget}); } }}>
+      {action === 'duplicate' ? <FaCopy aria-hidden="true" /> : <FaTrashAlt aria-hidden="true" />}
+    </button>)}
+  </> : null;
+  return <>
+    {(message || pending) && <section aria-label="ทำสำเนาหรือลบพอร์ต" className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+      {message && <p role="status" className="mb-3 text-sm">{message}</p>}
+      {pending && <div>
+        <p className="mb-3 text-sm wrap-anywhere">มีคำขอ{pending.action==='duplicate'?'ทำสำเนา':'ลบพอร์ต'}ที่ยังต้องยืนยัน{pending.title?`: ${pending.title}`:''} การปิดหน้านี้ไม่ได้ยกเลิกคำขอ</p>
+        <div className="flex flex-wrap gap-2">
+          <button className="min-h-11 rounded-xl border px-4 py-2" disabled={busy} onClick={()=>void execute('verify',pending.action,pending.sourceId,pending.title)}>ตรวจสอบผลคำขอค้าง</button>
+          <button className="min-h-11 rounded-xl border px-4 py-2" disabled={busy} onClick={()=>void execute('resume',pending.action,pending.sourceId,pending.title)}>ส่งคำขอเดิมซ้ำ</button>
+        </div>
+      </div>}
+    </section>}
+    {children(actions)}
     {target?.action==='duplicate'&&<DuplicatePortfolioDialog open ownerId={ownerId} portfolio={target.portfolio} trigger={target.trigger} onClose={()=>setTarget(null)} onConfirmed={()=>{}} onSubmit={r=>execute('new','duplicate',r.sourceId,r.title)} onVerify={r=>execute('verify','duplicate',r.sourceId,r.title)}/>}
     {target?.action==='delete'&&<DeletePortfolioDialog open ownerId={ownerId} portfolio={target.portfolio} trigger={target.trigger} onClose={()=>setTarget(null)} onConfirmed={()=>{}} onSubmit={id=>execute('new','delete',id,'')} onVerify={id=>execute('verify','delete',id,'')}/>}
-  </section>;
+  </>;
 }

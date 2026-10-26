@@ -20,6 +20,7 @@ import {
   FaEnvelope,
   FaDatabase,
   FaPen,
+  FaFont,
   FaClock,
   FaFileAlt,
 } from "react-icons/fa";
@@ -417,10 +418,10 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {process.env.NEXT_PUBLIC_PORTFOLIO_ACTIONS_ENABLED === "true" && listPhase === "success" && verifiedOwner && <PortfolioActionsPanel key={verifiedOwner} ownerId={verifiedOwner} portfolios={portfolios} onConfirmed={(action,id)=>{
+          <PortfolioActionsPanel ownerId={verifiedOwner || ""} enabled={process.env.NEXT_PUBLIC_PORTFOLIO_ACTIONS_ENABLED === "true" && listPhase === "success" && !!verifiedOwner} onConfirmed={(action,id)=>{
             if(action==='duplicate') router.push(`/editor?portfolio=${encodeURIComponent(id)}`);
             else {setPortfolios(items=>items.filter(item=>item.id!==id));setRenameStatus('ลบพอร์ตแล้ว รายการในคลังยังอยู่');}
-          }}/>}
+          }}>{renderActions => <>
           {/* PORTFOLIOS */}
           {renameStatus && <p role="status" className="mt-6 text-sm font-semibold text-emerald-700">{renameStatus}</p>}
 
@@ -528,7 +529,7 @@ export default function DashboardPage() {
                       hover:shadow-xl
                     "
                   >
-                    <Link href={`/editor?portfolio=${portfolio.id}`} className="flex min-w-0 flex-1 flex-col rounded-xl focus-visible:outline-2 focus-visible:outline-blue-500">
+                    <div className="flex min-w-0 flex-1 flex-col">
                     {/* PREVIEW */}
 
                     <div className="aspect-[16/10] overflow-hidden rounded-[18px] border border-slate-200 bg-slate-100">
@@ -567,29 +568,25 @@ export default function DashboardPage() {
                         )}
                       </div>
 
-                      <div className="mt-auto pt-5">
-                        <div className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-sm font-bold text-blue-600 transition-all group-hover:bg-blue-600 group-hover:text-white">
-                          <span>
-                            แก้ไข Portfolio
-                          </span>
-
-                          <FaPen className="text-xs" />
-                        </div>
-                      </div>
                     </div>
-                    </Link>
+                    </div>
+                    <div role="group" aria-label="จัดการพอร์ต" className="mt-4 flex gap-2 border-t border-slate-100 pt-4">
+                    <Link href={`/editor?portfolio=${portfolio.id}`} aria-label="แก้ไข Portfolio" title="แก้ไข Portfolio" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"><FaPen aria-hidden="true" /></Link>
                     <button type="button" aria-label={`เปลี่ยนชื่อ ${portfolio.title || "พอร์ตไม่มีชื่อ"}`}
-                      className="mt-3 min-h-11 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-blue-500"
+                      title="เปลี่ยนชื่อ" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                       onClick={event => {
                         if (targetLock.current || !owner.current) return;
                         targetLock.current = true; setRenameStatus("");
                         setRenameTarget({ portfolio, trigger: event.currentTarget, ownerId: owner.current });
-                      }}>เปลี่ยนชื่อ</button>
+                      }}><FaFont aria-hidden="true" /></button>
+                    {renderActions(portfolio)}
+                    </div>
                   </article>
                 )
               )}
             </div>
           </section>
+          </>}</PortfolioActionsPanel>
         </div>
       </main>
       {renameTarget && <RenamePortfolioDialog key={renameTarget.portfolio.id}

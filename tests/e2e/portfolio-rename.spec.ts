@@ -20,7 +20,7 @@ async function dashboard(page: Page) { await page.goto('/dashboard'); await expe
 
 test('rename confirms only the target title with owner filters and survives reload', async ({ page }) => {
   await dashboard(page);
-  expect(await card(page).getByRole('button').evaluate(el => el.closest('a'))).toBeNull();
+  expect(await card(page).getByRole('button', { name: /^เปลี่ยนชื่อ / }).evaluate(el => el.closest('a'))).toBeNull();
   await open(page); await expect(page).toHaveURL(/dashboard$/);
   await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toHaveValue('Portfolio A');
   await dialog(page).getByLabel('ชื่อพอร์ต', { exact: true }).fill('  พอร์ตสมัคร Science / 2026  ');
@@ -94,7 +94,7 @@ test('saving is server-confirmed and synchronously locks submit, cancel, Escape 
   await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(dialog(page)).toBeVisible();
   // Programmatic background activation also cannot swap target during the request.
-  await card(page, 'b').getByRole('button').evaluate(button => {
+  await card(page, 'b').getByRole('button', { name: /^เปลี่ยนชื่อ / }).evaluate(button => {
     if (!(button instanceof HTMLButtonElement)) throw new Error('Expected rename button');
     button.click();
   });
@@ -186,7 +186,7 @@ for (const width of [1440, 390]) {
     await page.keyboard.press('Shift+Tab'); await expect(dialog(page).getByRole('button', { name: 'บันทึกชื่อ', exact: true })).toBeFocused();
     await page.keyboard.press('Tab'); await expect(name).toBeFocused();
     await name.fill('discard'); await page.keyboard.press('Escape'); await expect(dialog(page)).toHaveCount(0);
-    await expect(card(page).getByRole('button')).toBeFocused();
+    await expect(card(page).getByRole('button', { name: /^เปลี่ยนชื่อ / })).toBeFocused();
     await page.keyboard.press('Enter'); await expect(name).toHaveValue('Portfolio A');
     const long = 'ชื่อพอร์ตภาษาไทยEnglish'.repeat(30);
     await name.fill(long); await name.press('Enter'); await expect(dialog(page)).toHaveCount(0);

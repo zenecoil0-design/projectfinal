@@ -16,7 +16,7 @@ The Dashboard flag remains off by default. Metadata and synthetic Docker tests d
 In the app checkout with existing working hosted configuration, add NEXT_PUBLIC_PORTFOLIO_ACTIONS_ENABLED=true to the untracked .env.local, preserving existing values. Restart npm run dev. For production, rebuild with the flag before npm start; restarting an old build alone is insufficient. Never commit credentials.
 
 1. Save distinct content, library selections/order, template, three colors and a hidden section in a disposable test portfolio.
-2. On Dashboard select it in the management panel and duplicate with a distinct name.
+2. On Dashboard use the duplicate icon on that portfolio card and give the copy a distinct name.
 3. Compare copy content/images/order/template/colors/visibility with source.
 4. Edit copy-specific text, save and reopen source; source text must remain unchanged. Library content remains shared by design.
 5. Cancel deletion once, then delete only the disposable copy. Reload and confirm source and library items remain.

@@ -53,7 +53,7 @@ test('retry deduplicates before React commit and preserves open create name/temp
   await expect(page.getByText(/มีทั้งหมด/)).toHaveCount(0);
   await page.getByRole('button', { name: 'สร้าง Portfolio ใหม่', exact: false }).click();
   const input = page.getByPlaceholder('เช่น Portfolio สมัครมหาวิทยาลัย'); await input.fill('draft through retry');
-  await page.getByRole('button', { name: /Minimal/ }).click();
+  await page.getByRole('button', { name: /Gallery Editorial/ }).click();
   release(); await expect(page.locator('main').getByRole('alert')).toHaveText(copy); await expect(input).toHaveValue('draft through retry');
   hold();
   // Exercise background loader state while the existing create overlay stays mounted.
@@ -115,7 +115,7 @@ test('confirmed rename after a recovered list is not undone by reads or retry cl
   });
   await page.goto('/dashboard'); await expect(page.locator('main').getByRole('alert')).toHaveText(copy);
   await page.getByRole('button', { name: 'ลองใหม่', exact: true }).click(); await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
-  await page.locator('article[data-portfolio-id=a]').getByRole('button').click();
+  await page.locator('article[data-portfolio-id=a]').getByRole('button', { name: /^เปลี่ยนชื่อ / }).click();
   await page.getByRole('dialog').getByLabel('ชื่อพอร์ต', { exact: true }).fill('confirmed name');
   await page.getByRole('dialog').getByLabel('ชื่อพอร์ต', { exact: true }).press('Enter'); await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('article[data-portfolio-id=a] h3')).toHaveText('confirmed name');
