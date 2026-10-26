@@ -33,3 +33,12 @@ Data/backend tests are synthetic mocks and PGlite. No new real PDF file or hoste
 4. Use an authorized test portfolio to save manual age, reopen, switch to auto/reopen, and duplicate. Verify both fields and original birthday. Keep hosted acceptance separate from local results.
 
 The overall profile milestone remains PARTIAL until deployment and acceptance are completed. Migration is additive; returning to the prior UI must not drop the columns or erase saved manual values.
+
+## Installation follow-up — 27 October 2026
+After explicit owner approval, applied the exact migration above. SHA-256: `6c7a8766f81cc8bdf241e43353364cfb258a6da497371a3f67377bd3b711861c`. Hosted history records `20261026180808_profile_age_override`; do not replay based on the different local timestamp.
+
+Preflight confirmed neither new column nor matching history existed and the current action function still matched the reviewed base. Post-install verification confirmed both column types/defaults, all three checks, profile RLS still enabled, new copy fields present, authenticated execute allowed and anonymous execute denied. Existing advisor categories remain; no claim that unrelated findings are resolved. No portfolio rows or Storage files were created/deleted for these checks.
+
+Combined production regression on unchanged application build: **18/18 PASS**, 38.7 seconds (manual age 5 + palette 6 + connected actions 7). Palette cases generated actual downloadable PDFs for Classic/Modern/Minimal from hidden mobile Preview and verified page counts/A4 plus measurement parity. Backend data remained synthetic. No new manual visual PDF inspection or hosted end-user mutation acceptance is claimed.
+
+The opening pending-install status is historical; migration is now installed. Localhost activation and signed-in smoke remain with the owner. See [demo checklist](../LOCALHOST_DEMO_CHECKLIST.md).
