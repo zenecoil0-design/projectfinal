@@ -30,6 +30,6 @@ localhost ยังต่อ Supabase ผ่านอินเทอร์เน
 
 ## ขอบเขตที่ยังต้องบอกตามจริง
 
-รอบล่าสุดตรวจ local production + mock ผ่าน 18/18 และตรวจ metadata ฐานจริงหลัง migration แล้ว แต่ยังไม่ได้ควบคุม localhost บนเครื่องเจ้าของหรือตรวจทุกขั้นผ่านบัญชีจริง
+ผลตรวจ 18/18 และ metadata ฐานหลัง migration เป็น checkpoint ก่อนหน้า ดูผลตรวจรวมล่าสุดแยกใน [รายงานตรวจรับ localhost](verification/LOCALHOST_CORE_ACCEPTANCE_2026_10_27.md) ยังไม่ได้ควบคุม localhost บนเครื่องเจ้าของหรือตรวจทุกขั้นผ่านบัญชีจริง
 
 ยังไม่ควรประกาศว่าทุกฟีเจอร์เสร็จ: ข้อความ/การ์ดยาวเกินหน้ายังมี overflow guard, cleanup ไฟล์ Storage ที่ไม่มี reference ยังไม่ครบ, และการรับอีเมลกู้รหัสจริงขึ้นกับ Auth/redirect/mail configuration ที่ต้องซ้อมจริง ระบบ autosave, เลือกรูปย่อยรายพอร์ต และ snapshot/version เป็นงานเลื่อนออกจากรอบส่งตามที่ตกลง

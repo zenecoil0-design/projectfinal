@@ -37,8 +37,10 @@ test('retry deduplicates before React commit and preserves open create name/temp
   const hold = () => { gate = new Promise<void>(resolve => { release = resolve; }); };
   hold();
   await page.route('**/rest/v1/portfolios?**', async route => {
-    if (route.request().method() !== 'GET') return route.continue();
-    expect(new URL(route.request().url()).searchParams.get('user_id')).toBe(`eq.${user.id}`);
+    const query = new URL(route.request().url()).searchParams;
+    // Only intercept Dashboard list reads, not the Editor's single-portfolio load after create.
+    if (route.request().method() !== 'GET' || query.has('id')) return route.continue();
+    expect(query.get('user_id')).toBe(`eq.${user.id}`);
     const attempt = ++reads;
     if (attempt > 1) await gate;
     if (attempt <= 2) return route.fulfill({ status: 500, json: { message: internal } });
