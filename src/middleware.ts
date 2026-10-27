@@ -1,3 +1,4 @@
+import { copySessionResponse } from "./lib/session-response";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -94,14 +95,7 @@ export async function middleware(request: NextRequest) {
     const redirectResponse =
       NextResponse.redirect(loginUrl);
 
-    response.cookies
-      .getAll()
-      .forEach((cookie) => {
-        redirectResponse.cookies.set(
-          cookie.name,
-          cookie.value
-        );
-      });
+    copySessionResponse(response, redirectResponse);
 
     return redirectResponse;
   }
@@ -125,14 +119,7 @@ export async function middleware(request: NextRequest) {
         dashboardUrl
       );
 
-    response.cookies
-      .getAll()
-      .forEach((cookie) => {
-        redirectResponse.cookies.set(
-          cookie.name,
-          cookie.value
-        );
-      });
+    copySessionResponse(response, redirectResponse);
 
     return redirectResponse;
   }
