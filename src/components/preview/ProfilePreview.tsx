@@ -1,5 +1,6 @@
 "use client";
-import Paper, { useTemplate } from "./Paper";
+import { useTemplate } from "./Paper";
+import Paper from "./ProfilePaper";
 import { PageNumber } from "./PageLayout";
 import { displayedAge } from "@/lib/age";
 
@@ -28,42 +29,42 @@ export default function ProfilePreview() {
   };
 
   if (template === "minimal") return <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page gallery-profile">
-    <aside className="gallery-profile-sidebar">
+    <aside data-profile-column="left" className="gallery-profile-sidebar">
       <div className="gallery-profile-photo">
         {profileStore.profileImage ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" /> : <span>รูปประวัติส่วนตัว</span>}
       </div>
       {hasContact && <><h3>CONTACT / ติดต่อ</h3>
       <div className="gallery-profile-contact">
-        {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong><span>{profileStore.phone}</span></p>}
-        {hasText(profileStore.email) && <p><strong>อีเมล</strong><span>{profileStore.email}</span></p>}
-        {hasText(profileStore.address) && <p><strong>ที่อยู่</strong><span>{profileStore.address}</span></p>}
-        {socials.map(social => <p key={social.id} className="profile-social-row">
+        {hasText(profileStore.phone) && <p data-profile-row><strong>โทรศัพท์</strong><span>{profileStore.phone}</span></p>}
+        {hasText(profileStore.email) && <p data-profile-row><strong>อีเมล</strong><span>{profileStore.email}</span></p>}
+        {hasText(profileStore.address) && <p data-profile-row><strong>ที่อยู่</strong><span>{profileStore.address}</span></p>}
+        {socials.map(social => <p data-profile-row key={social.id} className="profile-social-row">
           <span>{renderSocialIcon(social.platform)}</span>
           <span className="capitalize">{social.platform}:</span>
           <span>{social.link}</span>
         </p>)}
       </div></>}
-      {hasText(profileStore.skills) && <section className="gallery-profile-side-extra"><h3>SKILLS / ความสามารถ</h3><p>{profileStore.skills}</p></section>}
+      {hasText(profileStore.skills) && <section className="gallery-profile-side-extra"><h3>SKILLS / ความสามารถ</h3><p data-profile-row>{profileStore.skills}</p></section>}
     </aside>
-    <div className="gallery-profile-main">
+    <div data-profile-column="right" className="gallery-profile-main">
       <header className="gallery-profile-heading">
         <span>PERSONAL PROFILE</span>
         <h2>ข้อมูลส่วนตัว</h2>
         <p className="gallery-profile-fullname">{[profileStore.firstName, profileStore.lastName].filter(Boolean).join(" ") || "ชื่อ - นามสกุล"}</p>
       </header>
       <div className="gallery-profile-fields">
-        <p><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
-        <p><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
-        <p><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
-        <p><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
-        <p><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
-        <p><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
-        <p><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
-        <p><strong>โรงเรียน</strong><span>{profileStore.school}</span></p>
-        <p><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
-        <p><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
-        {hasText(profileStore.motto) && <p><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
-        {customFields.map(field => <p key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
+        <p data-profile-row><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
+        <p data-profile-row><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
+        <p data-profile-row><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
+        <p data-profile-row><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
+        <p data-profile-row><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
+        <p data-profile-row><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
+        <p data-profile-row><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
+        <p data-profile-row><strong>โรงเรียน</strong><span>{profileStore.school}</span></p>
+        <p data-profile-row><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
+        <p data-profile-row><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
+        {hasText(profileStore.motto) && <p data-profile-row><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
+        {customFields.map(field => <p data-profile-row key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
       </div>
       <div className="gallery-profile-bottom-rule" aria-hidden="true" />
     </div>
@@ -71,7 +72,7 @@ export default function ProfilePreview() {
   </Paper>;
 
   if (template === "modern") return <Paper sectionId="profile" data-section="ประวัติส่วนตัว" className="portfolio-page creative-profile">
-    <div className="creative-profile-left">
+    <div data-profile-column="left" className="creative-profile-left">
       <div className="creative-profile-photo">
         {profileStore.profileImage
           ? <img src={profileStore.profileImage} alt="รูปประวัติส่วนตัว" />
@@ -79,28 +80,28 @@ export default function ProfilePreview() {
       </div>
       {(hasText(profileStore.phone) || hasText(profileStore.email) || socials.length > 0) && <><h3>Contact</h3>
       <div className="creative-profile-contact">
-        {hasText(profileStore.phone) && <p><strong>โทรศัพท์</strong>{profileStore.phone}</p>}
-        {hasText(profileStore.email) && <p><strong>อีเมล</strong>{profileStore.email}</p>}
-        {socials.map(social => <p key={social.id}><strong>{social.platform}</strong>{social.link}</p>)}
+        {hasText(profileStore.phone) && <p data-profile-row><strong>โทรศัพท์</strong>{profileStore.phone}</p>}
+        {hasText(profileStore.email) && <p data-profile-row><strong>อีเมล</strong>{profileStore.email}</p>}
+        {socials.map(social => <p data-profile-row key={social.id}><strong>{social.platform}</strong>{social.link}</p>)}
       </div></>}
-      {hasText(profileStore.address) && <><h3>Address</h3><p className="creative-profile-address">{profileStore.address}</p></>}
+      {hasText(profileStore.address) && <><h3>Address</h3><p data-profile-row className="creative-profile-address">{profileStore.address}</p></>}
     </div>
-    <div className="creative-profile-right">
+    <div data-profile-column="right" className="creative-profile-right">
       <div className="creative-profile-heading"><p>ABOUT ME</p><h2>Profile</h2></div>
       <div className="creative-profile-information">
-        <p><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
-        <p><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
-        <p><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
-        <p><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
-        <p><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
-        <p><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
-        <p><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
-        <p><strong>ชื่อโรงเรียน</strong><span>{profileStore.school}</span></p>
-        <p><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
-        <p><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
-        {hasText(profileStore.skills) && <p><strong>ความสามารถพิเศษ</strong><span>{profileStore.skills}</span></p>}
-        {hasText(profileStore.motto) && <p><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
-        {customFields.map(field => <p key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
+        <p data-profile-row><strong>ชื่อ - นามสกุล</strong><span>{profileStore.firstName} {profileStore.lastName}</span></p>
+        <p data-profile-row><strong>ชื่อเล่น</strong><span>{profileStore.nickname}</span></p>
+        <p data-profile-row><strong>วันเดือนปีเกิด</strong><span>{profileStore.birthday || "—"}</span></p>
+        <p data-profile-row><strong>อายุ</strong><span>{age === null ? "—" : `${age} ปี`}</span></p>
+        <p data-profile-row><strong>สัญชาติ</strong><span>{profileStore.nationality}</span></p>
+        <p data-profile-row><strong>เชื้อชาติ</strong><span>{profileStore.ethnicity}</span></p>
+        <p data-profile-row><strong>ศาสนา</strong><span>{profileStore.religion}</span></p>
+        <p data-profile-row><strong>ชื่อโรงเรียน</strong><span>{profileStore.school}</span></p>
+        <p data-profile-row><strong>แผนการเรียน</strong><span>{profileStore.plan}</span></p>
+        <p data-profile-row><strong>GPAX</strong><span>{profileStore.gpax}</span></p>
+        {hasText(profileStore.skills) && <p data-profile-row><strong>ความสามารถพิเศษ</strong><span>{profileStore.skills}</span></p>}
+        {hasText(profileStore.motto) && <p data-profile-row><strong>คติประจำใจ</strong><span>{profileStore.motto}</span></p>}
+        {customFields.map(field => <p data-profile-row key={field.id}><strong>{field.title}</strong><span>{field.value}</span></p>)}
       </div>
     </div>
     <PageNumber />
@@ -126,25 +127,25 @@ export default function ProfilePreview() {
       <div className="flex-1 flex flex-col gap-4 text-sm">
         
         {/* ข้อมูลพื้นฐาน */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-          <div><span className="font-semibold text-slate-600">ชื่อ - นามสกุล :</span> {profileStore.firstName} {profileStore.lastName}</div>
-          <div><span className="font-semibold text-slate-600">ชื่อเล่น :</span> {profileStore.nickname}</div>
-          <div><span className="font-semibold text-slate-600">วันเกิด :</span> {profileStore.birthday || "—"}</div>
-          <div><span className="font-semibold text-slate-600">อายุ :</span> {age === null ? "—" : `${age} ปี`}</div>
-          <div><span className="font-semibold text-slate-600">สัญชาติ :</span> {profileStore.nationality}</div>
-          <div><span className="font-semibold text-slate-600">เชื้อชาติ :</span> {profileStore.ethnicity}</div>
-          <div><span className="font-semibold text-slate-600">ศาสนา :</span> {profileStore.religion}</div>
-          <div><span className="font-semibold text-slate-600">โรงเรียน :</span> {profileStore.school}</div>
-          <div><span className="font-semibold text-slate-600">แผนการเรียน :</span> {profileStore.plan}</div>
-          <div><span className="font-semibold text-slate-600">เกรดเฉลี่ย (GPAX) :</span> {profileStore.gpax}</div>
+        <div data-profile-group className="grid grid-cols-2 gap-x-8 gap-y-2">
+          <div data-profile-row><span className="font-semibold text-slate-600">ชื่อ - นามสกุล :</span> {profileStore.firstName} {profileStore.lastName}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">ชื่อเล่น :</span> {profileStore.nickname}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">วันเกิด :</span> {profileStore.birthday || "—"}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">อายุ :</span> {age === null ? "—" : `${age} ปี`}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">สัญชาติ :</span> {profileStore.nationality}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">เชื้อชาติ :</span> {profileStore.ethnicity}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">ศาสนา :</span> {profileStore.religion}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">โรงเรียน :</span> {profileStore.school}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">แผนการเรียน :</span> {profileStore.plan}</div>
+          <div data-profile-row><span className="font-semibold text-slate-600">เกรดเฉลี่ย (GPAX) :</span> {profileStore.gpax}</div>
         </div>
 
         {/* ข้อมูลการติดต่อ */}
-        {hasContact && <div className="border-t pt-3 flex flex-col gap-1.5">
+        {hasContact && <div data-profile-group className="border-t pt-3 flex flex-col gap-1.5">
           <h3 className="font-bold text-xs uppercase tracking-wider text-blue-600">ข้อมูลการติดต่อ</h3>
-          {hasText(profileStore.phone) && <div><span className="font-semibold text-slate-600">เบอร์โทรศัพท์ :</span> {profileStore.phone}</div>}
-          {hasText(profileStore.email) && <div><span className="font-semibold text-slate-600">อีเมล :</span> {profileStore.email}</div>}
-          {hasText(profileStore.address) && <div><span className="font-semibold text-slate-600">ที่อยู่ :</span> {profileStore.address}</div>}
+          {hasText(profileStore.phone) && <div data-profile-row><span className="font-semibold text-slate-600">เบอร์โทรศัพท์ :</span> {profileStore.phone}</div>}
+          {hasText(profileStore.email) && <div data-profile-row><span className="font-semibold text-slate-600">อีเมล :</span> {profileStore.email}</div>}
+          {hasText(profileStore.address) && <div data-profile-row><span className="font-semibold text-slate-600">ที่อยู่ :</span> {profileStore.address}</div>}
           
           {/* แสดง Social Media ที่ผู้ใช้เพิ่มเข้ามา */}
           {socials.length > 0 && (
@@ -152,7 +153,7 @@ export default function ProfilePreview() {
               <span className="font-semibold text-slate-600">ช่องทางอื่นๆ :</span>
               <div className="flex flex-col gap-1 pl-2">
                 {socials.map((s) => (
-                  <div key={s.id} className="profile-social-row flex items-center gap-2 text-xs">
+                  <div data-profile-row key={s.id} className="profile-social-row flex items-center gap-2 text-xs">
                     <span>{renderSocialIcon(s.platform)}</span>
                     <span className="capitalize font-medium">{s.platform}:</span>
                     <span className="text-slate-600">{s.link}</span>
@@ -164,15 +165,15 @@ export default function ProfilePreview() {
         </div>}
 
         {/* ข้อมูลเพิ่มเติมและความสามารถ */}
-        {hasAdditional && <div className="border-t pt-3 flex flex-col gap-1.5">
+        {hasAdditional && <div data-profile-group className="border-t pt-3 flex flex-col gap-1.5">
           <h3 className="font-bold text-xs uppercase tracking-wider text-blue-600">ข้อมูลเพิ่มเติม</h3>
-          {hasText(profileStore.skills) && <div><span className="font-semibold text-slate-600">ความสามารถพิเศษ (Skills) :</span> {profileStore.skills}</div>}
-          {hasText(profileStore.motto) && <div><span className="font-semibold text-slate-600">คติประจำใจ (Motto) :</span> {profileStore.motto}</div>}
+          {hasText(profileStore.skills) && <div data-profile-row><span className="font-semibold text-slate-600">ความสามารถพิเศษ (Skills) :</span> {profileStore.skills}</div>}
+          {hasText(profileStore.motto) && <div data-profile-row><span className="font-semibold text-slate-600">คติประจำใจ (Motto) :</span> {profileStore.motto}</div>}
 
           {/* แสดงหัวข้อพิเศษที่ผู้ใช้กดเพิ่มเอง (Custom Fields) */}
           {customFields.map(field => {
             const hasTitle = hasText(field.title), hasValue = hasText(field.value);
-            return <div key={field.id}>
+            return <div data-profile-row key={field.id}>
               {hasTitle && <span className="font-semibold text-slate-600">{field.title}{hasValue ? " :" : ""}</span>}
               {hasTitle && hasValue && " "}
               {hasValue && field.value}
