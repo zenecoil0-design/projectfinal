@@ -12,7 +12,7 @@ export default function ActivityPreview() {
         <h3>{activity.title}</h3>
         {activity.organization.trim() && <p className="gallery-activity-org">{activity.organization}</p>}
         {activity.activityDate.trim() && <p className="gallery-activity-date">{activity.activityDate}</p>}
-        {activity.description.trim() && <p className="gallery-activity-description whitespace-pre-line">{activity.description}</p>}
+        {activity.description.trim() && <p data-split-description className="gallery-activity-description whitespace-pre-line">{activity.description}</p>}
       </div>
       {activity.images.length > 0 && <div className="gallery-activity-media document-images" data-image-count={activity.images.length}>
         {activity.images.map((url, imageIndex) => <div key={activity.id + "-" + imageIndex} className="gallery-activity-image">
@@ -62,7 +62,7 @@ export default function ActivityPreview() {
                         </div>
 
                         {activity.description.trim() && (
-                          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                          <p data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               activity.description
                             }

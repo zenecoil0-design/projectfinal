@@ -17,7 +17,7 @@ export default function CertificatePreview() {
         <h3>{certificate.title}</h3>
         {certificate.issuedBy.trim() && <p className="gallery-certificate-issuer">{certificate.issuedBy}</p>}
         {certificate.issuedDate.trim() && <p className="gallery-certificate-date">{certificate.issuedDate}</p>}
-        {certificate.description.trim() && <p className="gallery-certificate-description whitespace-pre-line">{certificate.description}</p>}
+        {certificate.description.trim() && <p data-split-description className="gallery-certificate-description whitespace-pre-line">{certificate.description}</p>}
       </div>
     </article>
   ) : (
@@ -62,7 +62,7 @@ export default function CertificatePreview() {
                         </div>
 
                         {certificate.description.trim() && (
-                          <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                          <p data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               certificate.description
                             }
