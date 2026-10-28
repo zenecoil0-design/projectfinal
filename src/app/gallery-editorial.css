@@ -634,3 +634,9 @@
 
 [data-template="minimal"] .gallery-education-card[data-has-image="false"] { grid-template-columns: 104px minmax(0, 1fr); }
 [data-template="minimal"] .gallery-certificate-card:not(:has(.gallery-certificate-media)) { grid-template-columns: 1fr; }
+
+/* Legacy certificates may contain four photos. Keep every image in two rows. */
+[data-template="minimal"] .gallery-certificate-media[data-image-count="3"],
+[data-template="minimal"] .gallery-certificate-media[data-image-count="4"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
