@@ -9,15 +9,15 @@ export default function EducationPreview() {
     <article key={education.id} className="document-card education-card gallery-education-card" data-gallery-entry="education" data-has-image={Boolean(education.logoUrl)}>
       <div className="gallery-education-timeline">
         <span className="gallery-education-step">EDU. {String(index + 1).padStart(2, "0")}</span>
-        <strong>{[education.startYear.trim(), education.endYear.trim()].filter(Boolean).join(" – ") || `ช่วงที่ ${index + 1}`}</strong>
+        <strong data-split-field="years">{[education.startYear.trim(), education.endYear.trim()].filter(Boolean).join(" – ") || `ช่วงที่ ${index + 1}`}</strong>
       </div>
-      {education.logoUrl && <div className="gallery-education-image"><img src={education.logoUrl} alt={`สถานศึกษา ${education.schoolName}`} /></div>}
+      {education.logoUrl && <div data-split-media className="gallery-education-image"><img src={education.logoUrl} alt={`สถานศึกษา ${education.schoolName}`} /></div>}
       <div className="gallery-education-copy">
         <span className="gallery-education-kicker">EDUCATION HISTORY</span>
-        <h3>{education.schoolName || "ชื่อสถานศึกษา"}</h3>
-        {education.level.trim() && <p><strong>ระดับการศึกษา</strong><span>{education.level}</span></p>}
-        {education.studyPlan.trim() && <p><strong>แผนการเรียน / สาขา</strong><span>{education.studyPlan}</span></p>}
-        {education.gpa.trim() && <p><strong>GPAX</strong><span>{education.gpa}</span></p>}
+        <h3 data-split-field="school">{education.schoolName || "ชื่อสถานศึกษา"}</h3>
+        {education.level.trim() && <p data-split-row><strong>ระดับการศึกษา</strong><span data-split-field="level">{education.level}</span></p>}
+        {education.studyPlan.trim() && <p data-split-row><strong>แผนการเรียน / สาขา</strong><span data-split-field="plan">{education.studyPlan}</span></p>}
+        {education.gpa.trim() && <p data-split-row><strong>GPAX</strong><span data-split-field="gpa">{education.gpa}</span></p>}
       </div>
     </article>
   ) : (
@@ -29,7 +29,7 @@ export default function EducationPreview() {
               >
                 {/* LOGO */}
 
-                {education.logoUrl && <div className="education-logo flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                {education.logoUrl && <div data-split-media className="education-logo flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <img
                       src={
                         education.logoUrl
@@ -49,50 +49,46 @@ export default function EducationPreview() {
                     {index + 1}
                   </span>
 
-                  <h3 className="mt-1 text-lg font-bold text-slate-800">
+                  <h3 data-split-field="school" className="mt-1 text-lg font-bold text-slate-800">
                     {education.schoolName ||
                       "ชื่อสถานศึกษา"}
                   </h3>
 
-                  {education.level.trim() && <p className="mt-1 text-sm text-slate-600">
+                  {education.level.trim() && <p data-split-row className="mt-1 text-sm text-slate-600">
                     <span className="font-semibold">
                       ระดับการศึกษา:
                     </span>{" "}
-                    {education.level}
+                    <span data-split-field="level">{education.level}</span>
                   </p>}
 
                   {education.studyPlan.trim() && (
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p data-split-row className="mt-1 text-sm text-slate-600">
                       <span className="font-semibold">
                         แผนการเรียน /
                         สาขา:
                       </span>{" "}
-                      {
-                        education.studyPlan
-                      }
+                      <span data-split-field="plan">{education.studyPlan}</span>
                     </p>
                   )}
 
                   {education.gpa.trim() && (
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p data-split-row className="mt-1 text-sm text-slate-600">
                       <span className="font-semibold">
                         GPAX:
                       </span>{" "}
-                      {
-                        education.gpa
-                      }
+                      <span data-split-field="gpa">{education.gpa}</span>
                     </p>
                   )}
 
                   {(education.startYear.trim() ||
                     education.endYear.trim()) && (
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p data-split-row className="mt-1 text-sm text-slate-500">
                       <span className="font-semibold">
                         {education.startYear.trim() && education.endYear.trim() ? "ช่วงปีการศึกษา:" : education.startYear.trim() ? "ปีเริ่มต้น:" : "ปีสิ้นสุด:"}
                       </span>{" "}
-                      {education.startYear.trim() && education.startYear}
+                      <span data-split-field="years">{education.startYear.trim() && education.startYear}
                       {education.startYear.trim() && education.endYear.trim() && " - "}
-                      {education.endYear.trim() && education.endYear}
+                      {education.endYear.trim() && education.endYear}</span>
                     </p>
                   )}
                 </div>

@@ -20,7 +20,14 @@ async function assertNumbering(page: Page) {
   await expect(pages.nth(0).locator('[data-page-number]')).toHaveCount(0);
   await expect(pages.nth(1).locator('[data-page-number]')).toHaveCount(0);
   await expect(pages.nth(2).locator('[data-page-number]')).toHaveCount(0);
+  const active = page.locator('aside [id^="editor-heading-"][aria-expanded=true]');
+  const previous = await active.count() ? await active.getAttribute('id') : null;
+  await openEditorSection(page, 'colors');
   await expect(page.getByText(`${total} หน้า`, { exact: true })).toBeVisible();
+  if (previous !== 'editor-heading-colors') {
+    await page.locator('#editor-heading-colors').click();
+    if (previous) await page.locator(`#${previous}`).click();
+  }
   expect(await pages.evaluateAll(nodes => nodes.map(node => Number((node as HTMLElement).dataset.physicalPage)))).toEqual(Array.from({ length: total }, (_, i) => i + 1));
 }
 
@@ -32,9 +39,11 @@ test('all templates number seven physical pages as unnumbered, unnumbered, unnum
     await expect(page.locator(`[data-portfolio-page][data-template=${template}]`)).toHaveCount(7);
     await assertNumbering(page);
     if (template === 'modern') await expect(page.locator('.editorial-cover-bottom')).not.toContainText('01 /');
-    const firstChildren = await page.locator('[data-page-section=profile]').evaluate(el => Array.from(el.children).map(node => node.tagName));
-    expect(firstChildren).toEqual(['DIV', 'DIV', 'DIV']);
-    expect(await page.locator('[data-page-number]').count()).toBe(4); // measurement/clones do not add numbers
+    const firstChildren = await page.locator('main [data-page-section=profile]').evaluate(el => Array.from(el.children).map(node => node.tagName));
+    expect(firstChildren).toEqual(template === 'classic' ? ['DIV', 'DIV', 'DIV'] : template === 'modern' ? ['DIV', 'DIV', 'SPAN'] : ['ASIDE', 'DIV', 'SPAN']);
+    expect(await page.locator('main [data-page-number]').count()).toBe(4);
+    // Profile measurement repeats the footer shape, but carries no printed number.
+    expect(await page.locator('[data-page-number]').evaluateAll(markers => markers.filter(marker => !marker.closest('main')).every(marker => !marker.textContent))).toBe(true);
     await expect(page.locator('main')).not.toContainText('1 / 1');
   }
   const before = await page.locator('main').innerText();
@@ -66,10 +75,13 @@ for (const template of ['classic', 'modern', 'minimal']) {
     await page.locator('#editor-heading-cover').click();
     await expect(page.locator('aside [aria-expanded=true]')).toHaveCount(0);
     if (many) await expect(page.locator('main')).toBeHidden();
+    await openEditorSection(page, 'colors');
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
     const path = testInfo.outputPath(`numbered-${template}.pdf`);
     await (await download).saveAs(path);
+    await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
+    await page.locator('#editor-heading-colors').click();
     const audit = JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON || 'python', ['tests/pdf-inspect.py', path], { encoding: 'utf8' }));
     expect(audit.pages).toBe(mapping.length); expect(audit.uniqueRasters).toBe(mapping.length);
     for (const [width, height] of audit.boxes) { expect(width).toBeCloseTo(595.28, 1); expect(height).toBeCloseTo(841.89, 1); }
@@ -79,9 +91,13 @@ for (const template of ['classic', 'modern', 'minimal']) {
     await page.locator('.paper-frame:has([data-page-section=toc])').screenshot({ path: testInfo.outputPath(`toc-${template}.png`) });
     // Each real footer marker is outside content and within the physical A4 box.
     expect(await page.locator('main [data-page-number]').evaluateAll(markers => markers.every(marker => {
-      const number = marker.getBoundingClientRect(); const paper = marker.closest('[data-portfolio-page]')!.getBoundingClientRect();
-      const content = marker.parentElement!.previousElementSibling!.getBoundingClientRect();
-      return number.right <= paper.right && number.bottom <= paper.bottom && number.top >= content.bottom;
+      const number = marker.getBoundingClientRect();
+      const paperElement = marker.closest('[data-portfolio-page]')!;
+      const paper = paperElement.getBoundingClientRect();
+      // Modern/Minimal profile numbers are direct Paper children; full-height columns
+      // include background space. Check actual content in every template instead.
+      const contentBottom = Math.max(...Array.from(paperElement.querySelectorAll('.document-card, [data-profile-row], h2, h3, img')).map(node => node.getBoundingClientRect().bottom));
+      return number.right <= paper.right && number.bottom <= paper.bottom && number.top >= contentBottom;
     }))).toBe(true);
     await page.locator('.paper-frame:has([data-page-section=profile])').screenshot({ path: testInfo.outputPath(`numbered-${template}-profile.png`) });
     if (many) {
@@ -115,6 +131,7 @@ test('late image sizing is flushed before export even when ResizeObserver delive
   await assertNumbering(page);
   await expect(page.locator('[data-toc-section=certificate] [data-toc-page]')).toHaveText('4');
   await page.evaluate(() => { (window as unknown as { numberingResize: { hold: boolean } }).numberingResize.hold = true; });
+  await openEditorSection(page, 'colors');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
   await expect(page.getByRole('button', { name: 'กำลังส่งออก…', exact: true })).toBeDisabled();
@@ -180,6 +197,7 @@ test('multi-page education and activities update later offsets when selections c
   await assertNumbering(page);
   expect(Number(await page.locator('[data-page-section=certificate] [data-page-number]').textContent())).toBeLessThan(before);
   await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
+  await openEditorSection(page, 'colors');
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();
   await page.goto('/editor?portfolio=b');
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();

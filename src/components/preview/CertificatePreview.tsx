@@ -14,10 +14,10 @@ export default function CertificatePreview() {
       </div>}
       <div className="gallery-certificate-info">
         <span className="gallery-certificate-index">CERTIFICATE / {String(index + 1).padStart(2, "0")}</span>
-        <h3>{certificate.title}</h3>
-        {certificate.issuedBy.trim() && <p className="gallery-certificate-issuer">{certificate.issuedBy}</p>}
-        {certificate.issuedDate.trim() && <p className="gallery-certificate-date">{certificate.issuedDate}</p>}
-        {certificate.description.trim() && <p data-split-description className="gallery-certificate-description whitespace-pre-line">{certificate.description}</p>}
+        <h3 data-split-field="field-1">{certificate.title}</h3>
+        {certificate.issuedBy.trim() && <p data-split-field="field-2" className="gallery-certificate-issuer">{certificate.issuedBy}</p>}
+        {certificate.issuedDate.trim() && <p data-split-field="field-3" className="gallery-certificate-date">{certificate.issuedDate}</p>}
+        {certificate.description.trim() && <p data-split-field="field-4" data-split-description className="gallery-certificate-description whitespace-pre-line">{certificate.description}</p>}
       </div>
     </article>
   ) : (
@@ -37,14 +37,14 @@ export default function CertificatePreview() {
                               }
                             </span>
 
-                            <h3 className="mt-3 text-lg font-bold text-slate-800">
+                            <h3 data-split-field="field-5" className="mt-3 text-lg font-bold text-slate-800">
                               {
                                 certificate.title
                               }
                             </h3>
 
                             {certificate.issuedBy.trim() && (
-                              <p className="mt-1 text-sm font-semibold text-slate-500">
+                              <p data-split-field="field-6" className="mt-1 text-sm font-semibold text-slate-500">
                                 {
                                   certificate.issuedBy
                                 }
@@ -53,7 +53,7 @@ export default function CertificatePreview() {
                           </div>
 
                           {certificate.issuedDate.trim() && (
-                            <span className="shrink-0 text-xs font-semibold text-slate-400">
+                            <span data-split-field="date" className="shrink-0 text-xs font-semibold text-slate-400">
                               {
                                 certificate.issuedDate
                               }
@@ -62,7 +62,7 @@ export default function CertificatePreview() {
                         </div>
 
                         {certificate.description.trim() && (
-                          <p data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                          <p data-split-field="field-7" data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               certificate.description
                             }

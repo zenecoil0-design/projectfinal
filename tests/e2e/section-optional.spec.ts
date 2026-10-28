@@ -35,6 +35,7 @@ test('title-only and whitespace-only secondary data omit rows and image placehol
     await expect(page.locator('main [data-page-number]')).toHaveText(['1', '2', '3', '4']);
   }
   await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toHaveCount(0);
+  await openEditorSection(page, 'colors');
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
 });
 
@@ -49,14 +50,16 @@ test('education years show only actual endpoints, and zero remains data', async 
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
     await expect(cards(page, 'education').locator('h3')).toHaveText(rows.map(row => row.school_name));
     for (const card of await cards(page, 'education').all()) {
-      await expect(card).toContainText('ระดับการศึกษา: 0');
-      await expect(card).toContainText('สาขา: 0');
-      await expect(card).toContainText('GPAX: 0');
+      await expect(card).toContainText(template === 'minimal' ? 'ระดับการศึกษา0' : 'ระดับการศึกษา: 0');
+      await expect(card).toContainText(template === 'minimal' ? 'สาขา0' : 'สาขา: 0');
+      await expect(card).toContainText(template === 'minimal' ? 'GPAX0' : 'GPAX: 0');
       await expect(card).not.toContainText(/ปัจจุบัน|\?/);
     }
-    await expect(cards(page, 'education').nth(0)).toContainText('ช่วงปีการศึกษา: 2563 - 2566');
-    await expect(cards(page, 'education').nth(1)).toContainText('ปีเริ่มต้น: 2563');
-    await expect(cards(page, 'education').nth(2)).toContainText('ปีสิ้นสุด: 2566');
+    await expect(cards(page, 'education').nth(0)).toContainText(template === 'minimal' ? '2563 – 2566' : 'ช่วงปีการศึกษา: 2563 - 2566');
+    await expect(cards(page, 'education').nth(1)).toContainText(template === 'minimal' ? '2563' : 'ปีเริ่มต้น: 2563');
+    await expect(cards(page, 'education').nth(1)).not.toContainText('2566');
+    await expect(cards(page, 'education').nth(2)).toContainText(template === 'minimal' ? '2566' : 'ปีสิ้นสุด: 2566');
+    await expect(cards(page, 'education').nth(2)).not.toContainText('2563');
     await expect(cards(page, 'education').nth(3).locator('p')).toHaveCount(3);
     await expectCurrentContents(page);
   }
@@ -142,6 +145,7 @@ test('mixed cards retain every image/order including legacy certificates, match 
   await page.setViewportSize({ width: 390, height: 1000 });
   await expect(page.locator('main')).toBeHidden();
   const mapping = await page.locator('main [data-portfolio-page]').evaluateAll(nodes => nodes.map(node => ({ section: node.getAttribute('data-page-section'), number: node.querySelector('[data-page-number]')?.textContent ?? null })));
+  await openEditorSection(page, 'colors');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
   const path = info.outputPath('section-optional.pdf');
@@ -179,9 +183,11 @@ test('missing-image URLs stay rendered and block export in all three sections ra
     else await request.post(`http://127.0.0.1:54321/rest/v1/user_library_${section}_images`, { data: { id: 'bad', [`${section}_id`]: `${section}-a`, image_url: bad, sort_order: 0 } });
     await ready(page);
     await expect(cards(page, section).locator('img')).toHaveAttribute('src', bad);
+    await openEditorSection(page, 'colors');
     await page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true }).click();
     await expect(page.getByText('มีรูปภาพโหลดไม่สำเร็จ', { exact: false })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
+    await openEditorSection(page, 'colors');
+  await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
     expect(downloads).toBe(0);
   }
 });

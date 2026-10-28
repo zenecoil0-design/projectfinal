@@ -9,10 +9,10 @@ export default function ActivityPreview() {
     <article key={activity.id} className="document-card activity-card gallery-activity-card" data-gallery-entry="activity" data-image-count={activity.images.length}>
       <div className="gallery-activity-info">
         <span className="gallery-activity-index">{String(index + 1).padStart(2, "0")} / ACTIVITIES & WORKS</span>
-        <h3>{activity.title}</h3>
-        {activity.organization.trim() && <p className="gallery-activity-org">{activity.organization}</p>}
-        {activity.activityDate.trim() && <p className="gallery-activity-date">{activity.activityDate}</p>}
-        {activity.description.trim() && <p data-split-description className="gallery-activity-description whitespace-pre-line">{activity.description}</p>}
+        <h3 data-split-field="field-1">{activity.title}</h3>
+        {activity.organization.trim() && <p data-split-field="field-2" className="gallery-activity-org">{activity.organization}</p>}
+        {activity.activityDate.trim() && <p data-split-field="field-3" className="gallery-activity-date">{activity.activityDate}</p>}
+        {activity.description.trim() && <p data-split-field="field-4" data-split-description className="gallery-activity-description whitespace-pre-line">{activity.description}</p>}
       </div>
       {activity.images.length > 0 && <div className="gallery-activity-media document-images" data-image-count={activity.images.length}>
         {activity.images.map((url, imageIndex) => <div key={activity.id + "-" + imageIndex} className="gallery-activity-image">
@@ -37,14 +37,14 @@ export default function ActivityPreview() {
                               }
                             </span>
 
-                            <h3 className="mt-3 text-lg font-bold text-slate-800">
+                            <h3 data-split-field="field-5" className="mt-3 text-lg font-bold text-slate-800">
                               {
                                 activity.title
                               }
                             </h3>
 
                             {activity.organization.trim() && (
-                              <p className="mt-1 text-sm font-semibold text-slate-500">
+                              <p data-split-field="field-6" className="mt-1 text-sm font-semibold text-slate-500">
                                 {
                                   activity.organization
                                 }
@@ -53,7 +53,7 @@ export default function ActivityPreview() {
                           </div>
 
                           {activity.activityDate.trim() && (
-                            <span className="shrink-0 text-xs font-semibold text-slate-400">
+                            <span data-split-field="date" className="shrink-0 text-xs font-semibold text-slate-400">
                               {
                                 activity.activityDate
                               }
@@ -62,7 +62,7 @@ export default function ActivityPreview() {
                         </div>
 
                         {activity.description.trim() && (
-                          <p data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+                          <p data-split-field="field-7" data-split-description className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">
                             {
                               activity.description
                             }
