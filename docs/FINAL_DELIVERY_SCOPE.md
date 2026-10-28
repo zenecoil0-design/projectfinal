@@ -55,3 +55,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ประวัติ 28 ต.ค.: การปรับขอบเขตครั้งแรกเป็นเอกสารเท่านั้น ไม่มี application source, schema, migration หรือข้อมูลจริงเปลี่ยน และขณะนั้นยังไม่มีผลทดสอบ Snapshot
 
 ความคืบหน้า 29 ต.ค.: [ต้นแบบเก็บฉบับ](verification/SNAPSHOT_FOUNDATION_PROTOTYPE_REVIEW.md) และ [ต้นแบบบันทึกคลังเป็นธุรกรรมเดียว](verification/SNAPSHOT_ATOMIC_LIBRARY_UPDATE_REVIEW.md) มีผล PGlite แล้ว แต่ยังไม่ใช่ผลตรวจรับ SNP แบบ end-to-end ตาราง NOT_RUN ข้างบนจึงยังคงเดิม ไม่มีการเปิดใช้ Snapshot ในเว็บหรือติดตั้งฐานจริงจากงานนี้
+
+ส่วนต่อมา: [สร้างรายการและทำสำเนาฉบับเดิม](verification/SNAPSHOT_CREATE_COPY_REVIEW.md) ผ่านการทดสอบฐานจำลอง รวมส่งคำขอซ้ำ/rollback/สำเนาที่รักษาข้อมูล รูป เวอร์ชัน และลำดับ ยังต้องเชื่อม upload/callers, เปลี่ยนผ่านพอร์ตเดิม และตรวจ PostgreSQL/PostgREST จริงก่อนเปิดใช้

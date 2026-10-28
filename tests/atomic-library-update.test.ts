@@ -1,34 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { baseline, asUser, A, B, PA, LA, LB, sections } from './helpers/baseline';
+import { asUser, A, B, PA, LA, LB, sections } from './helpers/baseline';
 
-const proposal = (name: string) => readFileSync(new URL(`../supabase/proposals/${name}.sql`, import.meta.url), 'utf8');
-const TAG_A = '30000000-0000-0000-0000-000000000001';
-const TAG_B = '30000000-0000-0000-0000-000000000002';
+import { snapshotLibraryDatabase, TAG_A, TAG_B } from './helpers/snapshot';
 type Image = { id?: string; image_url: string };
 type Snapshot = { data: { item: Record<string, unknown>; images: Image[] }; revision: string; latest_revision: string; version: number };
 
-async function setup() {
-  const db = await baseline();
-  // Extend the synthetic baseline with the fields currently sent by the three forms.
-  // This is deliberately not a claim that target catalog types were verified here.
-  await db.exec(`
-    ALTER TABLE user_library_educations ADD COLUMN level text DEFAULT 'School', ADD COLUMN school_name text DEFAULT 'Original school',
-      ADD COLUMN study_plan text, ADD COLUMN gpa numeric, ADD COLUMN start_year text, ADD COLUMN end_year text, ADD COLUMN logo_url text;
-    ALTER TABLE user_library_activities ADD COLUMN activity_date date, ADD COLUMN organization text;
-    ALTER TABLE user_library_certificates ADD COLUMN issued_date date, ADD COLUMN issued_by text, ADD COLUMN image_url text;
-    INSERT INTO user_tags(id,user_id,name) VALUES('${TAG_A}','${A}','own'),('${TAG_B}','${B}','other');
-  `);
-  await db.exec(proposal('portfolio-item-snapshots'));
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261023150558_library_image_limits.sql', import.meta.url), 'utf8'));
-  await db.exec(proposal('atomic-library-update'));
-  return db;
-}
 
 for (const [kind, plural] of sections) {
   test(`${kind}: atomic text/media/tag update, retained snapshot and failure rollback`, async () => {
-    const db = await setup();
+    const db = await snapshotLibraryDatabase();
     try {
       if (kind !== 'education') {
         await db.query(`INSERT INTO user_library_${kind}_images(${kind}_id,image_url) VALUES($1,'old.png')`, [LA]);
@@ -87,7 +68,7 @@ for (const [kind, plural] of sections) {
 }
 
 test('image limits, ownership, reordering, malformed input and legacy certificates', async () => {
-  const db = await setup();
+  const db = await snapshotLibraryDatabase();
   try {
     // Seed historical over-limit data before enabling the current addition trigger.
     await db.exec('ALTER TABLE user_library_certificate_images DISABLE TRIGGER certificate_image_limit');

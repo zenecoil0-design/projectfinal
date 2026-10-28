@@ -45,6 +45,8 @@ The synthetic baseline was extended with form fields for these tests. Those colu
 
 No hosted SQL was executed, no migration/deployment/reset was applied, and no real data or Storage object was modified. Autosave and per-portfolio image subsets remain REMOVED.
 
+Follow-up: [atomic creation and snapshot copy](SNAPSHOT_CREATE_COPY_REVIEW.md) adds local contracts/tests for creation receipts and copying captured editions. Upload validation and application integration remain pending; the evidence above remains the result of this earlier round.
+
 ## Reference checked
 
 [PostgREST transaction behavior](https://docs.postgrest.org/en/stable/references/transactions.html): each API request has its own transaction and database errors abort that transaction. The Supabase changelog was also read; no extension or HTTP TLS configuration was changed by this local SQL proposal.
