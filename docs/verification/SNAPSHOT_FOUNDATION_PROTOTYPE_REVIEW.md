@@ -29,3 +29,5 @@ Scoped ESLint PASS; full-repository TypeScript PASS; git diff --check PASS. No b
 6. Add stored snapshot references to Storage reconciliation before any cleanup. Old image URLs retained by snapshots must remain usable.
 
 No deployment, migration installation, reset, real data deletion or Storage removal. Full snapshot feature remains IN_PROGRESS, not DONE. No Autosave or per-portfolio image subsets are introduced.
+
+Follow-up, 29 October 2026: [atomic library update prototype](SNAPSHOT_ATOMIC_LIBRARY_UPDATE_REVIEW.md) tests existing-item text/image/tag updates as one transaction. Creation, Storage validation, caller integration and real concurrency acceptance remain pending; the original evidence above is unchanged.
