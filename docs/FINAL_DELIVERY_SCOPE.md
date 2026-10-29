@@ -57,3 +57,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ความคืบหน้า 29 ต.ค.: [ต้นแบบเก็บฉบับ](verification/SNAPSHOT_FOUNDATION_PROTOTYPE_REVIEW.md) และ [ต้นแบบบันทึกคลังเป็นธุรกรรมเดียว](verification/SNAPSHOT_ATOMIC_LIBRARY_UPDATE_REVIEW.md) มีผล PGlite แล้ว แต่ยังไม่ใช่ผลตรวจรับ SNP แบบ end-to-end ตาราง NOT_RUN ข้างบนจึงยังคงเดิม ไม่มีการเปิดใช้ Snapshot ในเว็บหรือติดตั้งฐานจริงจากงานนี้
 
 ส่วนต่อมา: [สร้างรายการและทำสำเนาฉบับเดิม](verification/SNAPSHOT_CREATE_COPY_REVIEW.md) ผ่านการทดสอบฐานจำลอง รวมส่งคำขอซ้ำ/rollback/สำเนาที่รักษาข้อมูล รูป เวอร์ชัน และลำดับ ยังต้องเชื่อม upload/callers, เปลี่ยนผ่านพอร์ตเดิม และตรวจ PostgreSQL/PostgREST จริงก่อนเปิดใช้
+
+ส่วนต่อมา 29 ต.ค.: [เตรียมพอร์ตเดิมและอ่านฉบับที่บันทึก](verification/SNAPSHOT_TRANSITION_READ_REVIEW.md) เพิ่มการเตรียมครบสามหมวดเป็นธุรกรรมเดียวและตัวอ่านที่ไม่รับฉบับใหม่อัตโนมัติ พร้อม decoder สำหรับ Preview ผ่านชุดรวม unit/PGlite 39/39 แต่ยังไม่เชื่อม Editor หรือเปิดใช้ฐานจริง ต้องทำ atomic callers, lifecycle/รับอัปเดต, concurrency/API และการติดตั้งต่อก่อนปิด SNP
