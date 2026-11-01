@@ -16,3 +16,31 @@ three existing img warnings. Snapshot reader/API/PGlite tests 16/16 passed.
 Default-mode browser regression for metadata retry, order, dirty baseline and
 save payload passed 3/3 (one per section). This is not enabled-mode browser
 acceptance, hosted API testing or proof the complete Snapshot feature is ready.
+
+## Explicit per-item update UI — 2026-11-02
+
+Three forms now retain the loaded snapshot metadata and show a per-item update
+button for confirmed newer fingerprints. A native confirmation precedes mutation.
+Drafts are checked synchronously against store baselines as well as disabled UI.
+A session-wide busy lock shares existing export/form disabling and synchronous
+export guards; unmount invalidates the result and releases the owned lock.
+
+An uncertain response leaves the old draft intact, marks section readiness failed,
+and exposes read-only reconciliation outside the disabled content fieldset. It
+never automatically replays capture. Successful authoritative readback updates
+section data and its baseline. A changed draft while waiting rejects application.
+
+Final enabled-mode production build and full typecheck passed. Scoped lint: no
+errors, three existing img warnings. Reader/API/PGlite suite passed 16/16. Enabled
+production browser tests cover all three sections: old edition, dirty blocking,
+explicit acceptance, failed readback and read-only recovery without repeat capture.
+The initial browser run passed 3/3; final run after lifecycle/synchronous-dirty
+hardening is recorded separately. Three builds were needed after source changes.
+
+Still disabled by default. Preparation UI, atomic library writer integration,
+full enabled-mode async/PDF regression, hosted installation and API acceptance
+remain outstanding. This report does not authorize enabling the flag on hosted
+accounts or claim complete Snapshot delivery. No hosted data or SQL was changed.
+
+Final enabled production browser rerun: 3/3 passed in 4.5 seconds, on the final
+application source, using localhost mock responses (not hosted PostgREST).

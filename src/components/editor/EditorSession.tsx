@@ -12,6 +12,7 @@ const SessionContext = createContext<{
   tagStatus: Record<TagSection, Status>;
   reportTags: (section: TagSection, status: Status) => void;
   dirty: Section[];
+  hasUnsavedChanges: () => boolean;
   appearanceDirty: boolean;
   appearanceBusy: boolean;
   reportAppearance: (dirty: boolean, busy: boolean) => void;
@@ -20,6 +21,7 @@ const SessionContext = createContext<{
   exporting: boolean;
   isExporting: () => boolean;
   setExporting: (value: boolean) => void;
+  setSnapshotBusy: (value: boolean) => void;
   reportLoaded: (section: Section, success: boolean) => void;
   markSaved: (section: Section) => void;
 } | null>(null);
@@ -32,18 +34,22 @@ export function EditorSession({ children }: { children: ReactNode }) {
     setTagStatus(previous => previous[section] === next ? previous : { ...previous, [section]: next });
   }, []);
   const [exporting, updateExporting] = useState(false);
+  const [snapshotBusy, updateSnapshotBusy] = useState(false);
+  const snapshotBusyRef = useRef(false);
+  const setSnapshotBusy = useCallback((next: boolean) => { snapshotBusyRef.current = next; updateSnapshotBusy(next); }, []);
   const exportingRef = useRef(false);
   const setExporting = useCallback((next: boolean) => { exportingRef.current = next; updateExporting(next); }, []);
-  const isExporting = useCallback(() => exportingRef.current, []);
+  const isExporting = useCallback(() => exportingRef.current || snapshotBusyRef.current, []);
   const [appearance, setAppearance] = useState({ dirty: false, busy: false });
   const appearanceRef = useRef(appearance);
   const reportAppearance = useCallback((dirty: boolean, busy: boolean) => {
     appearanceRef.current = { dirty, busy };
     setAppearance(previous => previous.dirty === dirty && previous.busy === busy ? previous : { dirty, busy });
   }, []);
-  const isAppearanceBlocked = useCallback(() => appearanceRef.current.dirty || appearanceRef.current.busy, []);
+  const isAppearanceBlocked = useCallback(() => appearanceRef.current.dirty || appearanceRef.current.busy || snapshotBusyRef.current, []);
   const [dirty, setDirty] = useState<Section[]>([]);
   const baselines = useRef<Partial<Record<Section, string>>>({});
+  const hasUnsavedChanges = useCallback(() => sections.some(section => baselines.current[section] !== undefined && baselines.current[section] !== sectionSnapshot(section)), []);
   const clearDraftState = useCallback(() => { baselines.current = {}; setDirty([]); reportAppearance(false, false); }, [reportAppearance]);
   const refreshDirty = useCallback(() => {
     const next = sections.filter(section => baselines.current[section] !== undefined && baselines.current[section] !== sectionSnapshot(section));
@@ -64,7 +70,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
   }, [refreshDirty]);
 
   useEffect(() => {
-    if (!dirty.length && !appearance.dirty && !appearance.busy && !exporting) return;
+    if (!dirty.length && !appearance.dirty && !appearance.busy && !exporting && !snapshotBusy) return;
     const beforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = "";
@@ -74,7 +80,7 @@ export function EditorSession({ children }: { children: ReactNode }) {
       if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download") || event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
       const destination = new URL(anchor.href, window.location.href);
       if (destination.pathname === location.pathname && destination.search === location.search) return;
-      if (exporting || appearance.busy) { event.preventDefault(); event.stopPropagation(); return; }
+      if (exporting || snapshotBusy || appearance.busy) { event.preventDefault(); event.stopPropagation(); return; }
       if (!window.confirm("มีข้อมูลที่ยังไม่บันทึก ต้องการออกจากหน้านี้และทิ้งการแก้ไขหรือไม่?")) {
         event.preventDefault();
         event.stopPropagation();
@@ -86,9 +92,9 @@ export function EditorSession({ children }: { children: ReactNode }) {
       window.removeEventListener("beforeunload", beforeUnload);
       document.removeEventListener("click", onClick, true);
     };
-  }, [dirty, exporting, appearance]);
+  }, [dirty, exporting, snapshotBusy, appearance]);
 
-  const value = useMemo(() => ({ clearDraftState, appearanceDirty: appearance.dirty, appearanceBusy: appearance.busy, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved }), [clearDraftState, appearance, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved]);
+  const value = useMemo(() => ({ hasUnsavedChanges, clearDraftState, appearanceDirty: appearance.dirty, appearanceBusy: appearance.busy, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting: exporting || snapshotBusy, isExporting, setExporting, setSnapshotBusy, reportLoaded, markSaved }), [hasUnsavedChanges, snapshotBusy, setSnapshotBusy, clearDraftState, appearance, reportAppearance, isAppearanceBlocked, status, tagStatus, reportTags, dirty, exporting, isExporting, setExporting, reportLoaded, markSaved]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

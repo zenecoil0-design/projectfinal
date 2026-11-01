@@ -1,6 +1,8 @@
 "use client";
 import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
 import { useEditorTags } from "@/components/editor/useEditorTags";
+import { SnapshotUpdates } from "@/components/editor/SnapshotUpdates";
+import type { parsePortfolioSnapshots } from "@/lib/editor/snapshot-reader";
 import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
 import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { saveSelection } from "@/lib/editor/save-selection";
@@ -86,6 +88,8 @@ export default function EducationForm({
   onNext: () => void;
 }) {
   const { reportLoaded, markSaved, status, exporting } = useEditorSession();
+  const [snapshotEntries, setSnapshotEntries] = useState<ReturnType<typeof parsePortfolioSnapshots>>([]);
+  const [snapshotOwner, setSnapshotOwner] = useState("");
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const searchParams =
@@ -369,13 +373,17 @@ export default function EducationForm({
                 mapLibraryEducationToStore
               );
 
-          const savedItems = snapshotsEnabled
-            ? (await readPortfolioSnapshots(supabase, {
-                portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
-              }, "education")).map(entry => entry.item)
-            : selectedItems;
-          if (cancelled) return;
-          setEducations(savedItems);
+          if (snapshotsEnabled) {
+            const entries = await readPortfolioSnapshots(supabase, {
+              portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
+            }, "education");
+            if (cancelled) return;
+            setSnapshotEntries(entries);
+            setSnapshotOwner(user.id);
+            setEducations(entries.map(entry => entry.item));
+          } else {
+            setEducations(selectedItems);
+          }
         } catch (
           error: unknown
         ) {
@@ -510,6 +518,7 @@ export default function EducationForm({
             saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
           throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
         }
+        setSnapshotEntries(saved);
         setEducations(saved.map(entry => entry.item));
       }
       markSaved("education");
@@ -540,6 +549,16 @@ export default function EducationForm({
 
   return (
     <form onSubmit={handleNext} className="@container flex min-w-0 flex-col gap-5 pb-6">
+      {snapshotsEnabled && portfolioId && snapshotOwner && <SnapshotUpdates
+        client={supabase} portfolioId={portfolioId} ownerId={snapshotOwner} disabled={isLoading || isSaving}
+        section="education" entries={snapshotEntries} onApply={entries => {
+          const items = entries.map(entry => {
+            if (!("schoolName" in entry.item)) throw new Error("Invalid snapshot section");
+            return entry.item;
+          });
+          setEducations(items);
+          setSnapshotEntries(entries);
+        }} />}
       <fieldset disabled={exporting || isSaving || isLoading || status.education === "error"} className="contents">
         <div className="min-w-0 space-y-3">
           <h3 className="border-l-4 border-blue-500 pl-2 text-sm font-bold text-slate-800">หน้าที่ 4: ประวัติการศึกษา</h3>
