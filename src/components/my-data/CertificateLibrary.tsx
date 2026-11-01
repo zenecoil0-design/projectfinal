@@ -553,7 +553,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
   };
 
   const uploadImages = async (
-    certificateId: string
+    certificateId: string,
+    saveCurrent: () => boolean
   ) => {
     const rows = [];
 
@@ -562,6 +563,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       i < newFiles.length;
       i++
     ) {
+      if (!saveCurrent()) return;
       const file =
         newFiles[i];
 
@@ -589,6 +591,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
             }
           );
 
+      if (!saveCurrent()) return;
       if (error) {
         throw error;
       }
@@ -617,6 +620,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       });
     }
 
+    if (!saveCurrent()) return;
     if (rows.length) {
       const { error } =
         await supabase
@@ -733,8 +737,10 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       }
 
       await deleteRemoved();
+      if (!saveCurrent()) return;
 
-      await uploadImages(id);
+      await uploadImages(id, saveCurrent);
+      if (!saveCurrent()) return;
 
       const { error: deleteTagsError } = await supabase
         .from(

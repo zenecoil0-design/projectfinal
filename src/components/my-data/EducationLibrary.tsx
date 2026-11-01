@@ -617,6 +617,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
           );
       }
 
+      if (!saveCurrent()) return;
       const {
         error:
           logoError,
@@ -639,6 +640,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
         throw logoError;
       }
 
+      if (!saveCurrent()) return;
       const { error: deleteTagsError } = await supabase
         .from(
           "user_library_education_tags"

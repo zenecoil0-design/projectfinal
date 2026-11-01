@@ -567,3 +567,34 @@ for (const width of [1440, 390]) {
     await page.goForward(); await expect(page).toHaveURL(/\/$/);
   });
 }
+
+for (const config of sections) test(`${config.key}: late upload stops writes after account change`, async ({ page, request }) => {
+  const { state, longName } = await fixtures(page, config, 0);
+  await openSection(page, config);
+  await page.locator('article').filter({ has: page.getByRole('heading', { name: longName, exact: true }) }).getByRole('button', { name: /แก้ไข/ }).click();
+  const form = page.locator('main div[role=dialog]');
+  const png = await (await request.get('http://127.0.0.1:54321/sample.png')).body();
+  await form.locator('input[type=file]').setInputFiles({ name: 'late.png', mimeType: 'image/png', buffer: png });
+  await page.locator('dialog').getByRole('button', { name: 'ตัดรูปและใช้รูปนี้', exact: true }).click();
+  await expect(form.locator('img')).toHaveCount(1);
+  let release = () => {}; let uploading = false;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/storage/v1/**', async route => {
+    if (route.request().method() !== 'POST') return route.fulfill({ contentType: 'image/png', body: png });
+    uploading = true; await pending; await route.fulfill({ json: { Key: 'synthetic-upload' } });
+  });
+  await form.getByRole('button', { name: /^บันทึก/ }).click();
+  await expect.poll(() => uploading).toBe(true);
+  state.account = 'next-account'; await accountEvent(page, state.account);
+  await expect(form).toHaveCount(0);
+  await page.getByRole('group', { name: 'หมวดคลังข้อมูล' }).getByRole('button', { name: config.tab, exact: true }).click();
+  await page.getByRole('button', { name: config.add, exact: true }).click();
+  await form.getByLabel(config.title, { exact: true }).fill('new owner draft');
+  const writes: string[] = [];
+  page.on('request', req => { if (req.url().includes('/rest/v1/') && req.method() !== 'GET') writes.push(req.url()); });
+  const finished = page.waitForResponse(res => res.url().includes('/storage/v1/') && res.request().method() === 'POST');
+  release(); await finished;
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await expect(form.getByLabel(config.title, { exact: true })).toHaveValue('new owner draft');
+  expect(writes).toEqual([]);
+});

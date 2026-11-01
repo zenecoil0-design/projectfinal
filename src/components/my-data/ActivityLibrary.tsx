@@ -592,7 +592,8 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
   };
 
   const uploadImages = async (
-    activityId: string
+    activityId: string,
+    saveCurrent: () => boolean
   ) => {
     const rows: {
       activity_id: string;
@@ -606,6 +607,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
       newFiles.length;
       index++
     ) {
+      if (!saveCurrent()) return;
       const file =
         newFiles[index];
 
@@ -635,6 +637,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
             }
           );
 
+      if (!saveCurrent()) return;
       if (uploadError) {
         throw uploadError;
       }
@@ -663,6 +666,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
       });
     }
 
+    if (!saveCurrent()) return;
     if (
       rows.length > 0
     ) {
@@ -780,10 +784,10 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
       }
 
       await deleteRemovedImages();
+      if (!saveCurrent()) return;
 
-      await uploadImages(
-        activityId
-      );
+      await uploadImages(activityId, saveCurrent);
+      if (!saveCurrent()) return;
 
       const {
         error:
@@ -805,6 +809,7 @@ export default function ActivityLibrary({ ownerId }: { ownerId: string }) {
         throw deleteTagsError;
       }
 
+      if (!saveCurrent()) return;
       if (
         selectedTagIds.length
       ) {
