@@ -1,3 +1,7 @@
+import type { EducationItem } from '@/store/useEducationStore';
+import type { ActivityItem } from '@/store/useActivityStore';
+import type { CertificateItem } from '@/store/useCertificateStore';
+import type { SnapshotEntry } from './snapshot-reader';
 import { parsePortfolioSnapshots, type SnapshotSection } from './snapshot-reader';
 
 type Context = { portfolioId: string; ownerId: string; isCurrent: () => boolean };
@@ -21,6 +25,10 @@ function failure() { return new Error('ยืนยันข้อมูลฉ�
 
 // No implicit preparation, acceptance or retry during a read. The caller owns
 // draft/export readiness and must only apply a result to the matching session.
+export function readPortfolioSnapshots(client: Client, context: Context, section: "education"): Promise<SnapshotEntry<EducationItem>[]>;
+export function readPortfolioSnapshots(client: Client, context: Context, section: "activity"): Promise<SnapshotEntry<ActivityItem>[]>;
+export function readPortfolioSnapshots(client: Client, context: Context, section: "certificate"): Promise<SnapshotEntry<CertificateItem>[]>;
+export function readPortfolioSnapshots(client: Client, context: Context, section: SnapshotSection): Promise<ReturnType<typeof parsePortfolioSnapshots>>;
 export async function readPortfolioSnapshots(client: Client, context: Context, section: SnapshotSection) {
   await owner(client, context);
   const { data, error } = await client.rpc('read_portfolio_item_snapshots', {

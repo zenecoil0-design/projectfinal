@@ -1,6 +1,8 @@
 "use client";
 import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
 import { useEditorTags } from "@/components/editor/useEditorTags";
+import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
+import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -385,9 +387,13 @@ export default function ActivityForm({
                 mapLibraryActivityToStore
               );
 
-          setActivities(
-            selectedItems
-          );
+          const savedItems = snapshotsEnabled
+            ? (await readPortfolioSnapshots(supabase, {
+                portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
+              }, "activity")).map(entry => entry.item)
+            : selectedItems;
+          if (cancelled) return;
+          setActivities(savedItems);
         } catch (
           error: unknown
         ) {
@@ -492,6 +498,21 @@ export default function ActivityForm({
       await saveSelection(supabase, portfolioId, "activity", activities.map(item => item.id));
 
       if (!mounted.current) return;
+      if (snapshotsEnabled) {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!mounted.current) return;
+        if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
+        const saved = await readPortfolioSnapshots(supabase, {
+          portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
+        }, "activity");
+        if (!mounted.current) return;
+        const expectedIds = activities.map(item => item.id);
+        if (saved.length !== expectedIds.length ||
+            saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
+          throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
+        }
+        setActivities(saved.map(entry => entry.item));
+      }
       markSaved("activity");
       setSuccessMessage(
         "บันทึกผลงานและกิจกรรมเรียบร้อยแล้ว"

@@ -1,6 +1,8 @@
 "use client";
 import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
 import { useEditorTags } from "@/components/editor/useEditorTags";
+import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
+import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -367,9 +369,13 @@ export default function EducationForm({
                 mapLibraryEducationToStore
               );
 
-          setEducations(
-            selectedItems
-          );
+          const savedItems = snapshotsEnabled
+            ? (await readPortfolioSnapshots(supabase, {
+                portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
+              }, "education")).map(entry => entry.item)
+            : selectedItems;
+          if (cancelled) return;
+          setEducations(savedItems);
         } catch (
           error: unknown
         ) {
@@ -491,6 +497,21 @@ export default function EducationForm({
       await saveSelection(supabase, portfolioId, "education", educations.map(item => item.id));
 
       if (!mounted.current) return;
+      if (snapshotsEnabled) {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (!mounted.current) return;
+        if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
+        const saved = await readPortfolioSnapshots(supabase, {
+          portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
+        }, "education");
+        if (!mounted.current) return;
+        const expectedIds = educations.map(item => item.id);
+        if (saved.length !== expectedIds.length ||
+            saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
+          throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
+        }
+        setEducations(saved.map(entry => entry.item));
+      }
       markSaved("education");
       setSuccessMessage(
         "บันทึกประวัติการศึกษาเรียบร้อยแล้ว"
