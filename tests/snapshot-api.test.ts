@@ -4,12 +4,23 @@ import { readPortfolioSnapshots, preparePortfolioSnapshots, acceptPortfolioSnaps
 const ownerId='00000000-0000-0000-0000-000000000001';
 const portfolioId='10000000-0000-0000-0000-000000000001';
 const itemId='20000000-0000-0000-0000-000000000001';
+function capture() {
+ return {data:{item:{id:itemId,user_id:ownerId,title:'Activity',description:'',
+ activity_date:null,organization:null},images:[]},revision:'a'.repeat(32),
+ latest_revision:'a'.repeat(32),version:2};
+}
+function readback() {
+ return {format_version:1,portfolio_id:portfolioId,section:'activity',
+ items:[{...capture(),item_id:itemId,sort_order:0}]};
+}
 function setup() {
   const state={current:true,owner:ownerId,error:null as unknown,response:undefined as unknown};
+  let accepted=false;
   const calls: Array<{name:string;args:Record<string,unknown>}>=[];
   const client={auth:{getUser:async()=>({data:{user:{id:state.owner}},error:null})},rpc:async(name:string,args:Record<string,unknown>)=>{
     calls.push({name,args});
-    return {data:state.response ?? (name==='prepare_portfolio_item_snapshots'?{portfolio_id:portfolioId,prepared_count:0}:{format_version:1,portfolio_id:portfolioId,section:'activity',items:[]}),error:state.error};
+    if(name==='capture_portfolio_item_snapshot') accepted=true;
+    return {data:state.response ?? (name==='prepare_portfolio_item_snapshots'?{portfolio_id:portfolioId,prepared_count:0}:name==='capture_portfolio_item_snapshot'?capture():accepted?readback():{format_version:1,portfolio_id:portfolioId,section:'activity',items:[]}),error:state.error};
   }};
   return {state,calls,client,context:{portfolioId,ownerId,isCurrent:()=>state.current}};
 }
@@ -46,4 +57,36 @@ test('backend and malformed results fail closed without exposing backend text',a
  s.state.error=null;s.state.response={};await assert.rejects(readPortfolioSnapshots(s.client,s.context,'activity'));
  await assert.rejects(acceptPortfolioSnapshot(s.client,s.context,'activity',itemId,'a'.repeat(32)+'\n'));
  assert.equal(s.calls.length,2);
+});
+
+test('acceptance rejects malformed mutation results and wrong reviewed revision',async()=>{
+ for(const response of [{},[],{...capture(),revision:'b'.repeat(32)},
+ {...capture(),version:0},{...capture(),data:{...capture().data,item:{...capture().data.item,id:portfolioId}}}]) {
+  const s=setup();s.state.response=response;
+  await assert.rejects(acceptPortfolioSnapshot(s.client,s.context,'activity',itemId,'a'.repeat(32)));
+  assert.equal(s.calls.length,1);
+ }
+});
+test('readback must retain the accepted item, revision and version without mutation replay',async()=>{
+ for(const items of [[],[{...readback().items[0],revision:'b'.repeat(32)}],
+ [{...readback().items[0],version:3}]]) {
+  const s=setup();const original=s.client.rpc;
+  s.client.rpc=async(name,args)=>{
+   const result=await original(name,args);
+   return name==='read_portfolio_item_snapshots'?{data:{...readback(),items},error:null}:result;
+  };
+  await assert.rejects(acceptPortfolioSnapshot(s.client,s.context,'activity',itemId,'a'.repeat(32)));
+  assert.equal(s.calls.filter(c=>c.name==='capture_portfolio_item_snapshot').length,1);
+ }
+});
+test('a newer library revision after acceptance does not invalidate the accepted edition',async()=>{
+ const s=setup();const original=s.client.rpc;
+ s.client.rpc=async(name,args)=>{
+  const result=await original(name,args);
+  return name==='read_portfolio_item_snapshots'?{data:{...readback(),
+   items:[{...readback().items[0],latest_revision:'b'.repeat(32)}]},error:null}:result;
+ };
+ const result=await acceptPortfolioSnapshot(s.client,s.context,'activity',itemId,'a'.repeat(32));
+ assert.equal(result[0].hasUpdate,true);
+ assert.equal(result[0].revision,'a'.repeat(32));
 });

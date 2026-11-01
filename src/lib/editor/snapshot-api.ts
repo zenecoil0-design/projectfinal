@@ -52,11 +52,21 @@ export async function acceptPortfolioSnapshot(client: Client, context: Context,
   if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(itemId) || itemId.length !== 36 ||
       !/^[0-9a-f]{32}$/.test(expectedRevision) || expectedRevision.length !== 32) throw failure();
   await owner(client, context);
-  const { error } = await client.rpc('capture_portfolio_item_snapshot', {
+  const { data, error } = await client.rpc('capture_portfolio_item_snapshot', {
     p_portfolio_id: context.portfolioId, p_section: section, p_item_id: itemId,
     p_refresh: true, p_expected_revision: expectedRevision,
   });
   current(context);
   if (error) throw failure();
-  return readPortfolioSnapshots(client, context, section);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw failure();
+  const accepted = parsePortfolioSnapshots({
+    format_version: 1, portfolio_id: context.portfolioId, section,
+    items: [{ ...data, item_id: itemId, sort_order: 0 }],
+  }, section, context)[0];
+  if (accepted.revision !== expectedRevision) throw failure();
+  const entries = await readPortfolioSnapshots(client, context, section);
+  const confirmed = entries.find(entry => entry.item.id === itemId);
+  if (!confirmed || confirmed.revision !== accepted.revision ||
+      confirmed.version !== accepted.version) throw failure();
+  return entries;
 }

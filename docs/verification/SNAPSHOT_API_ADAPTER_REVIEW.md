@@ -9,3 +9,14 @@ The caller must still guard dirty/busy/export state, provide a fresh lifetime pr
 Validation: 10/10 unit tests passed in one run (five new adapter tests plus five reader tests). Full repository TypeScript and scoped ESLint passed. Diff whitespace check passed. Mock clients only, no hosted writes, no new browser/build claim. Existing application routes are unchanged.
 
 Next required implementation remains atomic library callers and uncertain-upload recovery, then Editor manual acceptance/UI and Preview/PDF validation, real concurrent API acceptance and reviewed migration installation. See [transition/read checkpoint](SNAPSHOT_TRANSITION_READ_REVIEW.md). Autosave and per-portfolio image subsets remain removed.
+
+## Follow-up: acceptance confirmation (2026-11-01)
+
+The adapter now validates the capture response with the strict snapshot reader,
+requires the reviewed revision, and verifies the same item/revision/version in
+section readback. Empty, stale or concurrently replaced results fail confirmation;
+no mutation is replayed. A newer library fingerprint alone remains a valid update
+notification and does not replace the accepted edition.
+
+Validation: reader/API unit tests 13/13 passed. No hosted mutation, migration or
+Editor activation was performed. This is still an adapter awaiting UI integration.
