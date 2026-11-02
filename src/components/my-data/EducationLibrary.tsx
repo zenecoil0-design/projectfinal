@@ -1,4 +1,6 @@
 "use client";
+import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
+import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
 import LibraryDeleteDialog from "./LibraryDeleteDialog";
@@ -77,6 +79,8 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
   const [showForm, setShowForm] =
     useState(false);
 
+  const atomicAttempt = useRef<LibrarySaveAttempt | null>(null);
+  const saveLock = useRef(false);
   const [editingId, setEditingId] =
     useState<string | null>(null);
 
@@ -213,6 +217,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
   useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
+    atomicAttempt.current = null;
     draftReads.current++;
     setEditingId(null);
 
@@ -503,7 +508,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    if (isSaving || !canSave) return;
+    if (saveLock.current || isSaving || !canSave) return;
 
     if (
       !level.trim() ||
@@ -517,6 +522,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
 
     const lifetime = saveLifetime.current;
     const saveCurrent = () => lifetime === saveLifetime.current;
+    saveLock.current = true;
     setIsSaving(true);
 
     try {
@@ -546,6 +552,21 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
           endYear ||
           null,
       };
+
+      if (snapshotsEnabled) {
+        const input = { section: "education" as const, ownerId: userId, itemId: editingId,
+          fields: { ...payload, logo_url: removeLogo ? null : (currentLogoUrl || null) }, images: [], files: selectedLogo ? [selectedLogo] : [], tagIds: [...selectedTagIds] };
+        if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
+        if (!sameLibrarySave(atomicAttempt.current, input)) {
+          throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
+        }
+        await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
+        if (!saveCurrent()) return;
+        await loadData(userId, true);
+        if (!saveCurrent()) return;
+        resetForm();
+        return;
+      }
 
       if (editingId) {
         const { error } =
@@ -691,10 +712,10 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
       console.error(error);
 
       alert(
-        "ไม่สามารถบันทึกประวัติการศึกษาได้"
+        snapshotsEnabled ? "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ" : "ไม่สามารถบันทึกประวัติการศึกษาได้"
       );
     } finally {
-      if (saveCurrent()) setIsSaving(false);
+      if (saveCurrent()) { saveLock.current = false; setIsSaving(false); }
     }
   };
 

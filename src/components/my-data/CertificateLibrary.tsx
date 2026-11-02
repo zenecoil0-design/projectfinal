@@ -1,4 +1,6 @@
 "use client";
+import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
+import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
 import LibraryDeleteDialog from "./LibraryDeleteDialog";
@@ -95,6 +97,8 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
   const [showForm, setShowForm] =
     useState(false);
 
+  const atomicAttempt = useRef<LibrarySaveAttempt | null>(null);
+  const saveLock = useRef(false);
   const [editingId, setEditingId] =
     useState<string | null>(null);
 
@@ -235,6 +239,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
   useEffect(() => { void loadData(ownerId); }, [loadData, ownerId]);
 
   const resetForm = () => {
+    atomicAttempt.current = null;
     draftReads.current++;
     setEditingId(null);
 
@@ -646,7 +651,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    if (isSaving || !canSave) return;
+    if (saveLock.current || isSaving || !canSave) return;
 
     if (!canAddLibraryImages('certificate', existingImages.length, newFiles.length)) {
       alert("เพิ่มรูปเกินเพดาน 2 รูปไม่ได้ กรุณาจัดการรูปก่อนเพิ่มรูปใหม่");
@@ -662,6 +667,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
 
     const lifetime = saveLifetime.current;
     const saveCurrent = () => lifetime === saveLifetime.current;
+    saveLock.current = true;
     setIsSaving(true);
 
     try {
@@ -683,6 +689,21 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
           issuedDate ||
           null,
       };
+
+      if (snapshotsEnabled) {
+        const input = { section: "certificate" as const, ownerId: userId, itemId: editingId,
+          fields: payload, images: existingImages.map(image => ({ id: image.id, image_url: image.image_url })), files: [...newFiles], tagIds: [...selectedTagIds] };
+        if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
+        if (!sameLibrarySave(atomicAttempt.current, input)) {
+          throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
+        }
+        await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
+        if (!saveCurrent()) return;
+        await loadData(userId, true);
+        if (!saveCurrent()) return;
+        resetForm();
+        return;
+      }
 
       if (editingId) {
         const { error } =
@@ -790,10 +811,10 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       console.error(error);
 
       alert(
-        "ไม่สามารถบันทึกเกียรติบัตรได้"
+        snapshotsEnabled ? "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ" : "ไม่สามารถบันทึกเกียรติบัตรได้"
       );
     } finally {
-      if (saveCurrent()) setIsSaving(false);
+      if (saveCurrent()) { saveLock.current = false; setIsSaving(false); }
     }
   };
 
