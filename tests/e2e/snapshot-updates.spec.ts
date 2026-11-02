@@ -1,10 +1,11 @@
+import { execFileSync } from 'node:child_process';
 import { test, expect } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
 const owner='00000000-0000-0000-0000-000000000001';
 const portfolio='10000000-0000-0000-0000-000000000001';
 const item='20000000-0000-0000-0000-000000000001';
 for(const section of ['education','activity','certificate'] as const) {
- test(section+': explicit update and read-only recovery',async({page,context,request})=>{
+ test(section+': explicit update and read-only recovery',async({page,context,request},testInfo)=>{
   await request.get('http://127.0.0.1:54321/__reset');
   await request.post('http://127.0.0.1:54321/rest/v1/portfolios',{data:{id:portfolio,user_id:owner,title:'Snapshot',template_key:'classic'}});
   const part=(value:object)=>Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -63,5 +64,20 @@ for(const section of ['education','activity','certificate'] as const) {
   await expect(panel.getByRole('button',{name:'รับอัปเดตรายการนี้'})).toHaveCount(0);
   expect(captures).toBe(1);
   await expect(page.locator('[data-portfolio-page]').filter({hasText:'New edition'}).first()).toBeAttached();
+  if(section==='education') {
+   await page.setViewportSize({width:390,height:844});
+   await page.getByRole('button',{name:'กรอกข้อมูล',exact:true}).click();
+   await page.getByRole('button',{name:'7. สีและดาวน์โหลด',exact:true}).click();
+   const button=page.getByRole('button',{name:'ดาวน์โหลด PDF',exact:true});
+   await expect(button).toBeEnabled();
+   const count=await page.locator('[data-portfolio-page]').count();
+   const downloaded=page.waitForEvent('download',{timeout:30000});
+   await button.click();
+   const path=testInfo.outputPath('snapshot-updated-mobile.pdf');
+   await (await downloaded).saveAs(path);
+   const info=execFileSync('pdfinfo',[path],{encoding:'utf8'});
+   expect(Number(info.match(/^Pages:\s+(\d+)/m)?.[1])).toBe(count);
+   expect(info).toMatch(/Page size:\s+595\.28 x 841\.89 pts/);
+  }
  });
 }

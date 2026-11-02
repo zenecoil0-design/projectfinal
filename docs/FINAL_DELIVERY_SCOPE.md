@@ -59,3 +59,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ส่วนต่อมา: [สร้างรายการและทำสำเนาฉบับเดิม](verification/SNAPSHOT_CREATE_COPY_REVIEW.md) ผ่านการทดสอบฐานจำลอง รวมส่งคำขอซ้ำ/rollback/สำเนาที่รักษาข้อมูล รูป เวอร์ชัน และลำดับ ยังต้องเชื่อม upload/callers, เปลี่ยนผ่านพอร์ตเดิม และตรวจ PostgreSQL/PostgREST จริงก่อนเปิดใช้
 
 ส่วนต่อมา 29 ต.ค.: [เตรียมพอร์ตเดิมและอ่านฉบับที่บันทึก](verification/SNAPSHOT_TRANSITION_READ_REVIEW.md) เพิ่มการเตรียมครบสามหมวดเป็นธุรกรรมเดียวและตัวอ่านที่ไม่รับฉบับใหม่อัตโนมัติ พร้อม decoder สำหรับ Preview ผ่านชุดรวม unit/PGlite 39/39 แต่ยังไม่เชื่อม Editor หรือเปิดใช้ฐานจริง ต้องทำ atomic callers, lifecycle/รับอัปเดต, concurrency/API และการติดตั้งต่อก่อนปิด SNP
+
+ความคืบหน้า 2 พ.ย.: เชื่อม Editor/การรับอัปเดตรายรายการ/การเตรียมพอร์ตเดิมและ atomic library callers หลัง feature flag แล้ว ตรวจรูปครอป/retry/เปลี่ยนบัญชีและ PDF จริงจากมือถือที่ซ่อน Preview ตาม [รายงาน callers](verification/SNAPSHOT_ATOMIC_LIBRARY_CALLERS_REVIEW.md) ข้อมูล browser ยังเป็น mock; ยังไม่เปิด flag โดยปริยาย ไม่ติดตั้ง proposals และไม่ปิด SNP จากผลนี้ ขั้นถัดไปคือ PostgreSQL/PostgREST concurrency/สิทธิ์จริง และตรวจ migration/ติดตั้ง/integration ตามลำดับ

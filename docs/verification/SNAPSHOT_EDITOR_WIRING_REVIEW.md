@@ -70,3 +70,8 @@ entry, dirty blocking and per-item acceptance/recovery in all three sections.
 
 Feature remains disabled by default. Atomic library callers, comprehensive
 async/PDF regression and real API/hosted installation are still outstanding.
+
+Follow-up: [atomic callers and image/account/PDF validation](SNAPSHOT_ATOMIC_LIBRARY_CALLERS_REVIEW.md)
+now covers the connected library writers and a real mobile-hidden-Preview export
+after explicit acceptance/read-only reconciliation. Earlier results above remain
+historical; this does not establish hosted availability or complete SNP acceptance.
