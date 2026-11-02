@@ -44,3 +44,29 @@ accounts or claim complete Snapshot delivery. No hosted data or SQL was changed.
 
 Final enabled production browser rerun: 3/3 passed in 4.5 seconds, on the final
 application source, using localhost mock responses (not hosted PostgREST).
+
+## Existing portfolio preparation gate — 2026-11-02
+
+With the feature flag enabled, the verified owner/portfolio first receives three
+read-only snapshot checks before forms mount. Only SQL code 55000 identifies a
+missing initial snapshot. Corrupt data, permission failures, missing RPCs and
+mixed missing/error results show read-only recovery, never a preparation prompt.
+
+The explicit preparation button explains that missing snapshots use current
+library contents, not historical reconstruction, and existing snapshots remain.
+The preparation RPC runs once per click with an immediate lock. A failed response
+shows read-only checking, and successful checking opens the Editor. No implicit
+capture during ordinary reads, no refresh of existing editions, no hosted writes.
+The keyed lifetime discards responses after changing portfolio/owner/unmount.
+
+Validation this round: enabled production build passed once; full TypeScript,
+scoped ESLint (zero errors/warnings) and diff check passed. Unit/reader/API/PGlite
+suite passed 22/22. Enabled browser initially 1 passed/2 failed because generic
+alert selectors also matched the Next route announcer; scoped selectors to main,
+then all 3 passed in one run (4.5s), without source/assertion changes. Scenarios
+include missing preparation, mixed backend error (no write offered), lost response
+after preparation, read-only reconciliation without replay, already-prepared
+entry, dirty blocking and per-item acceptance/recovery in all three sections.
+
+Feature remains disabled by default. Atomic library callers, comprehensive
+async/PDF regression and real API/hosted installation are still outstanding.

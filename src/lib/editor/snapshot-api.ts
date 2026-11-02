@@ -9,6 +9,9 @@ type Client = {
   auth: { getUser: () => Promise<{ data: { user: { id: string } | null }; error: unknown }> };
   rpc: (name: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }>;
 };
+export class SnapshotPreparationRequired extends Error {
+  constructor() { super('พอร์ตนี้ยังต้องเตรียมฉบับเริ่มต้น'); }
+}
 export class SnapshotSessionExpired extends Error {
   constructor() { super('หน้าปัจจุบันเปลี่ยนแล้ว กรุณาเปิดพอร์ตอีกครั้ง'); }
 }
@@ -35,6 +38,9 @@ export async function readPortfolioSnapshots(client: Client, context: Context, s
     p_portfolio_id: context.portfolioId, p_section: section,
   });
   current(context);
+  if (error && typeof error === 'object' && 'code' in error && error.code === '55000') {
+    throw new SnapshotPreparationRequired();
+  }
   if (error) throw failure();
   return parsePortfolioSnapshots(data, section, context);
 }

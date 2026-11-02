@@ -32,6 +32,7 @@ import CertificatePreview from "@/components/preview/CertificatePreview";
 import { createClient } from "@/lib/supabase/client";
 
 import { EditorSession, EditorStatus, ReadyPreview, useEditorSession } from "@/components/editor/EditorSession";
+import { SnapshotPreparationGate } from "@/components/editor/SnapshotPreparationGate";
 import TemplatePicker from "@/components/editor/TemplatePicker";
 import ExportButton from "@/components/editor/ExportButton";
 import { SectionVisibilityProvider, VisibilityPreview, VisibleSection, VisibilityStatus } from "@/components/editor/SectionVisibility";
@@ -272,7 +273,7 @@ function EditorContent() {
   // =====================================================
 
   return (
-    <SectionVisibilityProvider key={`${portfolio.id}:${portfolio.ownerId}`} portfolioId={portfolio.id}><div className="flex h-screen w-full flex-col overflow-hidden bg-slate-100">
+    <SnapshotPreparationGate key={`${portfolio.id}:${portfolio.ownerId}`} portfolioId={portfolio.id} ownerId={portfolio.ownerId}><SectionVisibilityProvider key={`${portfolio.id}:${portfolio.ownerId}`} portfolioId={portfolio.id}><div className="flex h-screen w-full flex-col overflow-hidden bg-slate-100">
       {/* HEADER */}
 
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
@@ -390,7 +391,7 @@ function EditorContent() {
           </VisibilityPreview></ReadyPreview>
         </main>
       </div>
-    </div></SectionVisibilityProvider>
+    </div></SectionVisibilityProvider></SnapshotPreparationGate>
   );
 }
 

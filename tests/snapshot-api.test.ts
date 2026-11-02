@@ -90,3 +90,14 @@ test('a newer library revision after acceptance does not invalidate the accepted
  assert.equal(result[0].hasUpdate,true);
  assert.equal(result[0].revision,'a'.repeat(32));
 });
+test('only the explicit missing-snapshot code offers preparation',async()=>{
+ const s=setup();
+ const { SnapshotPreparationRequired }=await import('../src/lib/editor/snapshot-api');
+ s.state.error={code:'55000',message:'private detail'};
+ await assert.rejects(readPortfolioSnapshots(s.client,s.context,'activity'),SnapshotPreparationRequired);
+ for(const error of [{code:'22023'},{code:'42501'},{code:'PGRST202'},{}]) {
+  s.state.error=error;
+  await assert.rejects(readPortfolioSnapshots(s.client,s.context,'activity'),
+   value=>value instanceof Error && !(value instanceof SnapshotPreparationRequired));
+ }
+});
