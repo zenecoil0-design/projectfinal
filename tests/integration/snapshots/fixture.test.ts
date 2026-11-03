@@ -63,3 +63,30 @@ test('fixture upload validation, stale acceptance and deletion cascade work toge
   for(const [kind,plural] of sections){await db.query(`DELETE FROM user_library_${plural} WHERE id=$1`,[item]);assert.deepEqual(await read(db,kind),[]);}
  }finally{await db.close();}
 });
+
+
+test('observed library columns support form payloads and defaulted optional fields',async()=>{
+ const db=await fixture();try{
+  await user(db,A);
+  for(const [kind] of sections){
+   const id=crypto.randomUUID();
+   const fields=kind==='education'
+    ?{level:'School',school_name:'Synthetic school',study_plan:'',gpa:null,start_year:null,end_year:null,logo_url:null}
+    :kind==='activity'
+     ?{title:'Synthetic activity',description:'',activity_date:null,organization:null}
+     :{title:'Synthetic certificate',description:'',issued_date:null,issued_by:null};
+   await db.query('SELECT create_library_item_atomic($1,$2,$3,$4,$5::uuid[])',[kind,id,JSON.stringify(fields),'[]',[]]);
+   await db.query('SELECT replace_portfolio_selection($1,$2,$3::uuid[])',[PA,kind,[id]]);
+   const edition=(await read(db,kind))[0];
+   for(const [key,value] of Object.entries(fields))assert.equal(edition.data.item[key],value);
+   assert.equal(typeof edition.data.item.created_at,'string');
+   if(kind==='education'){
+    assert.equal('title' in edition.data.item,false);
+    assert.equal('description' in edition.data.item,false);
+    const minimal=crypto.randomUUID();
+    await db.query("SELECT create_library_item_atomic('education',$1,$2,'[]','{}')",[minimal,JSON.stringify({level:'School',school_name:'Default study plan'})]);
+    assert.equal((await db.query<{study_plan:string}>('SELECT study_plan FROM user_library_educations WHERE id=$1',[minimal])).rows[0].study_plan,'');
+   }
+  }
+ }finally{await db.close();}
+});

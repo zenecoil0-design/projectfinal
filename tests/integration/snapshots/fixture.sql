@@ -39,4 +39,22 @@ END $$;
 ALTER TABLE user_library_educations ADD COLUMN level text DEFAULT 'School', ADD COLUMN school_name text DEFAULT 'Original school', ADD COLUMN study_plan text, ADD COLUMN gpa numeric, ADD COLUMN start_year text, ADD COLUMN end_year text, ADD COLUMN logo_url text;
 ALTER TABLE user_library_activities ADD COLUMN activity_date date, ADD COLUMN organization text;
 ALTER TABLE user_library_certificates ADD COLUMN issued_date date, ADD COLUMN issued_by text, ADD COLUMN image_url text;
+-- Match observed library column contracts without copying target data.
+-- The shared actions fixture deliberately starts smaller; only this suite tightens it.
+ALTER TABLE user_library_educations DROP COLUMN title, DROP COLUMN description;
+ALTER TABLE user_library_educations
+ ALTER COLUMN level SET NOT NULL, ALTER COLUMN level SET DEFAULT '',
+ ALTER COLUMN school_name SET NOT NULL, ALTER COLUMN school_name SET DEFAULT '';
+UPDATE user_library_educations SET study_plan='' WHERE study_plan IS NULL;
+ALTER TABLE user_library_educations ALTER COLUMN study_plan SET DEFAULT '', ALTER COLUMN study_plan SET NOT NULL;
+DO $$ DECLARE plural text; kind text; BEGIN
+ FOREACH plural IN ARRAY ARRAY['educations','activities','certificates'] LOOP
+  EXECUTE format('ALTER TABLE user_library_%I ALTER COLUMN user_id SET NOT NULL, ADD COLUMN created_at timestamptz NOT NULL DEFAULT now()',plural);
+ END LOOP;
+ FOREACH kind IN ARRAY ARRAY['activity','certificate'] LOOP
+  plural:=CASE kind WHEN 'activity' THEN 'activities' ELSE 'certificates' END;
+  EXECUTE format('ALTER TABLE user_library_%I ALTER COLUMN title SET NOT NULL',plural);
+  EXECUTE format('ALTER TABLE user_library_%I ADD COLUMN created_at timestamptz NOT NULL DEFAULT now()',kind||'_images');
+ END LOOP;
+END $$;
 COMMIT;
