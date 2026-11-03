@@ -65,3 +65,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ส่วนต่อมา 3 พ.ย.: [ชุดตรวจ Snapshot ผ่าน API จริง](verification/SNAPSHOT_REAL_API_RUNNER_REVIEW.md) เตรียมกรณี Docker/PostgreSQL/PostgREST 24 กรณีแล้ว ชุด local fixture/runner/adapter/transition ผ่าน 13/13 แต่ API 24 กรณียัง NOT_RUN เพราะเครื่องทำงานไม่มี Docker ต้องรันตาม README ก่อนเสนอ migration และยังไม่ปิด SNP/เปิด feature flag
 
 ผลจากเจ้าของ 3 พ.ย.: รัน API ที่ `418fd43` ผ่าน 11 กรณีแรกแล้วหยุดกรณีรับฉบับใหม่ พบ SQL ใช้ `40001` กับกรณี revision เก่า ซึ่ง PostgREST 14 อาจวน retry ไม่จบ แก้ proposal เป็น `PT409`/HTTP 409 และตรวจ local ผ่านแล้วตาม [รายงาน API](verification/SNAPSHOT_REAL_API_RUNNER_REVIEW.md) ยังรอผลรัน API ใหม่ ไม่ถือว่าผ่านครบ 24 กรณีหรือพร้อมติดตั้ง
+
+ยืนยันผลล่าสุด 3 พ.ย.: เจ้าของรัน PostgreSQL/PostgREST API ที่ `a9b3ee0` ผ่าน **24/24 ในรอบเดียว**, exit 0 รวมทั้งสามกรณี source-write/capture และการตอบ PT409 ตาม [รายงาน API](verification/SNAPSHOT_REAL_API_RUNNER_REVIEW.md) ปิดเฉพาะ local API acceptance ของชุดนี้แล้ว; ยังเหลือเทียบ catalog/history/grants ของ target, เตรียม migration/ติดตั้งที่ได้รับอนุญาต และตรวจเว็บเชื่อมฐานจริงก่อนเปิด Snapshot ไม่เปลี่ยนสถานะทั้งระบบเป็น DONE

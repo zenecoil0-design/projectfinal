@@ -1,5 +1,10 @@
 # Snapshot API runner — 3 November 2026
 
+**Latest status: owner-run local PostgreSQL/PostgREST API acceptance PASS, 24/24,
+exit 0, on `a9b3ee0bf13d3bd84496c52d124bddc94dea1f87` (3 November 2026).
+Hosted installation/integration remains pending. Earlier checkpoint results below
+are retained as history and are superseded only for this local API run.**
+
 Base: `a30dbc9490a3da56c868208d37b636ab813c728c`, branch
 `codex/portfolio-next-phase`. This checkpoint delivers a local acceptance runner,
 not a real API PASS or approval to install/enable Snapshot.
@@ -88,3 +93,35 @@ Local verification of the correction:
 The real 24-case API suite must be rerun on the corrected commit. Do not mark it
 passed from these PGlite tests. Ordinary --run now reports a safe failure category
 (e.g. TimeoutError versus AssertionError) without messages, payloads or credentials.
+
+
+## Owner-run corrected API acceptance — PASS
+
+The owner supplied the complete terminal output from Ubuntu/WSL at checkout
+`a9b3ee0bf13d3bd84496c52d124bddc94dea1f87`:
+
+- Docker Compose 5.6.1; Engine 29.9.2.
+- Runner project: `snapshot-integration-6a4dfb7130d0`.
+- All 13 isolated fixture/proposal setup steps completed.
+- All 24 named API cases passed in one run, including the previously failing
+  education acceptance case and all three observed source-write/capture races.
+- Final JSON: `result: PASS`, `cases: 24`.
+- Shell exit status: 0; no cleanup failure was reported.
+
+This is execution evidence supplied by the owner, not a run on the agent host.
+The tested stack uses the pinned PostgreSQL 17.6/PostgREST 14.18 Compose images,
+synthetic data, signed authenticated JWTs and real HTTP/SQL requests. It is not a
+mock API or a PGlite replacement. The correction to PT409 is now verified through
+PostgREST, including the HTTP 409 assertions and unchanged edition on conflict.
+
+The pass covers the defined preparation, ownership, replay, source updates,
+acceptance, rollback, copy, upload-reference metadata, selection and deletion cases.
+It does not establish hosted schema compatibility, Supabase Auth/Storage service
+behavior, physical file retention, all possible concurrency schedules, or full
+browser-to-hosted acceptance. No hosted installation or flag activation follows
+automatically. Next: inspect target catalog/history/grants and active writers,
+prepare reviewed migration/install steps, then obtain installation authorization
+and verify the real application before enabling Snapshot.
+
+This evidence-recording checkpoint changes documentation only; no application,
+SQL, dependencies or test assertions changed, so no build/test rerun was needed.
