@@ -61,3 +61,8 @@ The fixture is synthetic, not a live schema dump. A real API PASS does not estab
 hosted schema compatibility, Supabase Auth, Storage service behavior or physical
 file retention. Proposals remain outside migrations and are not installed by this
 runner on any hosted target. Keep the Snapshot flag off pending reviewed installation.
+
+Stale reviewed revisions now return **PT409 / HTTP 409**, not the transient
+serialization code 40001. PostgREST 14 may endlessly retry custom 40001 errors;
+the owner-run suite on 418fd43 stopped at that path. Update the checkout before
+rerunning. No increase to the 15-second request timeout is required by this fix.

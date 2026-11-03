@@ -8,7 +8,7 @@ const TA='30000000-0000-0000-0000-000000000001',TB='30000000-0000-0000-0000-0000
 const sections=[['education','educations'],['activity','activities'],['certificate','certificates']];
 const ok=r=>{assert.equal(r.status,200);return r.data;};
 const saved=r=>assert.ok([200,204].includes(r.status));
-const error=(r,code)=>{assert.ok(r.status>=400);assert.equal(r.data.code,code);};
+const error=(r,code)=>{assert.ok(r.status>=400);assert.equal(r.data.code,code);if(code==='PT409')assert.equal(r.status,409);};
 const denied=r=>{assert.ok([401,403].includes(r.status));assert.equal(r.data.code,'42501');};
 
 export async function snapshotCases({request,admin,check,blockedUpdate}) {
@@ -78,7 +78,7 @@ export async function snapshotCases({request,admin,check,blockedUpdate}) {
  });
  for(const [kind] of sections){
   await check(`${kind}: concurrent acceptance increments once without changing copy`,async()=>{
-   const pending=(await read(kind)).items[0];error(await accept(kind,pending.revision),'40001');
+   const pending=(await read(kind)).items[0];error(await accept(kind,pending.revision),'PT409');
    const [a,b]=await Promise.all([accept(kind,pending.latest_revision),accept(kind,pending.latest_revision)]);
    assert.deepEqual(ok(a),ok(b));assert.equal(a.data.version,2);assert.deepEqual((await read(kind,copied)).items[0].data,old.get(kind).data);
   });
@@ -100,7 +100,7 @@ export async function snapshotCases({request,admin,check,blockedUpdate}) {
  for(const [kind,plural] of sections)await check(`${kind}: row-locked source update blocks capture and rejects stale revision`,async()=>{
   const before=(await read(kind)).items[0],nextImages=(await images(kind)).reverse();
   await blockedUpdate(plural,()=>save(kind,fields(kind,'Race committed'),nextImages,[TA]),()=>accept(kind,before.latest_revision),async(write,capture)=>{
-   ok(write);error(capture,'40001');const after=(await read(kind)).items[0];assert.deepEqual(after.data,before.data);assert.notEqual(after.latest_revision,before.latest_revision);
+   ok(write);error(capture,'PT409');const after=(await read(kind)).items[0];assert.deepEqual(after.data,before.data);assert.notEqual(after.latest_revision,before.latest_revision);
    const accepted=ok(await accept(kind,after.latest_revision));assert.equal(accepted.data.item[kind==='education'?'school_name':'title'],'Race committed');
    if(kind!=='education')assert.deepEqual(accepted.data.images.map(i=>i.image_url),nextImages.map(i=>i.image_url));
   });

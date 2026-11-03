@@ -37,6 +37,13 @@ async function freePort() {
   return port;
 }
 
+// Only diagnostic categories and scalar assertion metadata; no messages/bodies/URLs.
+export function failureSummary(error) {
+ const kind=['AssertionError','TimeoutError','AbortError','TypeError','Error'].includes(error?.name)?error.name:'Unknown';
+ const scalar=value=>typeof value==='number'||typeof value==='boolean'?value:typeof value;
+ return {kind,actual:scalar(error?.actual),expected:scalar(error?.expected)};
+}
+
 export async function run() {
  const versions=prerequisites();
  const project=`snapshot-integration-${randomBytes(6).toString('hex')}`;
@@ -49,7 +56,7 @@ export async function run() {
  const admin=sql=>compose(psql,sql);
  const tokens={A:localJwt(A,secret),B:localJwt(B,secret)};
  const results=[];
- const check=async(name,fn)=>{try{await fn();results.push(name);console.log(`PASS ${name}`);}catch{console.error(`FAIL ${name}`);throw new Error('Local API assertion failed');}};
+ const check=async(name,fn)=>{try{await fn();results.push(name);console.log(`PASS ${name}`);}catch(error){console.error(`FAIL ${name}`);console.error(JSON.stringify(failureSummary(error)));throw new Error('Local API assertion failed');}};
  const request=async(who,method,path,body)=>{
   const headers={'Content-Type':'application/json',Prefer:'return=representation,resolution=merge-duplicates'};
   if(who)headers.Authorization=`Bearer ${tokens[who]}`;

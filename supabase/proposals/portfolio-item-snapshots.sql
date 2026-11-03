@@ -50,7 +50,9 @@ BEGIN
   RETURN jsonb_build_object('data',old_data,'revision',old_rev,'version',version,'latest_revision',rev);
  END IF;
  IF p_refresh AND (p_expected_revision IS NULL OR p_expected_revision IS DISTINCT FROM rev) THEN
-  RAISE EXCEPTION 'Source changed; inspect again' USING ERRCODE='40001';
+  -- A stale reviewed revision is a permanent conflict for this request, not a
+  -- serialization failure. PostgREST 14 can endlessly retry custom 40001 errors.
+  RAISE EXCEPTION 'Source changed; inspect again' USING ERRCODE='PT409';
  END IF;
  IF old_data IS NULL OR old_data IS DISTINCT FROM payload THEN
   version:=version+1;

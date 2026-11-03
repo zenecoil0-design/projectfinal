@@ -30,7 +30,12 @@ test('complete fixture: explicit preparation, source updates and copies preserve
   const copy=(await db.query<{r:{portfolio_id:string}}>("SELECT perform_portfolio_action('50000000-0000-0000-0000-000000000001','duplicate',$1,'Copy') r",[PA])).rows[0].r.portfolio_id;
   for(const [kind] of sections){
    assert.deepEqual((await read(db,kind,copy))[0].data,original.get(kind)!.data);
-   await db.query('SELECT capture_portfolio_item_snapshot($1,$2,$3,true,$4)',[PA,kind,item,(await read(db,kind))[0].latest_revision]);
+   const before=(await read(db,kind))[0];
+   await assert.rejects(db.query('SELECT capture_portfolio_item_snapshot($1,$2,$3,true,$4)',[PA,kind,item,before.revision]),{code:'PT409'});
+   assert.deepEqual((await read(db,kind))[0],before);
+   await db.query('SELECT capture_portfolio_item_snapshot($1,$2,$3,true,$4)',[PA,kind,item,before.latest_revision]);
+   // Replaying the same accepted revision must not increment it again.
+   await db.query('SELECT capture_portfolio_item_snapshot($1,$2,$3,true,$4)',[PA,kind,item,before.latest_revision]);
    assert.equal((await read(db,kind))[0].version,2);assert.equal((await read(db,kind,copy))[0].version,1);
   }
   assert.deepEqual((await db.query('SELECT age_mode,manual_age FROM profiles WHERE portfolio_id=$1',[copy])).rows,[{age_mode:'manual',manual_age:0}]);
@@ -53,7 +58,7 @@ test('fixture upload validation, stale acceptance and deletion cascade work toge
   const path=`users/${A}/activities/${item}/60000000-0000-0000-0000-000000000001.png`,url='https://snapshot-fixture.invalid/storage/v1/object/public/portfolio-images/'+path;
   const save=()=>db.query("SELECT update_library_item_atomic('activity',$1,'{\"title\":\"Uploaded\"}',$2,'{}')",[item,JSON.stringify([{image_url:url}])]);
   await assert.rejects(save(),{code:'42501'});await db.exec('RESET ROLE');await db.query("INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES('portfolio-images',$1,$2)",[path,A]);await user(db,A);await save();
-  await assert.rejects(db.query("SELECT capture_portfolio_item_snapshot($1,'activity',$2,true,$3)",[PA,item,old.revision]),{code:'40001'});const current=(await read(db,'activity'))[0];assert.deepEqual(current.data,old.data);
+  await assert.rejects(db.query("SELECT capture_portfolio_item_snapshot($1,'activity',$2,true,$3)",[PA,item,old.revision]),{code:'PT409'});const current=(await read(db,'activity'))[0];assert.deepEqual(current.data,old.data);
   await db.query("SELECT capture_portfolio_item_snapshot($1,'activity',$2,true,$3)",[PA,item,current.latest_revision]);assert.equal((await read(db,'activity'))[0].data.images[0].image_url,url);
   for(const [kind,plural] of sections){await db.query(`DELETE FROM user_library_${plural} WHERE id=$1`,[item]);assert.deepEqual(await read(db,kind),[]);}
  }finally{await db.close();}
