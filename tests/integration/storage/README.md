@@ -1,6 +1,8 @@
 # Isolated real Storage acceptance
 
-Status: PREPARED / real runtime NOT_RUN in the author environment (Docker absent).
+Status: owner-run real HTTP/file-byte acceptance PASS 7/7, exit 0, at
+`6484b3560394fa2a027d1f80ac13b795c4fdf5fb` on 5 November 2026.
+The author environment still has no Docker.
 Do not report 7/7 acceptance from the runner guard tests.
 
 Prerequisites: local Linux/WSL Docker engine and Compose, Node supporting fetch.
@@ -49,7 +51,8 @@ do not share docker inspect output, credentials, JWTs, or raw service logs.
 
 - Runner remote-target/argument/import guards: 3/3 PASS.
 - Scoped ESLint, JavaScript syntax and YAML parsing: PASS.
-- Real Docker/Storage seven-case run: NOT_RUN (no Docker in author environment).
+- Owner-run real Docker/Storage: 7/7 PASS in one run, exit 0, Engine 29.9.2 / Compose 5.6.1.
+- No hosted test or WEBP/application-upload acceptance is claimed.
 
 ## Configuration sources
 

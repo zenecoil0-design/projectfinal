@@ -73,3 +73,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ความคืบหน้า 4 พ.ย.: เพิ่ม [ข้อเสนอรักษารูป Snapshot](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md) ปิด UPDATE/DELETE ของไฟล์ใน bucket รูปพอร์ตสำหรับ client ปกติ โดยยังเก็บไฟล์ที่เลิกใช้ไว้ ไม่ใช่ระบบ cleanup ตรวจ PGlite รวม 10/10 ผ่าน ยังไม่ติดตั้งและยังต้องตรวจ Storage API/ไฟล์จริงก่อนปิดเงื่อนไขการรักษารูป
 
 ความคืบหน้า 4 พ.ย. — ชุดติดตั้ง: สร้าง migration รวม Snapshot ในธุรกรรมเดียวและเปลี่ยน isolated runner ให้ใช้ไฟล์นี้ตรง ๆ ตรวจ fixture/retention 7/7 และการสร้าง bundle/rollback/ติดตั้งซ้ำ 3/3 แยกสองรอบ ตาม [ขั้นตอนติดตั้ง](SNAPSHOT_RELEASE_RUNBOOK.md) ยังไม่ติดตั้ง ต้องตรวจ API ของชุดนี้และ Storage จริงก่อนเสนออนุมัติ
+
+ผลเจ้าของ 5 พ.ย.: ที่ `6484b35` ตรวจ migration consistency ผ่าน และรัน Snapshot PostgreSQL/PostgREST 24/24 กับ Storage HTTP/bytes 7/7 ผ่านแยกสองรอบ exit 0 ทั้งคู่ ตาม [release runbook](SNAPSHOT_RELEASE_RUNBOOK.md) ยังไม่ติดตั้ง hosted; พบความต่าง WEBP ระหว่างฟอร์มกับเส้นทาง Snapshot ที่ต้องแก้ก่อนเปิดใช้ ผล PNG Storage ไม่ใช่ผลตรวจ WEBP

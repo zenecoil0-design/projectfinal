@@ -1,6 +1,20 @@
 # Snapshot release runbook — prepared, not approved for hosted installation
 
-4 November 2026. This is an operator checklist, not an instruction to install now.
+Updated 5 November 2026. This is an operator checklist, not an instruction to install now.
+
+## Owner-run acceptance — 5 November 2026
+
+At `6484b3560394fa2a027d1f80ac13b795c4fdf5fb`, the owner ran both suites in Ubuntu/WSL using Docker Engine 29.9.2 and Compose 5.6.1 and supplied the complete console results:
+
+- Generated migration consistency check: PASS.
+- Snapshot release migration through real PostgreSQL/PostgREST: **24/24 PASS in one run, exit 0**. The runner applied eight setup steps, including the generated release migration. Includes owner isolation, concurrent acceptance/row-lock races, rollback, retained editions/copies and deletion semantics.
+- Real Storage HTTP and physical file-byte checks: **7/7 PASS in a separate run, exit 0**. Includes fresh upload/read, owner/anon restrictions, denied overwrite/upsert/move, delete leaving the original readable, and new-file upload retaining the old bytes.
+
+These are two separate suites, not a single 31-case run. Evidence was executed on the owner's machine and reported in chat, not rerun in the assistant environment. No hosted migration, live Auth, hosted Storage or full browser integration is established by these results.
+
+A remaining pre-enable compatibility issue was found in source review: library forms accept WEBP and CropInput's “use original” preserves that file, while the Snapshot atomic uploader and upload-reference SQL currently accept only JPG/PNG. Correct and test that mismatch before approving cutover; do not treat the PNG Storage PASS as WEBP coverage.
+
+
 
 ## Exact release inputs
 
@@ -55,8 +69,8 @@ After successful SQL installation, reverting only the frontend flag is **not** a
 - Bundle generation/late-DDL rollback/repeated-install tests: **3/3 PASS**, separate run.
 - Full repository TypeScript, scoped ESLint and diff check: PASS.
 - No application source change; no new build/browser/PDF result claimed.
-- Real API rerun on this exact bundle: NOT_RUN here (Docker unavailable).
-- Real Storage HTTP/physical bytes: NOT_RUN.
+- Real API: owner-run PASS 24/24 at 6484b35; see latest evidence above.
+- Real Storage HTTP/physical bytes: owner-run PASS 7/7 at 6484b35; see latest evidence above.
 - Hosted install and enabled Snapshot: NOT_DONE.
 
 Related: [retention](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md), [catalog compatibility](verification/SNAPSHOT_INSTALL_COMPATIBILITY_REVIEW.md), [earlier API evidence](verification/SNAPSHOT_REAL_API_RUNNER_REVIEW.md).
@@ -65,5 +79,5 @@ Related: [retention](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md), [catalo
 
 Use the [isolated Storage runner](../tests/integration/storage/README.md) for seven
 real HTTP/file-byte checks. Local runner guards passed 3/3; real Storage acceptance
-is still NOT_RUN because the author environment has no Docker. This is not a
+was NOT_RUN at preparation; the owner subsequently passed 7/7 as recorded above. This is not a
 hosted test and does not replace the migration-backed Snapshot API run.

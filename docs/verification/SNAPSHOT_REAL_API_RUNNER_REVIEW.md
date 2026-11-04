@@ -1,6 +1,19 @@
 # Snapshot API runner — 3 November 2026
 
-**Latest status: owner-run local PostgreSQL/PostgREST API acceptance PASS, 24/24,
+## Owner-run acceptance — 5 November 2026
+
+At `6484b3560394fa2a027d1f80ac13b795c4fdf5fb`, the owner ran both suites in Ubuntu/WSL using Docker Engine 29.9.2 and Compose 5.6.1 and supplied the complete console results:
+
+- Generated migration consistency check: PASS.
+- Snapshot release migration through real PostgreSQL/PostgREST: **24/24 PASS in one run, exit 0**. The runner applied eight setup steps, including the generated release migration. Includes owner isolation, concurrent acceptance/row-lock races, rollback, retained editions/copies and deletion semantics.
+- Real Storage HTTP and physical file-byte checks: **7/7 PASS in a separate run, exit 0**. Includes fresh upload/read, owner/anon restrictions, denied overwrite/upsert/move, delete leaving the original readable, and new-file upload retaining the old bytes.
+
+These are two separate suites, not a single 31-case run. Evidence was executed on the owner's machine and reported in chat, not rerun in the assistant environment. No hosted migration, live Auth, hosted Storage or full browser integration is established by these results.
+
+A remaining pre-enable compatibility issue was found in source review: library forms accept WEBP and CropInput's “use original” preserves that file, while the Snapshot atomic uploader and upload-reference SQL currently accept only JPG/PNG. Correct and test that mismatch before approving cutover; do not treat the PNG Storage PASS as WEBP coverage.
+
+
+**Earlier checkpoint status: owner-run local PostgreSQL/PostgREST API acceptance PASS, 24/24,
 exit 0, on `a9b3ee0bf13d3bd84496c52d124bddc94dea1f87` (3 November 2026).
 Hosted installation/integration remains pending. Earlier checkpoint results below
 are retained as history and are superseded only for this local API run.**
