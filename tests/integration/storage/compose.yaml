@@ -1,0 +1,42 @@
+# Disposable local stack. No hosted configuration or host data mounts.
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: storage_integration
+      POSTGRES_PASSWORD: ${STORAGE_TEST_PASSWORD:?use runner}
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d storage_integration']
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  storage:
+    image: supabase/storage-api:v1.81.0
+    environment:
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: '5000'
+      AUTH_JWT_SECRET: ${STORAGE_TEST_JWT_SECRET:?use runner}
+      AUTH_JWT_ALGORITHM: HS256
+      DATABASE_URL: postgres://postgres:${STORAGE_TEST_PASSWORD:?use runner}@db:5432/storage_integration
+      DB_INSTALL_ROLES: 'true'
+      DB_ALLOW_MIGRATION_REFRESH: 'false'
+      STORAGE_BACKEND: file
+      STORAGE_FILE_BACKEND_PATH: /var/lib/storage
+      STORAGE_S3_BUCKET: local-only
+      TENANT_ID: local-only
+      REGION: local
+      IMAGE_TRANSFORMATION_ENABLED: 'false'
+      STORAGE_LIFECYCLE_ENABLED: 'false'
+      STORAGE_VERSIONING_ENABLED: 'false'
+    tmpfs: [/var/lib/storage]
+    networks: [default, api_access]
+    ports: ['127.0.0.1:${STORAGE_TEST_PORT:?use runner}:5000']
+    depends_on:
+      db:
+        condition: service_healthy
+networks:
+  default:
+    internal: true
+  api_access:
+    driver: bridge

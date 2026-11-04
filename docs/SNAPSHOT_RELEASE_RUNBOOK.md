@@ -60,3 +60,10 @@ After successful SQL installation, reverting only the frontend flag is **not** a
 - Hosted install and enabled Snapshot: NOT_DONE.
 
 Related: [retention](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md), [catalog compatibility](verification/SNAPSHOT_INSTALL_COMPATIBILITY_REVIEW.md), [earlier API evidence](verification/SNAPSHOT_REAL_API_RUNNER_REVIEW.md).
+
+## Storage runtime acceptance prepared 4 November
+
+Use the [isolated Storage runner](../tests/integration/storage/README.md) for seven
+real HTTP/file-byte checks. Local runner guards passed 3/3; real Storage acceptance
+is still NOT_RUN because the author environment has no Docker. This is not a
+hosted test and does not replace the migration-backed Snapshot API run.
