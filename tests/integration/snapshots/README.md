@@ -66,3 +66,8 @@ Stale reviewed revisions now return **PT409 / HTTP 409**, not the transient
 serialization code 40001. PostgREST 14 may endlessly retry custom 40001 errors;
 the owner-run suite on 418fd43 stopped at that path. Update the checkout before
 rerunning. No increase to the 15-second request timeout is required by this fix.
+
+The current setup also applies `snapshot-storage-retention.sql` against synthetic
+Storage metadata with RLS enabled. This is a client UPDATE/DELETE restriction,
+not a real Storage HTTP or physical-file test. Run the retention unit suite with
+`node --import tsx --test tests/snapshot-storage-retention.test.ts`.

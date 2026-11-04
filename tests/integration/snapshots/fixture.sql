@@ -9,6 +9,12 @@ CREATE FUNCTION public.touch_snapshot_fixture_portfolio() RETURNS trigger LANGUA
 END $$;
 CREATE SCHEMA storage;
 CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),bucket_id text NOT NULL,name text NOT NULL,owner_id text NOT NULL,UNIQUE(bucket_id,name));
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+GRANT USAGE ON SCHEMA storage TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;
+CREATE POLICY fixture_storage_owner ON storage.objects FOR ALL TO authenticated
+ USING(bucket_id='portfolio-images' AND split_part(name,'/',1)='users' AND split_part(name,'/',2)=auth.uid()::text)
+ WITH CHECK(bucket_id='portfolio-images' AND split_part(name,'/',1)='users' AND split_part(name,'/',2)=auth.uid()::text);
 CREATE TABLE user_tags(id uuid PRIMARY KEY,user_id uuid NOT NULL REFERENCES auth.users(id),name text NOT NULL);
 ALTER TABLE user_tags ENABLE ROW LEVEL SECURITY;
 CREATE POLICY own_tags ON user_tags FOR SELECT TO authenticated USING(user_id=auth.uid());
