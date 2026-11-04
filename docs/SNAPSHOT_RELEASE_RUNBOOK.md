@@ -42,7 +42,7 @@ It does not prepare old portfolios automatically, delete files, populate the ass
 ## Gates before requesting installation approval
 
 - Reconcile catalog, constraints, grants, existing functions/triggers, storage policy names and migration history. Stop on an unexpected/partial installation.
-- Re-run isolated PostgreSQL/PostgREST acceptance using this exact migration revision. The earlier 24/24 result belongs to the proposal fixture, not this bundle.
+- Re-run isolated PostgreSQL/PostgREST acceptance using this exact migration revision. The owner-run 24/24 at 6484b35 already covered the generated bundle. The WEBP revision changed that bundle afterward, so it still requires acceptance at 926d6fe or a later reviewed revision.
 - Test real Storage HTTP behavior in an authorized isolated/staging environment: fresh uploads/read, owner isolation, rejected overwrite/upsert/delete/move, and unchanged bytes of an old retained image after editing/accepting a new version. PGlite storage metadata is not physical Storage acceptance.
 - Verify that administrators/service-role/bucket lifecycle jobs will not overwrite/remove retained images. Retention intentionally keeps unused files; cleanup remains a separate operation, never an unsafe client read-then-delete.
 - Review the exact two migration files, target and public asset-origin value with the owner. Obtain installation approval only after the above evidence is ready.
@@ -77,7 +77,7 @@ Related: [retention](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md), [catalo
 
 ## Storage runtime acceptance prepared 4 November
 
-Use the [isolated Storage runner](../tests/integration/storage/README.md) for seven
-real HTTP/file-byte checks. Local runner guards passed 3/3; real Storage acceptance
+The initial [isolated Storage runner](../tests/integration/storage/README.md) had seven
+real HTTP/file-byte checks. The current runner has eight, adding WEBP MIME/bytes and overwrite protection. Local runner guards passed 3/3; real Storage acceptance
 was NOT_RUN at preparation; the owner subsequently passed 7/7 as recorded above. This is not a
 hosted test and does not replace the migration-backed Snapshot API run.
