@@ -35,7 +35,7 @@ export async function saveAtomicLibrary(client: Client, attempt: LibrarySaveAtte
   for (let index = attempt.urls.length; index < input.files.length; index++) {
     current();
     const file = input.files[index];
-    const extension = file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : null;
+    const extension = file.type === "image/png" ? "png" : file.type === "image/jpeg" ? "jpg" : file.type === "image/webp" ? "webp" : null;
     if (!extension) throw new Error(message);
     const path = `users/${input.ownerId}/${folder}/${attempt.id}/${crypto.randomUUID()}.${extension}`;
     const bucket = client.storage.from("portfolio-images");

@@ -366,7 +366,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.create_library_item_atomic(text,uuid,jsonb,jsonb,uuid[]) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.create_library_item_atomic(text,uuid,jsonb,jsonb,uuid[]) TO authenticated;
 
--- Source: snapshot-upload-validation.sql SHA256 a7cbd110ea3cd3016702c4333344cffc840af59dcde60d59774e9c296fbc153c
+-- Source: snapshot-upload-validation.sql SHA256 5a3756b2ec0c1fc0b841e57556403d9687097eb43cc2efc2e234b1dbcefc825b
 CREATE SCHEMA IF NOT EXISTS portfolio_private;
 REVOKE ALL ON SCHEMA portfolio_private FROM PUBLIC,anon,authenticated;
 CREATE TABLE portfolio_private.asset_config (
@@ -401,7 +401,7 @@ BEGIN
  IF base_url IS NULL THEN RAISE EXCEPTION 'Asset origin not configured' USING ERRCODE='55000'; END IF;
  prefix:=base_url||'users/'||actor::text||'/'||section_path||'/'||item_id::text||'/';
  IF asset_url IS NULL OR left(asset_url,length(prefix))<>prefix
- OR substring(asset_url FROM length(prefix)+1) !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png)$' THEN
+ OR substring(asset_url FROM length(prefix)+1) !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|webp)$' THEN
   RAISE EXCEPTION 'Invalid upload reference' USING ERRCODE='22023';
  END IF;
  object_path:=substring(asset_url FROM length(base_url)+1);

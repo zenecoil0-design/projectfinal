@@ -35,7 +35,7 @@ BEGIN
  IF base_url IS NULL THEN RAISE EXCEPTION 'Asset origin not configured' USING ERRCODE='55000'; END IF;
  prefix:=base_url||'users/'||actor::text||'/'||section_path||'/'||item_id::text||'/';
  IF asset_url IS NULL OR left(asset_url,length(prefix))<>prefix
- OR substring(asset_url FROM length(prefix)+1) !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png)$' THEN
+ OR substring(asset_url FROM length(prefix)+1) !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|webp)$' THEN
   RAISE EXCEPTION 'Invalid upload reference' USING ERRCODE='22023';
  END IF;
  object_path:=substring(asset_url FROM length(base_url)+1);

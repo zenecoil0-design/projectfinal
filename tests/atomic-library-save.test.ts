@@ -48,3 +48,46 @@ test('update rejects wrong row and preserves retained image IDs and order',async
  response={id:'item',item:{id:'item',user_id:owner,title:'New'}};
  assert.equal(await saveAtomicLibrary(client,attempt,()=>true),'item');
 });
+
+for (const section of ['education', 'activity', 'certificate'] as const) {
+ test(section + ': WEBP keeps original file bytes, MIME and upload reference', async () => {
+  const file = new File(['original-webp-bytes'], 'photo.webp', {type: 'image/webp'});
+  const attempt = makeLibrarySaveAttempt({section, ownerId: owner, itemId: null,
+   fields: {}, images: [], files: [file], tagIds: []});
+  let uploadedPath = '';
+  const client = {
+   auth: {getUser: async () => ({data: {user: {id: owner}}, error: null})},
+   storage: {from: () => ({
+    upload: async (path: string, received: File, options: {contentType: string}) => {
+     uploadedPath = path;
+     assert.match(path, /\.webp$/);
+     assert.equal(received, file);
+     assert.equal(await received.text(), 'original-webp-bytes');
+     assert.equal(options.contentType, 'image/webp');
+     return {error: null};
+    },
+    getPublicUrl: (path: string) => ({data: {publicUrl: 'https://example.invalid/' + path}}),
+   })},
+   rpc: async (_name: string, args: Record<string, unknown>) => {
+    const url = 'https://example.invalid/' + uploadedPath;
+    if (section === 'education') assert.deepEqual(args.p_fields, {logo_url: url});
+    else assert.deepEqual(args.p_images, [{image_url: url}]);
+    return {data: {id: attempt.id, status: 'confirmed'}, error: null};
+   },
+  };
+  await saveAtomicLibrary(client, attempt, () => true);
+ });
+}
+test('unsupported file MIME cannot upload or mutate', async () => {
+ for (const type of ['image/gif', 'image/svg+xml', 'application/octet-stream', '']) {
+  const attempt = makeLibrarySaveAttempt({section: 'activity', ownerId: owner, itemId: null,
+   fields: {}, images: [], files: [new File(['x'], 'disguised.webp', {type})], tagIds: []});
+  const client = {
+   auth: {getUser: async () => ({data: {user: {id: owner}}, error: null})},
+   storage: {from: () => {throw new Error('must not reach storage');}},
+   rpc: async () => {throw new Error('must not reach mutation');},
+  };
+  await assert.rejects(saveAtomicLibrary(client, attempt, () => true),
+   error => error instanceof Error && !error.message.startsWith('must not'));
+ }
+});

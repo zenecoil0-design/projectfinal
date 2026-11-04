@@ -10,7 +10,7 @@ At `6484b3560394fa2a027d1f80ac13b795c4fdf5fb`, the owner ran both suites in Ubun
 
 These are two separate suites, not a single 31-case run. Evidence was executed on the owner's machine and reported in chat, not rerun in the assistant environment. No hosted migration, live Auth, hosted Storage or full browser integration is established by these results.
 
-A remaining pre-enable compatibility issue was found in source review: library forms accept WEBP and CropInput's “use original” preserves that file, while the Snapshot atomic uploader and upload-reference SQL currently accept only JPG/PNG. Correct and test that mismatch before approving cutover; do not treat the PNG Storage PASS as WEBP coverage.
+Follow-up: the WEBP compatibility mismatch is corrected in the atomic uploader and upload-reference SQL, with focused unit/PGlite coverage. The generated release migration has been updated. See [WEBP verification](SNAPSHOT_WEBP_REVIEW.md). The earlier owner-run PNG Storage and API results apply to commit 6484b35; they are not real-service WEBP coverage or acceptance of the revised bundle.
 
 
 **Earlier checkpoint status: owner-run local PostgreSQL/PostgREST API acceptance PASS, 24/24,

@@ -20,6 +20,14 @@ for(const [kind,plural] of sections) test(`${kind}: new upload must match config
   await asUser(db,A);
   for(const url of [base.replace('assets.example.invalid','evil.example.invalid')+path,base+path+'?x=1',base+path+'\n',base+path.replace(A,B),base+path.replace(file,'../'+file)]) await assert.rejects(save(url),/Invalid upload reference/);
   await assert.rejects(save(base+path.replace(file,'70000000-0000-0000-0000-000000000001.png')),/Owned upload not found/);
+  for(const extension of ['jpg','jpeg','png','webp']) {
+   const imagePath=path.replace(/png$/,extension);
+   await db.exec('RESET ROLE');
+   await db.query("INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES('portfolio-images',$1,$2) ON CONFLICT DO NOTHING",[imagePath,A]);
+   await asUser(db,A);
+   await save(base+imagePath);
+  }
+  for(const extension of ['gif','svg','webp.exe']) await assert.rejects(save(base+path.replace(/png$/,extension)),/Invalid upload reference/);
   await save(base+path);
   await assert.rejects(db.query('SELECT * FROM portfolio_private.asset_config'),/permission denied/);
   await db.exec('RESET ROLE');
