@@ -24,3 +24,9 @@ The upload test uses synthetic bytes and a mocked Storage boundary; it is not pr
 Owner-run Snapshot API **24/24** and real Storage HTTP **7/7** at `6484b35` remain valid evidence for that prior bundle. They must not be relabelled as WEBP or revised-bundle acceptance. Before enabling Snapshot, validate the revised release bundle and an actual WEBP upload/readback on the authorized acceptance environment, then complete the hosted catalog/cutover checks in [the release runbook](../SNAPSHOT_RELEASE_RUNBOOK.md).
 
 No feature flag was enabled and no hosted data or Storage was modified.
+
+## Real-service acceptance extension
+
+After the application fix, the isolated Snapshot API case now checks both PNG and WEBP upload references with the generated migration, including missing-object and wrong-origin rejection. Its total remains 24 cases. The separate Storage suite adds a decodable synthetic 2x2 lossless WEBP, checks HTTP content type and exact downloaded bytes, then denies overwrite and checks the original again. Its expected total is now 8.
+
+The synthetic fixture was decoded successfully with Pillow during preparation. Runner guard tests passed 3/3; scoped ESLint, all three JavaScript syntax checks, migration generation check and diff check passed. Docker prerequisite check returned NOT_RUN because the author environment has no local Docker/Compose. These new real-service cases are prepared, not claimed as passing. No application or SQL changes in this extension; no rebuild was needed.

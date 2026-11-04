@@ -33,7 +33,7 @@ export async function run(){
   const bytes=Buffer.isBuffer(body);const headers={...(body&&!bytes?{'Content-Type':'application/json'}:{}),...extra};
   if(who)headers.Authorization='Bearer '+tokens[who];
   const r=await fetch(`http://127.0.0.1:${port}/${path}`,{method,headers,body:body===undefined?undefined:bytes?body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
-  return {status:r.status,bytes:Buffer.from(await r.arrayBuffer())};
+  return {status:r.status,contentType:r.headers.get('content-type') ?? '',bytes:Buffer.from(await r.arrayBuffer())};
  };
  let started=false;let count=0;
  try{
@@ -47,7 +47,7 @@ export async function run(){
   sql(readFileSync(new URL('./storage/fixture.sql',import.meta.url),'utf8'));
   sql(readFileSync(new URL('../../supabase/proposals/snapshot-storage-retention.sql',import.meta.url),'utf8'));
   await storageCases({request,check:async(name,fn)=>{try{await fn();count++;console.log('PASS '+name);}catch(error){console.error('FAIL '+name);console.error(JSON.stringify(failureSummary(error)));throw new Error('Storage acceptance failed');}}});
-  assert.equal(count,7);console.log(JSON.stringify({result:'PASS',suite:'isolated real Storage HTTP and physical file bytes',cases:count,versions,project}));
+  assert.equal(count,8);console.log(JSON.stringify({result:'PASS',suite:'isolated real Storage HTTP and physical file bytes',cases:count,versions,project}));
  }finally{
   if(started)try{compose(['down','--remove-orphans']);}catch{console.error('Cleanup incomplete for isolated project '+project);process.exitCode=1;}
  }

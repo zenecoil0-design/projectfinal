@@ -15,7 +15,8 @@ node tests/integration/storage-api.mjs --run
 echo "Exit code: $?"
 ```
 
-A successful run prints seven PASS lines and a final result PASS with cases:7,
+The revised runner adds WEBP and is NOT_RUN against Docker in the author environment.
+A successful current run prints eight PASS lines and a final result PASS with cases:8,
 then exits 0. A timeout, assertion failure or missing runtime is not acceptance.
 The runner generates two signed synthetic user JWTs in memory; permission checks
 never use a service-role token. There is no hosted endpoint argument. Remote
@@ -26,7 +27,7 @@ Cleanup stops only that project; it never prunes shared Docker resources.
 The actual Storage service initializes its own schema/roles. A fresh database
 fixture then creates a public test bucket and owner-path policies, followed by
 the exact retention proposal. Tests send real HTTP and compare SHA-256 of bytes
-read back. Coverage: new upload/read, two owners, anon upload denial, PUT/upsert
+read back. Coverage: new upload/read, WEBP exact bytes and MIME with overwrite denial, two owners, anon upload denial, PUT/upsert
 denial, owner/foreign delete retaining the file, denied move, and a new uploaded
 version coexisting with the unchanged old file. A delete returning 200 must return
 an empty result and leave the exact original bytes accessible.

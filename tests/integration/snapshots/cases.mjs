@@ -90,12 +90,14 @@ export async function snapshotCases({request,admin,check,blockedUpdate}) {
   });
  }
  await check('new image reference requires matching origin path owner and stored object',async()=>{
-  const id=created.get('activity'),path=`users/${A}/activities/${id}/60000000-0000-0000-0000-000000000001.png`;
+  for(const extension of ['png','webp']) {
+  const id=created.get('activity'),path=`users/${A}/activities/${id}/60000000-0000-0000-0000-000000000001.${extension}`;
   const url='https://snapshot-fixture.invalid/storage/v1/object/public/portfolio-images/'+path;
   error(await save('activity',{title:'Missing'},[{image_url:url}],[],id),'42501');
   await admin(`INSERT INTO storage.objects(bucket_id,name,owner_id) VALUES('portfolio-images','${path}','${A}');`);
   error(await save('activity',{title:'Wrong origin'},[{image_url:url.replace('snapshot-fixture.invalid','other.invalid')}],[],id),'22023');
   ok(await save('activity',{title:'Owned upload'},[{image_url:url}],[],id));assert.equal((await images('activity',id))[0].image_url,url);
+  }
  });
  for(const [kind,plural] of sections)await check(`${kind}: row-locked source update blocks capture and rejects stale revision`,async()=>{
   const before=(await read(kind)).items[0],nextImages=(await images(kind)).reverse();
