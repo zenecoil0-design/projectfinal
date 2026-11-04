@@ -71,3 +71,5 @@ REMOVED ไม่ใช่ DONE หรือ DEFERRED รายงานแล�
 ตรวจเทียบเพื่อเตรียมติดตั้ง 3 พ.ย.: อ่าน catalog/history แล้ว และปรับ fixture ให้ตรงคอลัมน์คลังที่พบ ตรวจ local 7/7 และ regression 15/15 แยกสองรอบ ตาม [รายงานความเข้ากันได้](verification/SNAPSHOT_INSTALL_COMPATIBILITY_REVIEW.md) ยังไม่ติดตั้งหรือเปิด Snapshot; ต้องปิดช่องทางลบ/แทนที่ไฟล์ที่ฉบับเดิมอ้างอยู่ และตรวจชุดติดตั้งจริงก่อนอนุมัติ ผล API 24/24 ก่อนหน้ายังคงเป็นหลักฐานของ fixture รอบนั้น ไม่ใช่ผล hosted หรือ fixture ล่าสุด
 
 ความคืบหน้า 4 พ.ย.: เพิ่ม [ข้อเสนอรักษารูป Snapshot](verification/SNAPSHOT_STORAGE_RETENTION_REVIEW.md) ปิด UPDATE/DELETE ของไฟล์ใน bucket รูปพอร์ตสำหรับ client ปกติ โดยยังเก็บไฟล์ที่เลิกใช้ไว้ ไม่ใช่ระบบ cleanup ตรวจ PGlite รวม 10/10 ผ่าน ยังไม่ติดตั้งและยังต้องตรวจ Storage API/ไฟล์จริงก่อนปิดเงื่อนไขการรักษารูป
+
+ความคืบหน้า 4 พ.ย. — ชุดติดตั้ง: สร้าง migration รวม Snapshot ในธุรกรรมเดียวและเปลี่ยน isolated runner ให้ใช้ไฟล์นี้ตรง ๆ ตรวจ fixture/retention 7/7 และการสร้าง bundle/rollback/ติดตั้งซ้ำ 3/3 แยกสองรอบ ตาม [ขั้นตอนติดตั้ง](SNAPSHOT_RELEASE_RUNBOOK.md) ยังไม่ติดตั้ง ต้องตรวจ API ของชุดนี้และ Storage จริงก่อนเสนออนุมัติ

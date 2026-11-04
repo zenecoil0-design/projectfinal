@@ -71,3 +71,8 @@ The current setup also applies `snapshot-storage-retention.sql` against syntheti
 Storage metadata with RLS enabled. This is a client UPDATE/DELETE restriction,
 not a real Storage HTTP or physical-file test. Run the retention unit suite with
 `node --import tsx --test tests/snapshot-storage-retention.test.ts`.
+
+The runner now executes the generated release migration in one transaction. Verify
+`node scripts/build/snapshot-migration.mjs --check` before an acceptance run.
+See [release runbook](../../../docs/SNAPSHOT_RELEASE_RUNBOOK.md). The historical
+24-case PASS is not a rerun of this new bundle.
