@@ -12,7 +12,9 @@ test.beforeEach(async ({ context, request }) => {
 
 test('accordion opens one or none, keyboard reopens, collapsing never saves or reloads or changes preview', async ({ page }, testInfo) => {
   let reads = 0; let writes = 0;
-  page.on('request', request => { if (request.url().includes('/rest/v1/')) { if (request.method() === 'GET') reads++; else writes++; } });
+  // Snapshot reads are POST RPCs but read-only; count them as reads, never as saves.
+  const isRead = (request: { method(): string; url(): string }) => request.method() === 'GET' || request.url().includes('/rpc/read_portfolio_item_snapshots');
+  page.on('request', request => { if (request.url().includes('/rest/v1/')) { if (isRead(request)) reads++; else writes++; } });
   await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const initialReads = reads;
