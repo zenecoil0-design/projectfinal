@@ -1,4 +1,20 @@
-# Snapshot release runbook — prepared, not approved for hosted installation
+# Snapshot release runbook — installed; remaining acceptance tracked
+
+## Current status — 5 November 2026 hosted cutover
+
+The owner approved the concrete two-migration cutover after closing editing sessions. The connector confirmed installation of `library_image_limits` (history version `20261105104503`) and `portfolio_snapshot_release` (`20261105104937`). The first Snapshot confirmation expired; a read-only check found it absent before the successful retry. No reset or data/file deletion was performed during installation.
+
+The private asset origin was configured for the approved target. Post-install catalog checks found snapshot columns in all three relations, exactly one matching asset configuration, no anon/authenticated USAGE on the private schema, revoked legacy authenticated library UPDATE, and restrictive Storage UPDATE/DELETE retention policies. Migration history confirms both installations. These metadata checks do not constitute full hosted API acceptance.
+
+Backup evidence supplied by the owner: clean isolated restore exited 0; row counts matched for 25 checked tables (zero mismatches). Storage archives were downloaded and visually checked; no full path/hash manifest comparison was performed. The owner confirmed all current content is test data and accepted this backup limitation. This is not authorization to reset or delete existing content.
+
+The owner subsequently reported all seven requested localhost-to-hosted activity smoke steps passed: create/upload, select/save, copy, preserve old text/images after library edits, explicitly accept only in the original and reload, Preview/PDF agreement, and delete the test source from both portfolios. This is owner-reported manual acceptance, not an assistant-observed browser run. Browser/device, exact local frontend SHA, PDF files and per-step screenshots were not captured. Do not infer education/certificate, hidden-section, cross-owner or all-template hosted acceptance from this activity test.
+
+Remaining targeted acceptance: education and certificate flows; hidden-section deletion; hosted two-owner isolation; real password-recovery email round trip. Automated isolated API 24/24 and Storage 8/8 remain separate evidence. No application source changed in this documentation checkpoint; no new build or test-suite run is claimed.
+
+Security advisors after installation reported authenticated SECURITY DEFINER RPC warnings, four RLS-enabled legacy tables without policies, and disabled leaked-password protection. No permissions were relaxed to silence findings. Review RPC ownership guards and complete hosted isolation checks; advisory warnings are not a clean-security result. References: [RPC advisory](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable), [RLS advisory](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+The sections below retain preparation history and operator procedure. Historical NOT_DONE/NOT_RUN and approval gates do not override this dated installation record. Never replay installed migrations. The enabled matching frontend is required; turning the flag off alone is not rollback.
 
 ## Owner-run acceptance confirmed — 5 November 2026
 
