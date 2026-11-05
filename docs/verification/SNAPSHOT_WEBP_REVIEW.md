@@ -1,5 +1,19 @@
 # Snapshot WEBP compatibility
 
+## Owner-run acceptance confirmed — 5 November 2026
+
+The owner supplied complete Ubuntu/WSL console output at `926d6fe6df1dd4cae8a96219e42b9992c71049e6`:
+
+- Migration generator consistency: PASS.
+- Snapshot real PostgreSQL/PostgREST API: **24/24 PASS**, exit 0, one run.
+- Real Storage HTTP/physical bytes: **8/8 PASS**, exit 0, a separate run, including WEBP MIME, byte identity and overwrite denial.
+- Docker Engine 29.9.2 / Compose 5.6.1.
+
+Repeated copies of this console output represent the same runs, not additional executions. These results close the isolated WEBP/revised-bundle acceptance gate. Earlier NOT_RUN statements describe preparation history. No rerun is required solely for the subsequent documentation edits.
+
+Hosted catalog/history reconciliation, backup/cutover approval, installation, asset-origin configuration and enabled application acceptance remain outstanding. These local suites do not establish hosted installation or full browser/PDF acceptance.
+
+
 Base: `9bdda9e2aa8f827ba5b5e2a3a2de901cc8a6b35c`.
 
 Education, Activity and Certificate accept WEBP in the existing library UI. Choosing the original image retains its MIME and bytes. The Snapshot uploader previously rejected this file, while its SQL upload-reference validator excluded `.webp`.
