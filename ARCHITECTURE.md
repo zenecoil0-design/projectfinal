@@ -36,7 +36,7 @@ Repository: https://github.com/zenecoil0-design/projectfinal
 | `src/app/editor/page.tsx` | โหลดพอร์ตตาม query `portfolio`, ประกอบแบบฟอร์ม/Preview/เทมเพลต/ส่งออก |
 | `src/components/forms` | แบบฟอร์มปก คำนำ ประวัติส่วนตัว และตัวเลือกรายการจากคลัง |
 | `src/components/my-data` | คลังสามหมวด พร้อม useLibraryLoad/error-retry และ LibraryDraftGuard; save/Storage หลายคำขอยังไม่ใช่ transaction |
-| `src/components/layout` | `FormContainer` เป็น Accordion หกฟอร์มในหน้า Editor; `SidebarMenu` ยังมีไฟล์เดิมแต่ไม่ใช่เมนูที่ Editor ใช้อยู่ |
+| `src/components/layout` | `FormContainer` เป็น Accordion หกฟอร์มในหน้า Editor (ลบ `SidebarMenu` ที่ไม่ได้ใช้แล้ว 6 พ.ย. 2569) |
 | `src/components/editor` | สถานะ session, การเลือกเทมเพลต และปุ่มส่งออก |
 | `src/components/preview` | หกหมวดเนื้อหาเดิม + ContentsPreview, Paper, PaginatedSection, PageLayout; measurement portal แยกใต้ body |
 | `src/components/images/CropInput.tsx` | เลือกและครอปรูป ปรับซูมและตำแหน่ง |

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readPortfolioSnapshots, preparePortfolioSnapshots, acceptPortfolioSnapshot, SnapshotSessionExpired } from '../src/lib/editor/snapshot-api';
+import { readPortfolioSnapshots, preparePortfolioSnapshots, acceptPortfolioSnapshot, confirmSavedSelection, SnapshotSessionExpired } from '../src/lib/editor/snapshot-api';
 const ownerId='00000000-0000-0000-0000-000000000001';
 const portfolioId='10000000-0000-0000-0000-000000000001';
 const itemId='20000000-0000-0000-0000-000000000001';
@@ -100,4 +100,17 @@ test('only the explicit missing-snapshot code offers preparation',async()=>{
   await assert.rejects(readPortfolioSnapshots(s.client,s.context,'activity'),
    value=>value instanceof Error && !(value instanceof SnapshotPreparationRequired));
  }
+});
+test('saved selection is confirmed by readback order; stale callers get null; mismatch fails', async () => {
+ const s=setup();s.state.response=readback();
+ const done=await confirmSavedSelection(s.client,portfolioId,'activity',[itemId],()=>s.state.current);
+ assert.equal(done?.[0].item.id,itemId);
+ assert.deepEqual(s.calls.map(c=>c.name),['read_portfolio_item_snapshots']);
+ await assert.rejects(confirmSavedSelection(s.client,portfolioId,'activity',[],()=>true),/ยืนยันรายการที่บันทึกไม่สำเร็จ/);
+ const late=setup();late.state.response=readback();
+ late.client.auth.getUser=async()=>{late.state.current=false;return {data:{user:{id:ownerId}},error:null};};
+ assert.equal(await confirmSavedSelection(late.client,portfolioId,'activity',[itemId],()=>late.state.current),null);
+ assert.equal(late.calls.length,0);
+ const signedOut=setup();signedOut.client.auth.getUser=async()=>({data:{user:null},error:null}) as never;
+ await assert.rejects(confirmSavedSelection(signedOut.client,portfolioId,'activity',[itemId],()=>true),/ยืนยันบัญชีไม่สำเร็จ/);
 });

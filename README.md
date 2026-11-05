@@ -22,7 +22,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-publishable-or-anon-key>
 ```
 
-ค่าทั้งสองถูกอ่านจาก `src/lib/supabase/client.ts`, `server.ts` และ `src/middleware.ts` และมีคำนำหน้า `NEXT_PUBLIC_` จึงไม่ใช่ตำแหน่งสำหรับใส่ **service_role key หรือข้อมูลลับของฝั่งเซิร์ฟเวอร์** ห้ามนำคีย์ลับใส่ไฟล์/โค้ดที่ส่งไปยังเบราว์เซอร์
+ค่าทั้งสองถูกอ่านจาก `src/lib/supabase/client.ts` และ `src/middleware.ts` และมีคำนำหน้า `NEXT_PUBLIC_` จึงไม่ใช่ตำแหน่งสำหรับใส่ **service_role key หรือข้อมูลลับของฝั่งเซิร์ฟเวอร์** ห้ามนำคีย์ลับใส่ไฟล์/โค้ดที่ส่งไปยังเบราว์เซอร์
 
 เปิดเว็บสำหรับพัฒนา:
 

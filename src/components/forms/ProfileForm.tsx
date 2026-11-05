@@ -554,6 +554,8 @@ export default function ProfileForm({
     loadProfile();
     return () => { cancelled = true; };
 
+    // `store` is the whole profile state and changes on every keystroke; depending on it would
+    // reload the saved row over the draft. Only a portfolio/session change may trigger a reload.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolioId, reportLoaded]);
 

@@ -1,5 +1,5 @@
 "use client";
-import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
+import { submitLibrarySave, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
 import LibraryDeleteDialog from "./LibraryDeleteDialog";
@@ -587,11 +587,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
 
       const input = { section: "certificate" as const, ownerId: userId, itemId: editingId,
         fields: payload, images: existingImages.map(image => ({ id: image.id, image_url: image.image_url })), files: [...newFiles], tagIds: [...selectedTagIds] };
-      if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
-      if (!sameLibrarySave(atomicAttempt.current, input)) {
-        throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
-      }
-      await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
+      await submitLibrarySave(supabase, atomicAttempt, input, saveCurrent);
       if (!saveCurrent()) return;
       await loadData(userId, true);
       if (!saveCurrent()) return;

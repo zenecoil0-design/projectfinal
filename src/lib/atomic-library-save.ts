@@ -66,3 +66,12 @@ export async function saveAtomicLibrary(client: Client, attempt: LibrarySaveAtte
   }
   return attempt.id;
 }
+
+// One save button press: reuse the pending attempt (same item id and uploaded files) while the draft
+// is unchanged, so a retry after an uncertain outcome replays the same request instead of creating twice.
+export async function submitLibrarySave(client: Client, pending: { current: LibrarySaveAttempt | null },
+  input: Input, isCurrent: () => boolean) {
+  if (!pending.current) pending.current = makeLibrarySaveAttempt(input);
+  if (!sameLibrarySave(pending.current, input)) throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
+  return saveAtomicLibrary(client, pending.current, isCurrent);
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary } from '../src/lib/atomic-library-save';
+import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, submitLibrarySave, type LibrarySaveAttempt } from '../src/lib/atomic-library-save';
 const owner='00000000-0000-0000-0000-000000000001';
 for(const section of ['education','activity','certificate'] as const) {
  test(section+': uploads first, one atomic mutation, stable retry and owner/lifetime checks',async()=>{
@@ -90,4 +90,17 @@ test('unsupported file MIME cannot upload or mutate', async () => {
   await assert.rejects(saveAtomicLibrary(client, attempt, () => true),
    error => error instanceof Error && !error.message.startsWith('must not'));
  }
+});
+test('submit reuses the pending attempt for an unchanged draft and refuses a changed one', async () => {
+ const calls:Array<Record<string,unknown>>=[];let fail=true;
+ const client={auth:{getUser:async()=>({data:{user:{id:owner}},error:null})},
+  storage:{from:()=>({upload:async()=>({error:null}),getPublicUrl:(path:string)=>({data:{publicUrl:'https://example.invalid/'+path}})})},
+  rpc:async(_name:string,args:Record<string,unknown>)=>{calls.push(args);return {data:{id:args.p_item_id,status:'confirmed'},error:fail?{message:'lost'}:null};}};
+ const pending={current:null as LibrarySaveAttempt|null};
+ const input={section:'activity' as const,ownerId:owner,itemId:null,fields:{title:'A'},images:[],files:[],tagIds:[]};
+ await assert.rejects(submitLibrarySave(client,pending,input,()=>true));
+ fail=false;const id=await submitLibrarySave(client,pending,{...input},()=>true);
+ assert.equal(calls.length,2);assert.equal(calls[0].p_item_id,calls[1].p_item_id);assert.equal(id,calls[0].p_item_id);
+ await assert.rejects(submitLibrarySave(client,pending,{...input,fields:{title:'changed'}},()=>true),/ตรวจสอบผลบันทึกเดิม/);
+ assert.equal(calls.length,2);
 });

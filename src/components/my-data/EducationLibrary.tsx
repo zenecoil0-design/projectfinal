@@ -1,5 +1,5 @@
 "use client";
-import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
+import { submitLibrarySave, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
 import LibraryDeleteDialog from "./LibraryDeleteDialog";
@@ -502,11 +502,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
 
       const input = { section: "education" as const, ownerId: userId, itemId: editingId,
         fields: { ...payload, logo_url: removeLogo ? null : (currentLogoUrl || null) }, images: [], files: selectedLogo ? [selectedLogo] : [], tagIds: [...selectedTagIds] };
-      if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
-      if (!sameLibrarySave(atomicAttempt.current, input)) {
-        throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
-      }
-      await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
+      await submitLibrarySave(supabase, atomicAttempt, input, saveCurrent);
       if (!saveCurrent()) return;
       await loadData(userId, true);
       if (!saveCurrent()) return;

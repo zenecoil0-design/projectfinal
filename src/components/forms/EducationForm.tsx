@@ -3,7 +3,7 @@ import { EditorTagNotice } from "@/components/editor/EditorTagNotice";
 import { useEditorTags } from "@/components/editor/useEditorTags";
 import { SnapshotUpdates } from "@/components/editor/SnapshotUpdates";
 import type { parsePortfolioSnapshots } from "@/lib/editor/snapshot-reader";
-import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
+import { confirmSavedSelection, readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -403,18 +403,9 @@ export default function EducationForm({
       await saveSelection(supabase, portfolioId, "education", educations.map(item => item.id));
 
       if (!mounted.current) return;
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (!mounted.current) return;
-      if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
-      const saved = await readPortfolioSnapshots(supabase, {
-        portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
-      }, "education");
-      if (!mounted.current) return;
-      const expectedIds = educations.map(item => item.id);
-      if (saved.length !== expectedIds.length ||
-          saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
-        throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
-      }
+      const saved = await confirmSavedSelection(supabase, portfolioId, "education",
+        educations.map(item => item.id), () => mounted.current);
+      if (!saved) return;
       setSnapshotEntries(saved);
       setEducations(saved.map(entry => entry.item));
       markSaved("education");

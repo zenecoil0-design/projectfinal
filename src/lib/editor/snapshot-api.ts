@@ -45,6 +45,24 @@ export async function readPortfolioSnapshots(client: Client, context: Context, s
   return parsePortfolioSnapshots(data, section, context);
 }
 
+// After replace_portfolio_selection, read back the authoritative editions and require exactly the
+// saved order. Returns null once the caller is no longer current; never merges into an old draft.
+export function confirmSavedSelection(client: Client, portfolioId: string, section: "education", expectedIds: string[], isCurrent: () => boolean): Promise<SnapshotEntry<EducationItem>[] | null>;
+export function confirmSavedSelection(client: Client, portfolioId: string, section: "activity", expectedIds: string[], isCurrent: () => boolean): Promise<SnapshotEntry<ActivityItem>[] | null>;
+export function confirmSavedSelection(client: Client, portfolioId: string, section: "certificate", expectedIds: string[], isCurrent: () => boolean): Promise<SnapshotEntry<CertificateItem>[] | null>;
+export async function confirmSavedSelection(client: Client, portfolioId: string, section: SnapshotSection,
+  expectedIds: string[], isCurrent: () => boolean) {
+  const { data: { user }, error } = await client.auth.getUser();
+  if (!isCurrent()) return null;
+  if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
+  const saved = await readPortfolioSnapshots(client, { portfolioId, ownerId: user.id, isCurrent }, section);
+  if (!isCurrent()) return null;
+  if (saved.length !== expectedIds.length || saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
+    throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
+  }
+  return saved;
+}
+
 // Explicit transition only. A lost response is not evidence of rollback.
 export async function preparePortfolioSnapshots(client: Client, context: Context) {
   await owner(client, context);
