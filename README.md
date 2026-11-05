@@ -15,7 +15,7 @@ git switch codex/portfolio-next-phase
 npm ci
 ```
 
-สร้างไฟล์ `.env.local` ไว้ที่โฟลเดอร์หลัก (อย่า commit ค่า credentials):
+สร้างไฟล์ `.env.local` ไว้ที่โฟลเดอร์หลักโดยคัดลอกจาก `.env.example` (อย่า commit ค่า credentials) แอปไม่มี feature flag อื่นแล้ว:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
@@ -54,8 +54,9 @@ npx tsc --noEmit --incremental false
 npm run test:e2e
 ```
 
-- `npm test` ใช้ชุด unit tests ที่ `tests/*.test.ts`
-- `npm run test:e2e` ใช้ Playwright กับ **mock Supabase** ใน `tests/mock-supabase.mjs` และเปิด **production server** ตาม `playwright.config.ts` จึงต้อง `npm run build` ก่อน
+- `npm test` ใช้ชุด unit tests ที่ `tests/*.test.ts` (รวม `tests/mock-supabase-contract.test.ts` ที่ตรวจ mock กับโค้ดอ่าน Snapshot ของแอป)
+- `npm run build` เรียก `next build --webpack` ซึ่งเป็น bundler ที่ใช้ตรวจ build มาตลอด และเป็นคำสั่งเดียวกับที่ Vercel ใช้
+- `npm run test:e2e` ใช้ Playwright กับ **mock Supabase** ใน `tests/mock-supabase.mjs` และเปิด **production server** ตาม `playwright.config.ts` จึงต้อง `npm run build` ก่อน (build เดียวใช้ได้ทั้งชุด) fixture ใช้ UUID จาก `tests/e2e/helpers/fixtures.ts`
 - หากไม่มี Chromium ที่ Playwright ใช้งานได้ ให้ติดตั้ง/กำหนด browser runner ตามสภาพแวดล้อมทดสอบก่อน ไม่ถือว่าทดสอบผ่านหากยังรันไม่ได้
 - การทดสอบกับ mock ไม่เท่ากับการยืนยัน Supabase จริง, RLS, Storage, การส่งอีเมล หรือการติดตั้ง migrations
 
@@ -65,7 +66,8 @@ npm run test:e2e
 - [สถาปัตยกรรม](ARCHITECTURE.md)
 - [กติกาการทำงานและข้อควรระวัง](AGENTS.md)
 - [ระบบการออกแบบ](DESIGN_SYSTEM.md)
-- [แผนและงานคงเหลือ](docs/IMPLEMENTATION_PLAN.md)
+- [แผนและงานคงเหลือ](docs/IMPLEMENTATION_PLAN.md) และ [ขอบเขตจบโครงการล่าสุด](docs/FINAL_DELIVERY_SCOPE.md)
+- [ขั้นตอน deploy บน Vercel](DEPLOYMENT.md)
 - [สถานะการตรวจสอบและชนิดของ Tests](docs/verification/TEST_TYPES_AND_STATUS_REVIEW.md)
 - [คู่มือการตรวจ Supabase](scripts/inspection/README.md)
 
