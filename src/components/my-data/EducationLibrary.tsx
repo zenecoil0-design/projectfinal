@@ -1,5 +1,4 @@
 "use client";
-import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
@@ -454,55 +453,6 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     setIsAddingTag(false);
   };
 
-  const uploadLogo = async (
-    educationId: string
-  ) => {
-    if (!selectedLogo) {
-      return currentLogoUrl ||
-        null;
-    }
-
-    const extension =
-      selectedLogo.name
-        .split(".")
-        .pop()
-        ?.toLowerCase() ||
-      "jpg";
-
-    const path =
-      `users/${userId}/education/${educationId}/${crypto.randomUUID()}.${extension}`;
-
-    const { error } =
-      await supabase.storage
-        .from(
-          "portfolio-images"
-        )
-        .upload(
-          path,
-          selectedLogo,
-          {
-            contentType:
-              selectedLogo.type,
-          }
-        );
-
-    if (error) {
-      throw error;
-    }
-
-    const {
-      data: {
-        publicUrl,
-      },
-    } =
-      supabase.storage
-        .from(
-          "portfolio-images"
-        )
-        .getPublicUrl(path);
-
-    return publicUrl;
-  };
 
   const handleSave = async (
     event: React.FormEvent<HTMLFormElement>
@@ -526,9 +476,6 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
     setIsSaving(true);
 
     try {
-      let id =
-        editingId;
-
       const payload = {
         level:
           level.trim(),
@@ -553,158 +500,15 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
           null,
       };
 
-      if (snapshotsEnabled) {
-        const input = { section: "education" as const, ownerId: userId, itemId: editingId,
-          fields: { ...payload, logo_url: removeLogo ? null : (currentLogoUrl || null) }, images: [], files: selectedLogo ? [selectedLogo] : [], tagIds: [...selectedTagIds] };
-        if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
-        if (!sameLibrarySave(atomicAttempt.current, input)) {
-          throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
-        }
-        await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
-        if (!saveCurrent()) return;
-        await loadData(userId, true);
-        if (!saveCurrent()) return;
-        resetForm();
-        return;
+      const input = { section: "education" as const, ownerId: userId, itemId: editingId,
+        fields: { ...payload, logo_url: removeLogo ? null : (currentLogoUrl || null) }, images: [], files: selectedLogo ? [selectedLogo] : [], tagIds: [...selectedTagIds] };
+      if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
+      if (!sameLibrarySave(atomicAttempt.current, input)) {
+        throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
       }
-
-      if (editingId) {
-        const { error } =
-          await supabase
-            .from(
-              "user_library_educations"
-            )
-            .update(
-              payload
-            )
-            .eq(
-              "id",
-              editingId
-            )
-            .eq(
-              "user_id",
-              userId
-            ).select("id").single();
-
-        if (error) {
-          throw error;
-        }
-      } else {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "user_library_educations"
-            )
-            .insert({
-              ...payload,
-              user_id:
-                userId,
-
-              logo_url:
-                null,
-            })
-            .select(
-              "id"
-            )
-            .single();
-
-        if (error) {
-          throw error;
-        }
-
-        id = data.id;
-      }
-
+      await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
       if (!saveCurrent()) return;
-      if (!id) {
-        throw new Error();
-      }
-
-      let logoUrl:
-        | string
-        | null =
-        currentLogoUrl ||
-        null;
-
-      if (removeLogo) logoUrl = null; // Do not remove a file before confirming the database write.
-
-      if (selectedLogo) {
-        logoUrl =
-          await uploadLogo(
-            id
-          );
-      }
-
-      if (!saveCurrent()) return;
-      const {
-        error:
-          logoError,
-      } =
-        await supabase
-          .from(
-            "user_library_educations"
-          )
-          .update({
-            logo_url:
-              logoUrl,
-          })
-          .eq("id", id)
-          .eq(
-            "user_id",
-            userId
-          );
-
-      if (logoError) {
-        throw logoError;
-      }
-
-      if (!saveCurrent()) return;
-      const { error: deleteTagsError } = await supabase
-        .from(
-          "user_library_education_tags"
-        )
-        .delete()
-        .eq(
-          "education_id",
-          id
-        );
-
-      if (deleteTagsError) throw deleteTagsError;
-      if (!saveCurrent()) return;
-
-      if (
-        selectedTagIds.length
-      ) {
-        const { error } =
-          await supabase
-            .from(
-              "user_library_education_tags"
-            )
-            .insert(
-              selectedTagIds.map(
-                (tagId) => ({
-                  education_id:
-                    id,
-
-                  tag_id:
-                    tagId,
-                })
-              )
-            );
-
-        if (error) {
-          throw error;
-        }
-      }
-
-      if (!saveCurrent()) return;
-      await loadData(
-        userId, true
-      );
-
+      await loadData(userId, true);
       if (!saveCurrent()) return;
       resetForm();
     } catch (error) {
@@ -712,7 +516,7 @@ export default function EducationLibrary({ ownerId }: { ownerId: string }) {
       console.error(error);
 
       alert(
-        snapshotsEnabled ? "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ" : "ไม่สามารถบันทึกประวัติการศึกษาได้"
+        "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ"
       );
     } finally {
       if (saveCurrent()) { saveLock.current = false; setIsSaving(false); }

@@ -1,6 +1,7 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { openEditorSection } from "./helpers/editor";
 import { formLoadError, formSaveError } from "../../src/lib/editor/form-errors";
+import { editorUrl, libraryItem, portfolioA, portfolioB, seedLibrary, selectItems } from './helpers/fixtures';
 
 // Isolate fault-injected auth/network activity and serverless-browser context teardown.
 // Keep project launch/context settings; do not disable locks, CORS or application guards.
@@ -32,7 +33,7 @@ const configs = [
 type Config = typeof configs[number];
 
 async function ready(page: Page) {
-  await page.goto("/editor?portfolio=a");
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText("โหลดข้อมูลครบทุกหมวดแล้ว")).toBeVisible({ timeout: 20000 });
 }
 function form(page: Page, section: string) { return page.locator(`#editor-panel-${section} form`); }
@@ -48,7 +49,7 @@ async function expectDraft(page: Page, config: Config) {
 for (const config of configs) {
   test(`${config.section}: load failure is friendly, not empty or ready`, async ({ page }) => {
     await page.route(`**/rest/v1/${config.table}?**`, route => route.fulfill({ status: 500, json: { message: internal, details: internal, code: "42501" } }));
-    await page.goto("/editor?portfolio=a");
+    await page.goto(editorUrl(portfolioA));
     await openEditorSection(page, config.section);
     await expect(form(page, config.section).getByRole("alert")).toHaveText(formLoadError(config.section));
     await expect(page.locator("body")).not.toContainText(internal);
@@ -190,11 +191,15 @@ for (const section of ["preface", "profile"] as const) {
 }
 
 for (const config of configs.slice(3)) {
-  test(`${config.section}: failed selection save preserves tick order through folding/mobile and retry`, async ({ page }) => {
-    const ids = ["first", "second", "third"];
-    await page.route(`**/rest/v1/${config.table}?**`, route => route.fulfill({ json: ids.map(id => ({ id, title: id, school_name: id, level: "มัธยมศึกษา", description: "ข้อมูลสังเคราะห์" })) }));
-    const plural = config.table.replace("user_library_", "");
-    await page.route(`**/rest/v1/portfolio_${plural}?**`, route => route.fulfill({ json: [] }));
+  test(`${config.section}: failed selection save preserves tick order through folding/mobile and retry`, async ({ page, request }) => {
+    const section = config.section as "education" | "activity" | "certificate"; // configs.slice(3) are the library sections
+    const names = ["first", "second", "third"];
+    const rows = names.map(name => ({ id: libraryItem(section, name), title: name, school_name: name, level: "มัธยมศึกษา", description: "ข้อมูลสังเคราะห์" }));
+    const ids = rows.map(row => row.id);
+    // The selection RPC validates ownership in the mock database; the browser sees only these three rows.
+    await seedLibrary(request, section, rows);
+    await selectItems(request, portfolioA, section, []);
+    await page.route(`**/rest/v1/${config.table}?**`, route => route.fulfill({ json: rows }));
     await ready(page); await openEditorSection(page, config.section);
     const checks = form(page, config.section).getByRole("checkbox");
     await checks.nth(2).check(); await checks.nth(0).check(); await checks.nth(1).check();
@@ -202,12 +207,12 @@ for (const config of configs.slice(3)) {
     const assertOrder = async () => {
       for (const [index, number] of [[2, 1], [1, 2], [0, 3]]) {
         await expect(checks.nth(index)).toBeChecked();
-        await expect(form(page, config.section).locator("label").filter({ has: page.getByRole("checkbox", { name: ids[index], exact: true }) })).toContainText(`ลำดับ ${number}`);
+        await expect(form(page, config.section).locator("label").filter({ has: page.getByRole("checkbox", { name: names[index], exact: true }) })).toContainText(`ลำดับ ${number}`);
       }
     };
     const path = "**/rest/v1/rpc/replace_portfolio_selection";
     await page.route(path, route => {
-      expect(route.request().postDataJSON().p_item_ids).toEqual(["third", "second", "first"]);
+      expect(route.request().postDataJSON().p_item_ids).toEqual([ids[2], ids[1], ids[0]]);
       return route.fulfill({ status: 500, json: { message: internal } });
     });
     await form(page, config.section).locator("button[type=submit]").click(); await assertOrder();
@@ -220,7 +225,7 @@ for (const config of configs.slice(3)) {
     await page.unroute(path);
     const next = page.waitForRequest(r => r.url().includes("/rpc/replace_portfolio_selection"));
     await form(page, config.section).locator("button[type=submit]").click();
-    expect((await next).postDataJSON().p_item_ids).toEqual(["third", "second", "first"]);
+    expect((await next).postDataJSON().p_item_ids).toEqual([ids[2], ids[1], ids[0]]);
     await expect(form(page, config.section).locator('[role="status"]').filter({ hasText: "เรียบร้อยแล้ว" })).toHaveCount(1);
   });
 }
@@ -230,17 +235,17 @@ for (const operation of ["load", "save"] as const) for (const destination of ["p
     let release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
     let started = false; let settled = false;
     await page.route("**/rest/v1/covers?**", async route => {
-      const old = operation === "load" ? route.request().method() === "GET" && new URL(route.request().url()).searchParams.get("portfolio_id") === "eq.a"
-        : route.request().method() === "POST" && route.request().postDataJSON().portfolio_id === "a";
+      const old = operation === "load" ? route.request().method() === "GET" && new URL(route.request().url()).searchParams.get("portfolio_id") === `eq.${portfolioA}`
+        : route.request().method() === "POST" && route.request().postDataJSON().portfolio_id === portfolioA;
       if (!old) return route.continue();
       started = true; await gate;
       await route.fulfill({ status: 500, json: { message: internal } }); settled = true;
     });
-    if (operation === "load") await page.goto("/editor?portfolio=a");
+    if (operation === "load") await page.goto(editorUrl(portfolioA));
     else { await ready(page); await edit(page, configs[0]); await form(page, "cover").locator("button[type=submit]").click(); }
     await expect.poll(() => started).toBe(true);
     if (destination === "portfolio") {
-      await page.evaluate(() => history.pushState(null, "", "/editor?portfolio=b"));
+      await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
       await expect(page.getByText("Portfolio B", { exact: true })).toBeVisible();
       await expect(page.getByText("โหลดข้อมูลครบทุกหมวดแล้ว")).toBeVisible();
       await page.locator("#cover-first-name").fill("พอร์ตใหม่");

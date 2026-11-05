@@ -1,4 +1,5 @@
 import { test, expect, errors, type Page } from '@playwright/test';
+import { portfolioA } from './helpers/fixtures';
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
   await request.get('http://127.0.0.1:54321/__reset');
@@ -112,7 +113,7 @@ test('after leaving the library, Home/Dashboard/Editor history and clean guards 
   await history(page); await draft(page); await blockedTraversal(page, 'back');
   await confirmation(page).getByRole('button', { name: 'ทิ้งการเปลี่ยนแปลง', exact: true }).click(); await expect(page).toHaveURL(/\/$/);
   await page.getByRole('banner').getByRole('link', { name: 'ไปหน้า Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard$/);
-  await page.locator('article[data-portfolio-id=a]').getByRole('link').click(); await expect(page).toHaveURL(/editor\?portfolio=a$/);
+  await page.locator(`article[data-portfolio-id="${portfolioA}"]`).getByRole('link').click(); await expect(page).toHaveURL(new RegExp(`editor\\?portfolio=${portfolioA}$`));
   await expect(page.getByText('Portfolio A', { exact: true })).toBeVisible(); await expect(confirmation(page)).toHaveCount(0);
   await page.goBack(); await expect(page).toHaveURL(/dashboard$/); await page.goBack(); await expect(page).toHaveURL(/\/$/);
   await expect(confirmation(page)).toHaveCount(0);

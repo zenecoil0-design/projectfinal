@@ -4,7 +4,6 @@ import { useEditorTags } from "@/components/editor/useEditorTags";
 import { SnapshotUpdates } from "@/components/editor/SnapshotUpdates";
 import type { parsePortfolioSnapshots } from "@/lib/editor/snapshot-reader";
 import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
-import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -66,11 +65,6 @@ type CertificateImageRow = {
   id: string;
   certificate_id: string;
   image_url: string;
-  sort_order: number;
-};
-
-type PortfolioCertificateRow = {
-  certificate_id: string;
   sort_order: number;
 };
 
@@ -215,13 +209,6 @@ export default function CertificateForm({
               error:
                 certificateImageError,
             },
-
-            {
-              data:
-                portfolioCertificateData,
-              error:
-                portfolioCertificateError,
-            },
           ] =
             await Promise.all([
               supabase
@@ -264,25 +251,6 @@ export default function CertificateForm({
                       true,
                   }
                 ),
-
-              supabase
-                .from(
-                  "portfolio_certificates"
-                )
-                .select(
-                  "certificate_id, sort_order"
-                )
-                .eq(
-                  "portfolio_id",
-                  portfolioId
-                )
-                .order(
-                  "sort_order",
-                  {
-                    ascending:
-                      true,
-                  }
-                ),
             ]);
 
           if (cancelled) return;
@@ -299,12 +267,6 @@ export default function CertificateForm({
             throw certificateImageError;
           }
 
-          if (
-            portfolioCertificateError
-          ) {
-            throw portfolioCertificateError;
-          }
-
           const certificateRows:
             CertificateRow[] =
             certificateData ?? [];
@@ -312,11 +274,6 @@ export default function CertificateForm({
           const imageRows:
             CertificateImageRow[] =
             certificateImageData ??
-            [];
-
-          const portfolioRows:
-            PortfolioCertificateRow[] =
-            portfolioCertificateData ??
             [];
 
           const mappedLibrary:
@@ -365,43 +322,13 @@ export default function CertificateForm({
             mappedLibrary
           );
 
-          const selectedItems =
-            portfolioRows
-              .map(
-                (
-                  relation
-                ) =>
-                  mappedLibrary.find(
-                    (
-                      certificate
-                    ) =>
-                      certificate.id ===
-                      relation.certificate_id
-                  )
-              )
-              .filter(
-                (
-                  certificate
-                ): certificate is LibraryCertificate =>
-                  Boolean(
-                    certificate
-                  )
-              )
-              .map(
-                mapLibraryCertificateToStore
-              );
-
-          if (snapshotsEnabled) {
-            const entries = await readPortfolioSnapshots(supabase, {
-              portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
-            }, "certificate");
-            if (cancelled) return;
-            setSnapshotEntries(entries);
-            setSnapshotOwner(user.id);
-            setCertificates(entries.map(entry => entry.item));
-          } else {
-            setCertificates(selectedItems);
-          }
+          const entries = await readPortfolioSnapshots(supabase, {
+            portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
+          }, "certificate");
+          if (cancelled) return;
+          setSnapshotEntries(entries);
+          setSnapshotOwner(user.id);
+          setCertificates(entries.map(entry => entry.item));
         } catch (
           error: unknown
         ) {
@@ -508,22 +435,20 @@ export default function CertificateForm({
       await saveSelection(supabase, portfolioId, "certificate", certificates.map(item => item.id));
 
       if (!mounted.current) return;
-      if (snapshotsEnabled) {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (!mounted.current) return;
-        if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
-        const saved = await readPortfolioSnapshots(supabase, {
-          portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
-        }, "certificate");
-        if (!mounted.current) return;
-        const expectedIds = certificates.map(item => item.id);
-        if (saved.length !== expectedIds.length ||
-            saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
-          throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
-        }
-        setSnapshotEntries(saved);
-        setCertificates(saved.map(entry => entry.item));
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!mounted.current) return;
+      if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
+      const saved = await readPortfolioSnapshots(supabase, {
+        portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
+      }, "certificate");
+      if (!mounted.current) return;
+      const expectedIds = certificates.map(item => item.id);
+      if (saved.length !== expectedIds.length ||
+          saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
+        throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
       }
+      setSnapshotEntries(saved);
+      setCertificates(saved.map(entry => entry.item));
       markSaved("certificate");
       setSuccessMessage(
         "บันทึกเกียรติบัตรเรียบร้อยแล้ว"
@@ -548,7 +473,7 @@ export default function CertificateForm({
 
   return (
     <form onSubmit={handleNext} className="@container flex min-w-0 flex-col gap-5 pb-6">
-      {snapshotsEnabled && portfolioId && snapshotOwner && <SnapshotUpdates
+      {portfolioId && snapshotOwner && <SnapshotUpdates
         client={supabase} portfolioId={portfolioId} ownerId={snapshotOwner} disabled={isLoading || isSaving}
         section="certificate" entries={snapshotEntries} onApply={entries => {
           const items = entries.map(entry => {

@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
 import { expectCurrentContents } from './helpers/toc';
 import { execFileSync } from 'node:child_process';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ page, context, request }) => {
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page, context, request }) => {
 
 const paper = (page: Page) => page.locator('main [data-portfolio-page][data-page-section=profile]');
 async function ready(page: Page) {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await openEditorSection(page, 'profile');
 }
@@ -46,7 +47,7 @@ test('empty/default social hides optional groups in all templates without hiding
 
 test('whitespace is absent only in Preview; loaded form values and arrays are not rewritten', async ({ page, request }) => {
   const blank = ' \t ';
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: {
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: {
     phone: blank, contact_email: blank, address: ' \t\n ', talents: blank, motto: blank,
     social_links: [{ id: 'blank', platform: 'facebook', link: blank }],
     custom_fields: [{ id: 'blank', title: blank, value: blank }],
@@ -64,7 +65,7 @@ test('whitespace is absent only in Preview; loaded form values and arrays are no
 });
 
 test('zero is content in every optional scalar and both list types', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: {
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: {
     phone: '0', contact_email: '0', address: '0', talents: '0', motto: '0',
     social_links: [{ id: 'zero', platform: 'line', link: '0' }],
     custom_fields: [{ id: 'zero', title: '0', value: '0' }],
@@ -103,7 +104,7 @@ async function expectMixed(page: Page) {
 }
 
 test('mixed social/custom entries retain order and raw values through all templates, Save/reload and portfolio switch', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: {
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: {
     address: 'บ้านเลขที่ 123 กรุงเทพมหานคร', motto: 'เรียนรู้ทุกวัน', social_links: socials, custom_fields: customFields,
   } });
   await ready(page);
@@ -126,7 +127,7 @@ test('mixed social/custom entries retain order and raw values through all templa
   await expect(page.getByLabel('ชื่อเล่น', { exact: true })).toHaveValue('ข้อมูลฉบับบันทึก');
   await expect(page.locator('#profile-custom-title-f0')).toHaveValue('');
   await expect(page.locator('#profile-custom-title-f1')).toHaveValue(customFields[1].title);
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await openEditorSection(page, 'profile');
   await expectNoExtras(page);
@@ -161,7 +162,7 @@ test('editing and clearing optional content updates groups immediately without l
 });
 
 test('optional groups fit desktop/mobile and the real PDF omits blank rows while retaining populated content', async ({ page, request }, info) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: {
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: {
     address: 'บ้านเลขที่ 123 กรุงเทพมหานคร', motto: 'เรียนรู้ทุกวัน', social_links: socials, custom_fields: customFields,
   } });
   await page.setViewportSize({ width: 1440, height: 1000 });

@@ -1,5 +1,6 @@
 import { openEditorSection } from './helpers/editor';
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -11,7 +12,7 @@ test.beforeEach(async ({ context, request }) => {
 
 
 test('palette saves only its field, retries failures and survives cleared browser cache', async ({ page }) => {
- await page.goto('/editor?portfolio=a');
+ await page.goto(editorUrl(portfolioA));
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await openEditorSection(page, 'colors');
  await page.getByLabel('รหัสสี HEX').fill('#A13A50');
@@ -30,12 +31,12 @@ test('palette saves only its field, retries failures and survives cleared browse
  await expect(page.getByText('บันทึกสีพอร์ตแล้ว',{exact:true})).toBeVisible(); expect(calls).toBe(2);
  await page.evaluate(()=>localStorage.clear()); await page.reload();
  await expect(page.locator('main [data-portfolio-page]').first()).toHaveCSS('--portfolio-primary','#A13A50');
- await page.goto('/editor?portfolio=b');
+ await page.goto(editorUrl(portfolioB));
  await expect(page.locator('main [data-portfolio-page]').first()).toHaveCSS('--portfolio-primary','#1D416D');
 });
 for(const template of ['classic','modern','minimal'])test(`${template}: saved palette exports actual PDF from hidden mobile Preview`,async({page},info)=>{
  await page.setViewportSize({width:390,height:900});
- await page.goto('/editor?portfolio=a');
+ await page.goto(editorUrl(portfolioA));
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);
  await openEditorSection(page, 'colors');
@@ -62,13 +63,13 @@ for(const template of ['classic','modern','minimal'])test(`${template}: saved pa
 });
 
 test('account change discards late save UI and releases the return-home guard',async({page})=>{
- await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+ await page.goto(editorUrl(portfolioA));await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await openEditorSection(page, 'colors');await page.getByLabel('รหัสสี HEX').fill('#A13A50');
  let release!:()=>void;const barrier=new Promise<void>(resolve=>release=resolve);
  let start!:()=>void;const started=new Promise<void>(resolve=>start=resolve);
  await page.route('**/rest/v1/portfolios?**',async route=>{
   if(route.request().method()!=='PATCH')return route.continue();
-  start();await barrier;await route.fulfill({json:{id:'a',user_id:user.id,...route.request().postDataJSON()}});
+  start();await barrier;await route.fulfill({json:{id:portfolioA,user_id:user.id,...route.request().postDataJSON()}});
  });
  await page.getByRole('button',{name:'บันทึกสีพอร์ต',exact:true}).click();await started;
  await page.evaluate(user=>{const c=new BroadcastChannel('sb-127-auth-token');c.postMessage({event:'SIGNED_IN',session:{user:{...user,id:'account-b'}}});c.close();},user);
@@ -78,7 +79,7 @@ test('account change discards late save UI and releases the return-home guard',a
 });
 
 test('black and gray retain selected hue; blank contact groups are absent',async({page})=>{
- await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+ await page.goto(editorUrl(portfolioA));await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await openEditorSection(page, 'colors');
  for(const hex of ['#000000','#888888','#FFFFFF']){
   await page.getByLabel('รหัสสี HEX').fill(hex);

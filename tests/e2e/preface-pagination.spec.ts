@@ -1,5 +1,6 @@
 import { openEditorSection } from './helpers/editor';
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -11,7 +12,7 @@ test.beforeEach(async ({ context, request }) => {
 
 
 for (const template of ['classic','modern','minimal']) test(`${template}: long preface exports complete hidden mobile pages`,async({page},info)=>{
- await page.setViewportSize({width:390,height:900});await page.goto('/editor?portfolio=a');
+ await page.setViewportSize({width:390,height:900});await page.goto(editorUrl(portfolioA));
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);await openEditorSection(page,'preface');
  const text=Array.from({length:65},(_,i)=>`ย่อหน้า ${i} ทดสอบภาษาไทย กิ้ 👩‍👩‍👧‍👦 ข้อมูลครบและเรียงลำดับ`).join('\n');

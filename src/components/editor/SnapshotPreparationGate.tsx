@@ -2,13 +2,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { preparePortfolioSnapshots, readPortfolioSnapshots, SnapshotPreparationRequired } from "@/lib/editor/snapshot-api";
 
-export function SnapshotPreparationGate(props: { portfolioId: string; ownerId: string; children: ReactNode }) {
-  return snapshotsEnabled ? <Preparation {...props} /> : props.children;
-}
-function Preparation({ portfolioId, ownerId, children }: { portfolioId: string; ownerId: string; children: ReactNode }) {
+// Every editor session reads saved snapshots first; an old portfolio must be prepared explicitly.
+export function SnapshotPreparationGate({ portfolioId, ownerId, children }: { portfolioId: string; ownerId: string; children: ReactNode }) {
   const client = useMemo(() => createClient(), []);
   const [state, setState] = useState<"checking" | "missing" | "error" | "ready">("checking");
   const [busy, setBusy] = useState(false);

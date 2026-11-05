@@ -1,5 +1,4 @@
 "use client";
-import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { makeLibrarySaveAttempt, sameLibrarySave, saveAtomicLibrary, type LibrarySaveAttempt } from "@/lib/atomic-library-save";
 import { useLibraryDraft } from "./LibraryDraftGuard";
 import LibraryLoadStatus from "./LibraryLoadStatus";
@@ -119,10 +118,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     setExistingImages,
   ] = useState<CertificateImage[]>([]);
 
-  const [
-    removedImageIds,
-    setRemovedImageIds,
-  ] = useState<string[]>([]);
 
   const [newFiles, setNewFiles] =
     useState<File[]>([]);
@@ -249,7 +244,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     setIssuedDate("");
 
     setExistingImages([]);
-    setRemovedImageIds([]);
 
     setNewFiles([]);
     setNewPreviews([]);
@@ -299,7 +293,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       certificate.images
     );
 
-    setRemovedImageIds([]);
 
     setNewFiles([]);
     setNewPreviews([]);
@@ -436,13 +429,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
             item.id !== image.id
         )
     );
-
-    setRemovedImageIds(
-      (current) => [
-        ...current,
-        image.id,
-      ]
-    );
   };
 
   const removeNew = (
@@ -557,95 +543,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     setIsAddingTag(false);
   };
 
-  const uploadImages = async (
-    certificateId: string,
-    saveCurrent: () => boolean
-  ) => {
-    const rows = [];
 
-    for (
-      let i = 0;
-      i < newFiles.length;
-      i++
-    ) {
-      if (!saveCurrent()) return;
-      const file =
-        newFiles[i];
-
-      const extension =
-        file.name
-          .split(".")
-          .pop()
-          ?.toLowerCase() ||
-        "jpg";
-
-      const path =
-        `users/${userId}/certificates/${certificateId}/${crypto.randomUUID()}.${extension}`;
-
-      const { error } =
-        await supabase.storage
-          .from(
-            "portfolio-images"
-          )
-          .upload(
-            path,
-            file,
-            {
-              contentType:
-                file.type,
-            }
-          );
-
-      if (!saveCurrent()) return;
-      if (error) {
-        throw error;
-      }
-
-      const {
-        data: {
-          publicUrl,
-        },
-      } =
-        supabase.storage
-          .from(
-            "portfolio-images"
-          )
-          .getPublicUrl(path);
-
-      rows.push({
-        certificate_id:
-          certificateId,
-
-        image_url:
-          publicUrl,
-
-        sort_order:
-          Math.max(-1, ...existingImages.map(image => image.sort_order)) + 1 +
-          i,
-      });
-    }
-
-    if (!saveCurrent()) return;
-    if (rows.length) {
-      const { error } =
-        await supabase
-          .from(
-            "user_library_certificate_images"
-          )
-          .insert(rows);
-
-      if (error) {
-        throw error;
-      }
-    }
-  };
-
-  const deleteRemoved = async () => {
-    if (!removedImageIds.length) return;
-    const { error } = await supabase.from("user_library_certificate_images").delete().in("id", removedImageIds);
-    if (error) throw error;
-    // Retain Storage files until reference-safe cleanup is separately verified.
-  };
 
   const handleSave = async (
     event: React.FormEvent<HTMLFormElement>
@@ -671,9 +569,6 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
     setIsSaving(true);
 
     try {
-      let id =
-        editingId;
-
       const payload = {
         title:
           title.trim(),
@@ -690,120 +585,15 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
           null,
       };
 
-      if (snapshotsEnabled) {
-        const input = { section: "certificate" as const, ownerId: userId, itemId: editingId,
-          fields: payload, images: existingImages.map(image => ({ id: image.id, image_url: image.image_url })), files: [...newFiles], tagIds: [...selectedTagIds] };
-        if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
-        if (!sameLibrarySave(atomicAttempt.current, input)) {
-          throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
-        }
-        await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
-        if (!saveCurrent()) return;
-        await loadData(userId, true);
-        if (!saveCurrent()) return;
-        resetForm();
-        return;
+      const input = { section: "certificate" as const, ownerId: userId, itemId: editingId,
+        fields: payload, images: existingImages.map(image => ({ id: image.id, image_url: image.image_url })), files: [...newFiles], tagIds: [...selectedTagIds] };
+      if (!atomicAttempt.current) atomicAttempt.current = makeLibrarySaveAttempt(input);
+      if (!sameLibrarySave(atomicAttempt.current, input)) {
+        throw new Error("ตรวจสอบผลบันทึกเดิมก่อนเปลี่ยนคำขอ");
       }
-
-      if (editingId) {
-        const { error } =
-          await supabase
-            .from(
-              "user_library_certificates"
-            )
-            .update(payload)
-            .eq(
-              "id",
-              editingId
-            )
-            .eq(
-              "user_id",
-              userId
-            ).select("id").single();
-
-        if (error) {
-          throw error;
-        }
-      } else {
-        const {
-          data,
-          error,
-        } =
-          await supabase
-            .from(
-              "user_library_certificates"
-            )
-            .insert({
-              ...payload,
-
-              user_id:
-                userId,
-
-              image_url:
-                null,
-            })
-            .select("id")
-            .single();
-
-        if (error) {
-          throw error;
-        }
-
-        id = data.id;
-      }
-
-      if (!saveCurrent()) return;
-      if (!id) {
-        throw new Error();
-      }
-
-      await deleteRemoved();
-      if (!saveCurrent()) return;
-
-      await uploadImages(id, saveCurrent);
-      if (!saveCurrent()) return;
-
-      const { error: deleteTagsError } = await supabase
-        .from(
-          "user_library_certificate_tags"
-        )
-        .delete()
-        .eq(
-          "certificate_id",
-          id
-        );
-
-      if (deleteTagsError) throw deleteTagsError;
-      if (!saveCurrent()) return;
-
-      if (
-        selectedTagIds.length
-      ) {
-        const { error } =
-          await supabase
-            .from(
-              "user_library_certificate_tags"
-            )
-            .insert(
-              selectedTagIds.map(
-                (tagId) => ({
-                  certificate_id:
-                    id,
-
-                  tag_id:
-                    tagId,
-                })
-              )
-            );
-
-        if (error) {
-          throw error;
-        }
-      }
-
+      await saveAtomicLibrary(supabase, atomicAttempt.current, saveCurrent);
       if (!saveCurrent()) return;
       await loadData(userId, true);
-
       if (!saveCurrent()) return;
       resetForm();
     } catch (error) {
@@ -811,7 +601,7 @@ export default function CertificateLibrary({ ownerId }: { ownerId: string }) {
       console.error(error);
 
       alert(
-        snapshotsEnabled ? "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ" : "ไม่สามารถบันทึกเกียรติบัตรได้"
+        "ยังยืนยันการบันทึกไม่ได้ ข้อมูลในฟอร์มยังอยู่ กรุณาตรวจรายการคลังก่อนสร้างหรือแก้ไขซ้ำ"
       );
     } finally {
       if (saveCurrent()) { saveLock.current = false; setIsSaving(false); }

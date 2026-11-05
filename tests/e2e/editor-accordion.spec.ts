@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -12,7 +13,7 @@ test.beforeEach(async ({ context, request }) => {
 test('accordion opens one or none, keyboard reopens, collapsing never saves or reloads or changes preview', async ({ page }, testInfo) => {
   let reads = 0; let writes = 0;
   page.on('request', request => { if (request.url().includes('/rest/v1/')) { if (request.method() === 'GET') reads++; else writes++; } });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const initialReads = reads;
   const pages = page.locator('[data-portfolio-page]');
@@ -48,7 +49,7 @@ test('accordion opens one or none, keyboard reopens, collapsing never saves or r
 });
 
 test('save failure stays, success advances, last section never wraps, and a delayed save cannot steal navigation', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('ชื่อบนหน้าปก', { exact: true }).fill('รอบบันทึก');
   await page.route('**/rest/v1/covers?**', route => route.request().method() === 'POST' ? route.fulfill({ status: 500, json: { message: 'Mock accordion save failure' } }) : route.continue());
@@ -84,7 +85,7 @@ test('save failure stays, success advances, last section never wraps, and a dela
 
 test('cover, preface and profile drafts persist across mobile preview; folded controls leave the Tab order', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('ชื่อบนหน้าปก', { exact: true }).fill('ชื่อปกที่ยังไม่บันทึก');
   await openEditorSection(page, 'preface');
@@ -140,7 +141,7 @@ test('confirmed cover/profile crops retain valid object URLs through folding and
     URL.revokeObjectURL = url => { state.revoked.push(url); revoke(url); };
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const sample = await page.request.get('http://127.0.0.1:54321/sample.png');
   const file = { name: 'accordion.png', mimeType: 'image/png', buffer: await sample.body() };
@@ -189,7 +190,7 @@ test('folding cancels a pending crop worker and a late crop result cannot change
       toBlob.call(this, blob => { state.releaseCrop = () => callback(blob); }, type, quality);
     };
   });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const original = await page.locator('#editor-panel-cover img').getAttribute('src');
   const sample = await page.request.get('http://127.0.0.1:54321/sample.png');
@@ -207,7 +208,7 @@ test('folding cancels a pending crop worker and a late crop result cannot change
 });
 
 test('a late save from the previous portfolio never changes the new portfolio draft or open section', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('ชื่อบนหน้าปก', { exact: true }).fill('OLD PORTFOLIO DRAFT');
   let release = () => {};
@@ -220,7 +221,7 @@ test('a late save from the previous portfolio never changes the new portfolio dr
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click();
   await expect(page).toHaveURL(/dashboard/);
-  await page.locator('a[href="/editor?portfolio=b"]').click();
+  await page.locator(`a[href="${editorUrl(portfolioB)}"]`).click();
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('ชื่อบนหน้าปก', { exact: true })).toHaveValue('');
   const response = page.waitForResponse(response => response.url().includes('/rest/v1/covers?') && response.request().method() === 'POST');

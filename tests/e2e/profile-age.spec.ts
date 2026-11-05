@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 test.use({ timezoneId: 'America/Los_Angeles' });
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
@@ -15,7 +16,7 @@ test.beforeEach(async ({ page, context, request }) => {
 const formAge = (page: Page) => page.locator('#editor-panel-profile output[aria-labelledby=profile-age-label]');
 const previewAge = (page: Page) => page.locator('main [data-portfolio-page][data-page-section=profile]').getByText('อายุ :', { exact: true }).locator('..');
 async function ready(page: Page) {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await openEditorSection(page, 'profile');
 }
@@ -45,7 +46,7 @@ test('before/on/after birthday and age zero use the fixed local reference day', 
 });
 
 test('Feb 29 follows leap-year anniversaries and March 1 in a normal year', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: { date_of_birth: '2000-02-29' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: { date_of_birth: '2000-02-29' } });
   for (const [instant, age] of [['2024-02-28T20:00:00Z', 23], ['2024-02-29T20:00:00Z', 24], ['2025-02-28T20:00:00Z', 24], ['2025-03-01T20:00:00Z', 25]] as const) {
     await page.clock.setFixedTime(new Date(instant));
     await ready(page);
@@ -59,7 +60,7 @@ test('unavailable ages have one dash without a year suffix in all templates; loa
   let writes = 0;
   page.on('request', request => { if (request.url().includes('/rest/v1/profiles') && ['POST', 'PATCH'].includes(request.method())) writes++; });
   for (const birthday of [null, '', '2001-02-29', 'invalid', '2000-06-15\n', '2040-06-15']) {
-    await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: { date_of_birth: birthday } });
+    await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: { date_of_birth: birthday } });
     await ready(page);
     for (const template of ['classic', 'modern', 'minimal']) {
       await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
@@ -67,7 +68,7 @@ test('unavailable ages have one dash without a year suffix in all templates; loa
       await expect(previewAge(page)).toHaveText('อายุ : —');
       await expect(previewAge(page)).not.toContainText(/NaN|— ปี|-\d/);
     }
-    const saved = await (await request.get('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a')).json();
+    const saved = await (await request.get(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`)).json();
     expect(saved[0].date_of_birth).toBe(birthday);
     await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toHaveCount(0);
   }
@@ -104,9 +105,10 @@ test('birthday save failure keeps dirty draft/leave warning, retry and reload re
   expect(bodies).toHaveLength(2);
   for (const payload of bodies) {
     expect(payload.date_of_birth).toBe('2000-06-14');
-    expect(payload.portfolio_id).toBe('a');
+    expect(payload.portfolio_id).toBe(portfolioA);
     expect(payload).not.toHaveProperty('age');
-    expect(payload).not.toHaveProperty('age_mode');
+    // Manual age is permanent: automatic mode is saved explicitly with no manual value.
+    expect(payload).toMatchObject({ age_mode: 'auto', manual_age: null });
   }
   await ready(page);
   await expect(birthday).toHaveValue('2000-06-14');
@@ -115,7 +117,7 @@ test('birthday save failure keeps dirty draft/leave warning, retry and reload re
 });
 
 test('legacy invalid birthday is not silently cleared or newly blocked when another field is saved', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: { date_of_birth: '2001-02-29' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: { date_of_birth: '2001-02-29' } });
   await ready(page);
   await expect(formAge(page)).toHaveText('—');
   await page.getByLabel('ชื่อเล่น', { exact: true }).fill('Legacy birthday retained');
@@ -123,7 +125,7 @@ test('legacy invalid birthday is not silently cleared or newly blocked when anot
   await page.locator('#editor-panel-profile form button[type=submit]').click();
   expect((await write).postDataJSON().date_of_birth).toBe('2001-02-29');
   await expect(page.locator('#editor-heading-education')).toHaveAttribute('aria-expanded', 'true');
-  const saved = await (await request.get('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a')).json();
+  const saved = await (await request.get(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`)).json();
   expect(saved[0].date_of_birth).toBe('2001-02-29');
   expect(saved[0].nickname).toBe('Legacy birthday retained');
 });
@@ -153,10 +155,10 @@ test('desktop/mobile age area fits and mobile Preview retains the same dirty bir
 });
 
 test('changing portfolios cannot retain the prior profile birthday or age', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a', { data: { date_of_birth: '2000-06-15' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`, { data: { date_of_birth: '2000-06-15' } });
   await ready(page);
   await expect(formAge(page)).toHaveText('39');
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await openEditorSection(page, 'profile');
   await expect(page.getByLabel('วันเกิด', { exact: true })).toHaveValue('');

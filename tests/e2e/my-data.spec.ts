@@ -40,6 +40,18 @@ async function fixtures(page: Page, config: Section, imageCount = 2) {
     if (state.loading) await new Promise<void>(resolve => { state.release = resolve; });
     return route.fulfill(response.error ? { status: 500, json: { message: 'private database details' } } : { json: response.rows });
   });
+  // Library content, image references and Tag links are written by one atomic RPC; mirror it into this fixture.
+  await page.route('**/rest/v1/rpc/*_library_item_atomic', async route => {
+    state.writes++;
+    if (state.saveLoading) await new Promise<void>(resolve => { state.releaseSave = resolve; });
+    if (state.failSave) return route.fulfill({ status: 500, json: { message: 'Mock save failure' } });
+    const args = route.request().postDataJSON();
+    const create = new URL(route.request().url()).pathname.endsWith('/create_library_item_atomic');
+    let row = state.rows.find(row => row.id === args.p_item_id);
+    if (create) { row = { id: args.p_item_id, user_id: state.account, ...args.p_fields }; state.rows.push(row!); }
+    else Object.assign(row!, args.p_fields);
+    return route.fulfill({ json: create ? { id: args.p_item_id, status: 'confirmed' } : { id: args.p_item_id, item: row } });
+  });
   if (config.key !== 'education') {
     state.rows.push({ ...state.rows[0], id: 'library-no-image', [config.titleKey]: 'รายการไม่มีรูปและไม่มี Tags', description: '' });
     const pictures = [[80, 160], [160, 80]].slice(0, imageCount).map(([width, height]) => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#2563eb"/><rect x="10" y="10" width="${width-20}" height="${height-20}" fill="#f59e0b"/></svg>`)}`);
@@ -533,7 +545,7 @@ for (const config of sections) {
     await form.getByLabel(config.title, { exact: true }).fill('third account draft');
     const alerts: string[] = []; page.on('dialog', async dialog => { alerts.push(dialog.message()); await dialog.accept(); });
     const reads = state.reads, tagWrites = state.tagWrites;
-    const finished = page.waitForResponse(response => response.status() === (lateFailure ? 500 : 200) && new URL(response.url()).pathname === `/rest/v1/user_library_${config.plural}`);
+    const finished = page.waitForResponse(response => response.status() === (lateFailure ? 500 : 200) && new URL(response.url()).pathname === '/rest/v1/rpc/create_library_item_atomic');
     state.saveLoading = false; state.releaseSave(); await finished;
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     expect(alerts).toEqual([]); await expect(form.getByLabel(config.title, { exact: true })).toHaveValue('third account draft');

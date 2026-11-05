@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
 import { expectCurrentContents } from './helpers/toc';
 import { visibilitySections, visibilityNames, type VisibilitySection } from '../../src/lib/editor/section-visibility';
+import { editorUrl, portfolioA, portfolioB, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -13,8 +14,8 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 const paper = (page: Page, section: string) => page.locator(`main [data-page-section=${section}]`);
-async function ready(page: Page, portfolio = 'a') {
-  await page.goto(`/editor?portfolio=${portfolio}`);
+async function ready(page: Page, portfolio = portfolioA) {
+  await page.goto(editorUrl(portfolio));
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeEnabled();
 }
 async function toggle(page: Page, section: VisibilitySection, visible: boolean) {
@@ -25,11 +26,12 @@ async function toggle(page: Page, section: VisibilitySection, visible: boolean) 
   if (visible) await expect(control).toBeChecked(); else await expect(control).not.toBeChecked();
   await expect(control).toBeEnabled();
 }
+// Many selected items in portfolio A, seeded through the mock database and the selection RPC.
 async function many(page: Page) {
-  await page.route('**/rest/v1/user_library_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ id: `e-${i}`, school_name: `โรงเรียนลำดับ ${i} ` + 'รายละเอียดโรงเรียนภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })) }));
-  await page.route('**/rest/v1/portfolio_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ education_id: `e-${i}`, sort_order: i })) }));
-  await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: Array.from({ length: 10 }, (_, i) => ({ id: `a-${i}`, title: `ORDER ${i} / ผลงานภาษาไทย`, description: 'รายละเอียดกิจกรรมและการเรียนรู้ภาษาไทย\n'.repeat(20) })) }));
-  await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: Array.from({ length: 10 }, (_, i) => ({ activity_id: `a-${i}`, sort_order: i })) }));
+  const educations = await seedLibrary(page.request, 'education', Array.from({ length: 9 }, (_, i) => ({ school_name: `โรงเรียนลำดับ ${i} ` + 'รายละเอียดโรงเรียนภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })), 'many');
+  await selectItems(page.request, portfolioA, 'education', educations);
+  const activities = await seedLibrary(page.request, 'activity', Array.from({ length: 10 }, (_, i) => ({ title: `ORDER ${i} / ผลงานภาษาไทย`, description: 'รายละเอียดกิจกรรมและการเรียนรู้ภาษาไทย\n'.repeat(20) })), 'many');
+  await selectItems(page.request, portfolioA, 'activity', activities);
 }
 
 test('each optional section persists through reload, cover has no switch, keyboard controls are outside header buttons', async ({ page }) => {
@@ -94,7 +96,7 @@ test('load failure is not all-on; retry deduplicates and preserves content draft
     reads++; if (failReads) return route.fulfill({ status: 403, json: { message: 'private catalog error' } });
     return route.fulfill({ json: [{ section: 'profile', visible: false }] });
   });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByRole('alert').filter({ hasText: 'โหลดการแสดงหมวดไม่สำเร็จ' })).toBeVisible();
   await expect(page.locator('[data-portfolio-page]')).toHaveCount(0);
   await page.getByLabel('ชื่อบนหน้าปก', { exact: true }).fill('Keep while retry');
@@ -126,7 +128,7 @@ test('failed write keeps confirmed preview, retry sends just one key and never m
   await expect(paper(page, 'activity')).toHaveCount(1); await expect(page.locator('#visibility-activity')).toBeChecked();
   await page.getByRole('button', { name: 'ลองใหม่การแสดงหมวด', exact: true }).click();
   await expect(paper(page, 'activity')).toHaveCount(0);
-  expect(writes).toBe(2); expect(payloads).toEqual(Array(2).fill({ portfolio_id: 'a', section: 'activity', visible: false }));
+  expect(writes).toBe(2); expect(payloads).toEqual(Array(2).fill({ portfolio_id: portfolioA, section: 'activity', visible: false }));
   await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
   await openEditorSection(page, 'cover'); await expect(page.getByLabel('ชื่อบนหน้าปก', { exact: true })).toHaveValue('Unchanged dirty');
   await expect(page.locator('body')).not.toContainText('internal write detail');
@@ -159,16 +161,16 @@ for (const operation of ['load', 'save']) for (const destination of ['portfolio'
     let started = false; let settled = false;
     await page.route('**/rest/v1/portfolio_section_visibility?**', async route => {
       const request = route.request(); const url = new URL(request.url());
-      const old = operation === 'load' ? request.method() === 'GET' && url.searchParams.get('portfolio_id') === 'eq.a' : request.method() === 'POST' && request.postDataJSON().portfolio_id === 'a';
+      const old = operation === 'load' ? request.method() === 'GET' && url.searchParams.get('portfolio_id') === `eq.${portfolioA}` : request.method() === 'POST' && request.postDataJSON().portfolio_id === portfolioA;
       if (!old) return route.continue();
       started = true;
       await gate; await route.fulfill({ json: operation === 'load' ? [{ section: 'profile', visible: false }] : { section: 'profile', visible: false } }); settled = true;
     });
-    if (operation === 'load') await page.goto('/editor?portfolio=a');
+    if (operation === 'load') await page.goto(editorUrl(portfolioA));
     else { await ready(page); await openEditorSection(page, 'profile'); await page.locator('#visibility-profile').click(); }
     await expect.poll(() => started).toBe(true);
     if (destination === 'portfolio') {
-      await page.evaluate(() => history.pushState(null, '', '/editor?portfolio=b'));
+      await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
       await expect(page.getByText('Portfolio B', { exact: true })).toBeVisible();
       await expect(paper(page, 'profile')).toHaveCount(1);
       release(); await expect.poll(() => settled).toBe(true); await openEditorSection(page, 'profile'); await expect(page.locator('#visibility-profile')).toBeChecked();
@@ -210,9 +212,9 @@ test('portfolio overrides remain independent and navigating to a hidden section 
   await openEditorSection(page, 'profile');
   await expect(page.locator('main')).toHaveJSProperty('scrollTop', top);
   await expect(page.getByText('หมวดนี้ไม่แสดงบน A4 และ PDF ข้อมูลยังอยู่และแก้ไขได้')).toBeVisible();
-  await page.evaluate(() => history.pushState(null, '', '/editor?portfolio=b'));
+  await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
   await expect(paper(page, 'profile')).toHaveCount(1); await toggle(page, 'education', false);
-  await page.evaluate(() => history.pushState(null, '', '/editor?portfolio=a'));
+  await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioA));
   await expect(paper(page, 'profile')).toHaveCount(0); await expect(paper(page, 'education')).toHaveCount(1);
   await page.reload(); await expect(paper(page, 'profile')).toHaveCount(0); await expect(paper(page, 'education')).toHaveCount(1);
 });
@@ -225,7 +227,7 @@ test('two tabs write different section keys without lost updates; the other tab 
     await toggle(page, 'profile', false);
     await expect(paper(other, 'profile')).toHaveCount(1); // no realtime sync is promised
     await toggle(other, 'activity', false);
-    const rows = await (await page.request.get('http://127.0.0.1:54321/rest/v1/portfolio_section_visibility?portfolio_id=eq.a')).json();
+    const rows = await (await page.request.get(`http://127.0.0.1:54321/rest/v1/portfolio_section_visibility?portfolio_id=eq.${portfolioA}`)).json();
     expect(rows).toEqual(expect.arrayContaining([
       expect.objectContaining({ section: 'profile', visible: false }),
       expect.objectContaining({ section: 'activity', visible: false }),
@@ -240,7 +242,7 @@ test('two tabs write different section keys without lost updates; the other tab 
 
 test('hiding a failed main section does not unlock export, while Tags-only failure still permits ready content', async ({ page }) => {
   await page.route('**/rest/v1/profiles?**', route => route.fulfill({ status: 500, json: { message: 'main failed' } }));
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.locator('#visibility-toc')).toBeEnabled(); await toggle(page, 'profile', false);
   await expect(page.getByText('โหลดข้อมูลไม่ครบ กรุณาตรวจสอบข้อความในแบบฟอร์มแล้วรีเฟรชก่อนดูตัวอย่าง', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();

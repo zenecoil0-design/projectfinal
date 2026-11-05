@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, portfolioA, seedImages, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -11,7 +12,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 async function ready(page: Page) {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
 }
 
@@ -27,9 +28,9 @@ for (const total of [13, 21]) {
       ctx.fillStyle = 'white'; ctx.font = 'bold 32px sans-serif'; ctx.fillText(`M${index}`, 150, 90);
       return canvas.toDataURL();
     }), cards);
-    await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: pictures.map((_, index) => ({ id: `long-${index}`, title: `ORDER ${String(index).padStart(2, '0')} ผลงานทดสอบภาษาไทย`, description: 'ข้อความภาษาไทยสำหรับตรวจความชัดเจนและลำดับหน้า\n'.repeat(14), organization: '', activity_date: null })) }));
-    await page.route('**/rest/v1/user_library_activity_images?**', route => route.fulfill({ json: pictures.map((image_url, index) => ({ id: `image-${index}`, activity_id: `long-${index}`, image_url, sort_order: 0 })) }));
-    await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: pictures.map((_, index) => ({ activity_id: `long-${index}`, sort_order: index })) }));
+    const ids = await seedLibrary(page.request, 'activity', pictures.map((_, index) => ({ title: `ORDER ${String(index).padStart(2, '0')} ผลงานทดสอบภาษาไทย`, description: 'ข้อความภาษาไทยสำหรับตรวจความชัดเจนและลำดับหน้า\n'.repeat(14), organization: '', activity_date: null })), `long-${total}`);
+    for (const [index, id] of ids.entries()) await seedImages(page.request, 'activity', id, [pictures[index]]);
+    await selectItems(page.request, portfolioA, 'activity', ids);
     await page.setViewportSize({ width: total === 13 ? 390 : 1440, height: 1000 }); await ready(page);
     await expect(page.locator('[data-portfolio-page]')).toHaveCount(total);
     await expect(page.getByText(`${total} หน้า`, { exact: true })).toBeVisible();

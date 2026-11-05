@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, libraryItem, portfolioA, portfolioB, recapture, seedImages, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -21,20 +22,19 @@ for (const mobile of [false, true]) {
       ctx.font = 'bold 22px sans-serif'; ctx.fillStyle = '#202a2d'; ctx.fillText(`IMAGE ${index + 1}`, 15, 50);
       return canvas.toDataURL();
     }));
-    await page.route('**/rest/v1/covers?**', route => route.fulfill({ json: [{ id: 'c', portfolio_id: 'a', title: 'PORTFOLIO / แฟ้มสะสมผลงาน', first_name: 'ปกทดสอบชื่อภาษาไทยยาว', last_name: 'นามสกุลสำหรับตรวจการจัดวาง', school_name: 'โรงเรียนตัวอย่างเพื่อทดสอบการจัดลำดับข้อมูลบนหน้าปก', cover_image_url: images[0] }] }));
-    await page.route('**/rest/v1/prefaces?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: 'a', content: 'ย่อหน้าแรกสำหรับทดสอบภาษาไทยและความตั้งใจในการเรียนรู้\n\nย่อหน้าที่สองคงการขึ้นบรรทัดเดิม\nข้อความที่มีรายละเอียดอ่านง่ายและไม่ถูกตัดทิ้ง', signature_name: 'ผู้เขียนคำนำคนละชื่อกับหน้าปก' }] }));
-    await page.route('**/rest/v1/profiles?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: 'a', first_name: 'ชื่อประวัติแยกจากหน้าปก', last_name: 'นามสกุลประวัติ', profile_image_url: images[1], address: 'บ้านเลขที่ 123 หมู่บ้านการเรียนรู้ ถนนวิทยาการ แขวงทดสอบ เขตทดสอบ กรุงเทพมหานคร '.repeat(2), talents: 'การสื่อสาร การเขียนโปรแกรม และการเรียนรู้ร่วมกับผู้อื่น', social_links: [{ id: 's', platform: 'website', link: 'https://example.invalid/' + 'long-address-'.repeat(7) }], custom_fields: [{ id: 'x', title: 'หัวข้อเพิ่มเติมที่มีข้อความยาว', value: 'รายละเอียดที่ผู้ใช้กำหนดเองต้องแสดงครบและตัดบรรทัดได้' }], gpax: 3.75 }] }));
-    await page.route('**/rest/v1/user_library_educations?**', route => route.fulfill({ json: [
-      { id: 'edu-a', level: 'ประถมศึกษา', school_name: 'โรงเรียนประถมศึกษาชื่อยาวสำหรับตรวจข้อมูลในเทมเพลต', logo_url: '', study_plan: '', gpa: null, start_year: '', end_year: '' },
-      { id: 'edu-b', level: 'มัธยมศึกษา', school_name: 'โรงเรียนมัธยมศึกษาที่มีชื่อภาษาไทยยาวและรายละเอียดแผนการเรียน', logo_url: images[2], study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' },
-    ] }));
-    await page.route('**/rest/v1/portfolio_educations?**', route => route.fulfill({ json: [{ education_id: 'edu-b', sort_order: 0 }, { education_id: 'edu-a', sort_order: 1 }] }));
+    await page.route('**/rest/v1/covers?**', route => route.fulfill({ json: [{ id: 'c', portfolio_id: portfolioA, title: 'PORTFOLIO / แฟ้มสะสมผลงาน', first_name: 'ปกทดสอบชื่อภาษาไทยยาว', last_name: 'นามสกุลสำหรับตรวจการจัดวาง', school_name: 'โรงเรียนตัวอย่างเพื่อทดสอบการจัดลำดับข้อมูลบนหน้าปก', cover_image_url: images[0] }] }));
+    await page.route('**/rest/v1/prefaces?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: portfolioA, content: 'ย่อหน้าแรกสำหรับทดสอบภาษาไทยและความตั้งใจในการเรียนรู้\n\nย่อหน้าที่สองคงการขึ้นบรรทัดเดิม\nข้อความที่มีรายละเอียดอ่านง่ายและไม่ถูกตัดทิ้ง', signature_name: 'ผู้เขียนคำนำคนละชื่อกับหน้าปก' }] }));
+    await page.route('**/rest/v1/profiles?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: portfolioA, age_mode: 'auto', manual_age: null, first_name: 'ชื่อประวัติแยกจากหน้าปก', last_name: 'นามสกุลประวัติ', profile_image_url: images[1], address: 'บ้านเลขที่ 123 หมู่บ้านการเรียนรู้ ถนนวิทยาการ แขวงทดสอบ เขตทดสอบ กรุงเทพมหานคร '.repeat(2), talents: 'การสื่อสาร การเขียนโปรแกรม และการเรียนรู้ร่วมกับผู้อื่น', social_links: [{ id: 's', platform: 'website', link: 'https://example.invalid/' + 'long-address-'.repeat(7) }], custom_fields: [{ id: 'x', title: 'หัวข้อเพิ่มเติมที่มีข้อความยาว', value: 'รายละเอียดที่ผู้ใช้กำหนดเองต้องแสดงครบและตัดบรรทัดได้' }], gpax: 3.75 }] }));
+    // Seed the selected editions in the mock database: the editor reads saved snapshots, not live library rows.
+    const [eduA, eduB] = await seedLibrary(page.request, 'education', [{ level: 'ประถมศึกษา', school_name: 'โรงเรียนประถมศึกษาชื่อยาวสำหรับตรวจข้อมูลในเทมเพลต', logo_url: '', study_plan: '', gpa: null, start_year: '', end_year: '' }, { level: 'มัธยมศึกษา', school_name: 'โรงเรียนมัธยมศึกษาที่มีชื่อภาษาไทยยาวและรายละเอียดแผนการเรียน', logo_url: images[2], study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' }], 'minimal');
+    await selectItems(page.request, portfolioA, 'education', [eduB, eduA]);
     const count = mobile ? 12 : 1;
-    await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: Array.from({ length: count }, (_, index) => ({ id: `act-${index}`, title: `ORDER ${String(index).padStart(2, '0')} ผลงานภาษาไทยที่มีชื่อยาวสำหรับตรวจการตัดบรรทัด`, description: mobile ? 'รายละเอียดภาษาไทยสำหรับตรวจลำดับหน้าและพื้นที่แสดงผลงาน\n'.repeat(14) : 'รายละเอียดผลงานที่มีภาพหลายแนว\nข้อมูลต้องแสดงครบตามเดิม', organization: 'โรงเรียนตัวอย่าง', activity_date: '2026-10-17' })) }));
-    await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: Array.from({ length: count }, (_, index) => ({ activity_id: `act-${index}`, sort_order: index })) }));
-    await page.route('**/rest/v1/user_library_activity_images?**', route => route.fulfill({ json: Array.from({ length: count }, (_, index) => (mobile ? [images[index % 4]] : images).map((image_url, imageIndex) => ({ id: `img-${index}-${imageIndex}`, activity_id: `act-${index}`, image_url, sort_order: imageIndex }))).flat() }));
-    await page.route('**/rest/v1/user_library_certificate_images?**', route => route.fulfill({ json: images.map((image_url, index) => ({ id: `cert-img-${index}`, certificate_id: 'certificate-a', image_url, sort_order: index })) }));
-    await page.goto('/editor?portfolio=a');
+    const activities = await seedLibrary(page.request, 'activity', Array.from({ length: count }, (_, index) => ({ title: `ORDER ${String(index).padStart(2, '0')} ผลงานภาษาไทยที่มีชื่อยาวสำหรับตรวจการตัดบรรทัด`, description: mobile ? 'รายละเอียดภาษาไทยสำหรับตรวจลำดับหน้าและพื้นที่แสดงผลงาน\n'.repeat(14) : 'รายละเอียดผลงานที่มีภาพหลายแนว\nข้อมูลต้องแสดงครบตามเดิม', organization: 'โรงเรียนตัวอย่าง', activity_date: '2026-10-17' })), 'minimal');
+    for (const [index, id] of activities.entries()) await seedImages(page.request, 'activity', id, mobile ? [images[index % 4]] : images);
+    await selectItems(page.request, portfolioA, 'activity', activities);
+    await seedImages(page.request, 'certificate', libraryItem('certificate'), images);
+    await recapture(page.request);
+    await page.goto(editorUrl(portfolioA));
     await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
     await expect(page.locator('.minimal-cover')).toBeAttached();
@@ -84,8 +84,8 @@ for (const mobile of [false, true]) {
 
 test('Minimal without photos stays compact; genuine long preface overflow is still blocked on hidden mobile Preview', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.route('**/rest/v1/covers?**', route => route.fulfill({ json: [{ id: 'c', portfolio_id: 'a', title: 'หัวเรื่องของฉัน', first_name: 'ชื่อจริง', last_name: 'ไม่มีรูป', school_name: '' }] }));
-  await page.goto('/editor?portfolio=a');
+  await page.route('**/rest/v1/covers?**', route => route.fulfill({ json: [{ id: 'c', portfolio_id: portfolioA, title: 'หัวเรื่องของฉัน', first_name: 'ชื่อจริง', last_name: 'ไม่มีรูป', school_name: '' }] }));
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
   await expect(page.locator('.minimal-cover')).toBeAttached();
@@ -95,7 +95,7 @@ test('Minimal without photos stays compact; genuine long preface overflow is sti
   await expect(page.locator('main .activity-card h3')).toHaveText('Saved Activity');
   await expect(page.locator('main .certificate-card h3')).toHaveText('Saved Certificate');
   await page.getByRole('button', { name: 'กรอกข้อมูล', exact: true }).click();
-  await page.route('**/rest/v1/prefaces?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: 'a', content: 'ข้อความยาวมาก '.repeat(3000), signature_name: 'A' }] }));
+  await page.route('**/rest/v1/prefaces?**', route => route.fulfill({ json: [{ id: 'p', portfolio_id: portfolioA, content: 'ข้อความยาวมาก '.repeat(3000), signature_name: 'A' }] }));
   await page.reload();
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   let downloads = 0; page.on('download', () => downloads++);
@@ -106,7 +106,7 @@ test('Minimal without photos stays compact; genuine long preface overflow is sti
 
 test('Editor template selector is readable and touch-sized on mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const picker = page.getByLabel('เทมเพลต', { exact: true });
   await expect(picker).toBeVisible();
@@ -119,7 +119,7 @@ test('Editor template selector is readable and touch-sized on mobile', async ({ 
 });
 
 test('Minimal has six distinct section styles; switching preserves drafts, selection and dirty baseline', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.locator('form:visible input').first().fill('ร่างหัวเรื่องที่ยังไม่บันทึก');
   await openEditorSection(page, 'activity');
@@ -144,7 +144,7 @@ test('Minimal has six distinct section styles; switching preserves drafts, selec
 });
 
 test('Minimal persists on reload, failed changes preserve saved design, portfolio switch resets it and unknown keys keep fallback', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const picker = page.getByLabel('เทมเพลต', { exact: true });
   await picker.selectOption('minimal');
@@ -157,13 +157,13 @@ test('Minimal persists on reload, failed changes preserve saved design, portfoli
   await expect(page.getByText('template save failed')).toBeVisible();
   await expect(picker).toHaveValue('minimal');
   await expect(page.locator('.minimal-cover')).toBeVisible();
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(picker).toHaveValue('classic');
   await expect(page.locator('.minimal-cover')).toHaveCount(0);
   await expect(page.locator('main')).not.toContainText('Alpha Student');
   await page.unroute('**/rest/v1/portfolios?**');
-  await page.route('**/rest/v1/portfolios?**', route => route.fulfill({ json: { id: 'b', title: 'Legacy portfolio', template_key: 'legacy-key', user_id: user.id } }));
+  await page.route('**/rest/v1/portfolios?**', route => route.fulfill({ json: { id: portfolioB, title: 'Legacy portfolio', template_key: 'legacy-key', user_id: user.id } }));
   await page.reload();
   await expect(picker).toHaveValue('legacy-key');
   await expect(page.locator('[data-portfolio-page][data-template=legacy-key]')).toHaveCount(7);

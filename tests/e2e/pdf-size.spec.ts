@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 // Size mocks still rasterize seven pages at all three quality levels. Allow the
 // real renderer to finish on slower workers; keep ordinary UI waits unchanged.
@@ -38,7 +39,7 @@ async function sizeMock(page: Page, bytes: number) {
 }
 
 async function ready(page: Page) {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
 }
 
@@ -147,7 +148,7 @@ for (const navigation of ['portfolio', 'account'] as const) {
       else await expect.poll(() => page.evaluate(() => (window as unknown as { pdfDelay: { releases: (() => void)[] } }).pdfDelay.releases.length)).toBeGreaterThan(0);
       let downloads = 0; page.on('download', () => downloads++);
       if (navigation === 'portfolio') {
-        await page.evaluate(() => history.pushState(null, '', '/editor?portfolio=b'));
+        await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
         await expect(page.getByText('Portfolio B', { exact: true })).toBeVisible();
         await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
       } else {

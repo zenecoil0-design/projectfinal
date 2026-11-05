@@ -4,7 +4,6 @@ import { useEditorTags } from "@/components/editor/useEditorTags";
 import { SnapshotUpdates } from "@/components/editor/SnapshotUpdates";
 import type { parsePortfolioSnapshots } from "@/lib/editor/snapshot-reader";
 import { readPortfolioSnapshots } from "@/lib/editor/snapshot-api";
-import { snapshotsEnabled } from "@/lib/editor/snapshot-enabled";
 import { saveSelection } from "@/lib/editor/save-selection";
 
 import { useEditorSession } from "@/components/editor/EditorSession";
@@ -75,11 +74,6 @@ type EducationRow = {
   start_year: string | null;
 
   end_year: string | null;
-};
-
-type PortfolioEducationRow = {
-  education_id: string;
-  sort_order: number;
 };
 
 export default function EducationForm({
@@ -232,75 +226,24 @@ export default function EducationForm({
 
           void loadTags(user.id);
 
-          const [
-            {
-              data:
-                educationData,
-              error:
-                educationError,
-            },
-
-            {
-              data:
-                portfolioEducationData,
-              error:
-                portfolioEducationError,
-            },
-          ] =
-            await Promise.all([
-              // =========================================
-              // Library Educations
-              // =========================================
-
-              supabase
-                .from(
-                  "user_library_educations"
-                )
-                .select(
-                  `
-                    id,
-                    level,
-                    school_name,
-                    study_plan,
-                    gpa,
-                    logo_url,
-                    start_year,
-                    end_year
-                  `
-                )
-                .eq(
-                  "user_id",
-                  user.id
-                )
-                .order(
-                  "created_at",
-                  {
-                    ascending:
-                      false,
-                  }
-                ),
-
-              // Portfolio <-> Education
-
-              supabase
-                .from(
-                  "portfolio_educations"
-                )
-                .select(
-                  "education_id, sort_order"
-                )
-                .eq(
-                  "portfolio_id",
-                  portfolioId
-                )
-                .order(
-                  "sort_order",
-                  {
-                    ascending:
-                      true,
-                  }
-                ),
-            ]);
+          // Library Educations; the portfolio selection comes from its saved snapshots below.
+          const {
+            data: educationData,
+            error: educationError,
+          } = await supabase
+            .from("user_library_educations")
+            .select(`
+              id,
+              level,
+              school_name,
+              study_plan,
+              gpa,
+              logo_url,
+              start_year,
+              end_year
+            `)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
 
           if (cancelled) return;
 
@@ -310,20 +253,9 @@ export default function EducationForm({
             throw educationError;
           }
 
-          if (
-            portfolioEducationError
-          ) {
-            throw portfolioEducationError;
-          }
-
           const rows:
             EducationRow[] =
             educationData ?? [];
-
-          const portfolioRows:
-            PortfolioEducationRow[] =
-            portfolioEducationData ??
-            [];
 
           // =========================================
           // สร้าง Library (Tags แยกโหลดเพื่อไม่แตะ selection ตอน retry)
@@ -343,47 +275,13 @@ export default function EducationForm({
             mappedLibrary
           );
 
-          // =========================================
-          // โหลด Education ที่ Portfolio นี้เลือกไว้
-          // =========================================
-
-          const selectedItems =
-            portfolioRows
-              .map(
-                (
-                  relation
-                ) =>
-                  mappedLibrary.find(
-                    (
-                      education
-                    ) =>
-                      education.id ===
-                      relation.education_id
-                  )
-              )
-              .filter(
-                (
-                  education
-                ): education is LibraryEducation =>
-                  Boolean(
-                    education
-                  )
-              )
-              .map(
-                mapLibraryEducationToStore
-              );
-
-          if (snapshotsEnabled) {
-            const entries = await readPortfolioSnapshots(supabase, {
-              portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
-            }, "education");
-            if (cancelled) return;
-            setSnapshotEntries(entries);
-            setSnapshotOwner(user.id);
-            setEducations(entries.map(entry => entry.item));
-          } else {
-            setEducations(selectedItems);
-          }
+          const entries = await readPortfolioSnapshots(supabase, {
+            portfolioId, ownerId: user.id, isCurrent: () => !cancelled,
+          }, "education");
+          if (cancelled) return;
+          setSnapshotEntries(entries);
+          setSnapshotOwner(user.id);
+          setEducations(entries.map(entry => entry.item));
         } catch (
           error: unknown
         ) {
@@ -505,22 +403,20 @@ export default function EducationForm({
       await saveSelection(supabase, portfolioId, "education", educations.map(item => item.id));
 
       if (!mounted.current) return;
-      if (snapshotsEnabled) {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (!mounted.current) return;
-        if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
-        const saved = await readPortfolioSnapshots(supabase, {
-          portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
-        }, "education");
-        if (!mounted.current) return;
-        const expectedIds = educations.map(item => item.id);
-        if (saved.length !== expectedIds.length ||
-            saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
-          throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
-        }
-        setSnapshotEntries(saved);
-        setEducations(saved.map(entry => entry.item));
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (!mounted.current) return;
+      if (error || !user) throw new Error("ยืนยันบัญชีไม่สำเร็จ");
+      const saved = await readPortfolioSnapshots(supabase, {
+        portfolioId, ownerId: user.id, isCurrent: () => mounted.current,
+      }, "education");
+      if (!mounted.current) return;
+      const expectedIds = educations.map(item => item.id);
+      if (saved.length !== expectedIds.length ||
+          saved.some((entry, index) => entry.item.id !== expectedIds[index])) {
+        throw new Error("ยืนยันรายการที่บันทึกไม่สำเร็จ");
       }
+      setSnapshotEntries(saved);
+      setEducations(saved.map(entry => entry.item));
       markSaved("education");
       setSuccessMessage(
         "บันทึกประวัติการศึกษาเรียบร้อยแล้ว"
@@ -549,7 +445,7 @@ export default function EducationForm({
 
   return (
     <form onSubmit={handleNext} className="@container flex min-w-0 flex-col gap-5 pb-6">
-      {snapshotsEnabled && portfolioId && snapshotOwner && <SnapshotUpdates
+      {portfolioId && snapshotOwner && <SnapshotUpdates
         client={supabase} portfolioId={portfolioId} ownerId={snapshotOwner} disabled={isLoading || isSaving}
         section="education" entries={snapshotEntries} onApply={entries => {
           const items = entries.map(entry => {

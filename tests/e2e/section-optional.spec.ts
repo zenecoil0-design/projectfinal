@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { expectCurrentContents } from './helpers/toc';
 import { openEditorSection } from './helpers/editor';
 import { execFileSync } from 'node:child_process';
+import { editorUrl, fixtureId, libraryItem, portfolioA, recapture, recaptureUrl } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -13,14 +14,15 @@ test.beforeEach(async ({ context, request }) => {
 
 const cards = (page: Page, section: string) => page.locator(`main .${section}-card`);
 async function ready(page: Page) {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
 }
 
 test('title-only and whitespace-only secondary data omit rows and image placeholders in every template without removing items', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/user_library_educations?id=eq.education-a', { data: { level: '  ', study_plan: '\t', gpa: null, start_year: '', end_year: ' ', logo_url: '' } });
-  await request.patch('http://127.0.0.1:54321/rest/v1/user_library_activities?id=eq.activity-a', { data: { description: ' \n ', organization: '\t', activity_date: ' ' } });
-  await request.patch('http://127.0.0.1:54321/rest/v1/user_library_certificates?id=eq.certificate-a', { data: { description: ' ', issued_by: '\n', issued_date: ' ' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_educations?id=eq.${libraryItem('education')}`, { data: { level: '  ', study_plan: '\t', gpa: null, start_year: '', end_year: ' ', logo_url: '' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_activities?id=eq.${libraryItem('activity')}`, { data: { description: ' \n ', organization: '\t', activity_date: ' ' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_certificates?id=eq.${libraryItem('certificate')}`, { data: { description: ' ', issued_by: '\n', issued_date: ' ' } });
+  await recapture(request);
   await ready(page);
   for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
@@ -41,10 +43,10 @@ test('title-only and whitespace-only secondary data omit rows and image placehol
 
 test('education years show only actual endpoints, and zero remains data', async ({ page, request }) => {
   const years = [['2563', '2566'], ['2563', ' '], [' ', '2566'], [' ', '\t']];
-  const rows = years.map(([start_year, end_year], index) => ({ id: `edu-${index}`, user_id: user.id, school_name: `โรงเรียน ${index}`, level: '0', study_plan: '0', gpa: 0, start_year, end_year, logo_url: '' }));
+  const rows = years.map(([start_year, end_year], index) => ({ id: fixtureId(`edu-${index}`), user_id: user.id, school_name: `โรงเรียน ${index}`, level: '0', study_plan: '0', gpa: 0, start_year, end_year, logo_url: '' }));
   await request.post('http://127.0.0.1:54321/rest/v1/user_library_educations', { data: rows });
-  await request.delete('http://127.0.0.1:54321/rest/v1/portfolio_educations?portfolio_id=eq.a');
-  await request.post('http://127.0.0.1:54321/rest/v1/portfolio_educations', { data: rows.map((row, index) => ({ portfolio_id: 'a', education_id: row.id, sort_order: index })) });
+  await request.delete(`http://127.0.0.1:54321/rest/v1/portfolio_educations?portfolio_id=eq.${portfolioA}`);
+  await request.post('http://127.0.0.1:54321/rest/v1/portfolio_educations', { data: rows.map((row, index) => ({ portfolio_id: portfolioA, education_id: row.id, sort_order: index })) });
   await ready(page);
   for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
@@ -66,8 +68,9 @@ test('education years show only actual endpoints, and zero remains data', async 
 });
 
 test('zero and nonblank secondary text remain visible without normalizing stored whitespace', async ({ page, request }) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/user_library_activities?id=eq.activity-a', { data: { description: '  0  ', organization: '0', activity_date: '0' } });
-  await request.patch('http://127.0.0.1:54321/rest/v1/user_library_certificates?id=eq.certificate-a', { data: { description: '  0  ', issued_by: '0', issued_date: '0' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_activities?id=eq.${libraryItem('activity')}`, { data: { description: '  0  ', organization: '0', activity_date: '0' } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_certificates?id=eq.${libraryItem('certificate')}`, { data: { description: '  0  ', issued_by: '0', issued_date: '0' } });
+  await recapture(request);
   await ready(page);
   for (const section of ['activity', 'certificate']) {
     await expect(cards(page, section).locator(':scope > p')).toHaveText('0');
@@ -88,20 +91,22 @@ async function mixedFixture(page: Page) {
     return canvas.toDataURL();
   }));
   const educations = [
-    { id: 'edu-plain', school_name: 'โรงเรียนไม่มีโลโก้', logo_url: '', level: '', study_plan: '', gpa: null, start_year: '', end_year: '' },
-    { id: 'edu-logo', school_name: 'โรงเรียนมีโลโก้', logo_url: images[0], level: 'มัธยมศึกษา', study_plan: '', gpa: 0, start_year: '2566', end_year: '' },
+    { id: fixtureId('edu-plain'), school_name: 'โรงเรียนไม่มีโลโก้', logo_url: '', level: '', study_plan: '', gpa: null, start_year: '', end_year: '' },
+    { id: fixtureId('edu-logo'), school_name: 'โรงเรียนมีโลโก้', logo_url: images[0], level: 'มัธยมศึกษา', study_plan: '', gpa: 0, start_year: '2566', end_year: '' },
   ];
   await page.request.post('http://127.0.0.1:54321/rest/v1/user_library_educations', { data: educations.map(row => ({ ...row, user_id: user.id })) });
-  await page.request.delete('http://127.0.0.1:54321/rest/v1/portfolio_educations?portfolio_id=eq.a');
-  await page.request.post('http://127.0.0.1:54321/rest/v1/portfolio_educations', { data: educations.map((row, index) => ({ portfolio_id: 'a', education_id: row.id, sort_order: index })) });
+  await page.request.delete(`http://127.0.0.1:54321/rest/v1/portfolio_educations?portfolio_id=eq.${portfolioA}`);
+  await page.request.post('http://127.0.0.1:54321/rest/v1/portfolio_educations', { data: educations.map((row, index) => ({ portfolio_id: portfolioA, education_id: row.id, sort_order: index })) });
   for (const [section, plural, counts] of [['activity', 'activities', [0, 1, 4]], ['certificate', 'certificates', [0, 1, 2, 3]]] as const) {
-    const rows = counts.map(count => ({ id: `${section}-${count}`, user_id: user.id, title: `${section === 'activity' ? 'กิจกรรม' : 'เกียรติบัตร'} ${count} รูป`, description: count === 0 ? '  ' : `รายละเอียด ${count} รูป`, organization: '', issued_by: '', activity_date: '', issued_date: '' }));
+    const rows = counts.map(count => ({ id: fixtureId(`${section}-${count}`), user_id: user.id, title: `${section === 'activity' ? 'กิจกรรม' : 'เกียรติบัตร'} ${count} รูป`, description: count === 0 ? '  ' : `รายละเอียด ${count} รูป`, organization: '', issued_by: '', activity_date: '', issued_date: '' }));
     await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${plural}`, { data: rows });
-    await page.request.delete(`http://127.0.0.1:54321/rest/v1/portfolio_${plural}?portfolio_id=eq.a`);
-    await page.request.post(`http://127.0.0.1:54321/rest/v1/portfolio_${plural}`, { data: rows.map((row, index) => ({ portfolio_id: 'a', [`${section}_id`]: row.id, sort_order: index })) });
+    await page.request.delete(`http://127.0.0.1:54321/rest/v1/portfolio_${plural}?portfolio_id=eq.${portfolioA}`);
+    await page.request.post(`http://127.0.0.1:54321/rest/v1/portfolio_${plural}`, { data: rows.map((row, index) => ({ portfolio_id: portfolioA, [`${section}_id`]: row.id, sort_order: index })) });
     // Deliberately reverse delivery order; persisted sort_order remains the source of image order.
-    await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${section}_images`, { data: counts.flatMap(count => images.slice(0, count).map((image_url, index) => ({ id: `${section}-${count}-${index}`, [`${section}_id`]: `${section}-${count}`, image_url, sort_order: index })).reverse()) });
+    await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${section}_images`, { data: counts.flatMap(count => images.slice(0, count).map((image_url, index) => ({ id: fixtureId(`${section}-${count}-${index}`), [`${section}_id`]: fixtureId(`${section}-${count}`), image_url, sort_order: index })).reverse()) });
   }
+  // Relations were captured before their images existed; refresh the fixture editions.
+  await page.request.post(recaptureUrl);
   return images;
 }
 
@@ -179,8 +184,9 @@ test('missing-image URLs stay rendered and block export in all three sections ra
     await request.get('http://127.0.0.1:54321/__reset');
     const bad = `http://127.0.0.1:54321/broken-${section}.png`;
     await page.route(bad, route => route.fulfill({ status: 404, contentType: 'text/plain', body: 'not an image' }));
-    if (section === 'education') await request.patch('http://127.0.0.1:54321/rest/v1/user_library_educations?id=eq.education-a', { data: { logo_url: bad } });
-    else await request.post(`http://127.0.0.1:54321/rest/v1/user_library_${section}_images`, { data: { id: 'bad', [`${section}_id`]: `${section}-a`, image_url: bad, sort_order: 0 } });
+    if (section === 'education') await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_educations?id=eq.${libraryItem('education')}`, { data: { logo_url: bad } });
+    else await request.post(`http://127.0.0.1:54321/rest/v1/user_library_${section}_images`, { data: { id: fixtureId(`bad-${section}`), [`${section}_id`]: libraryItem(section), image_url: bad, sort_order: 0 } });
+    await recapture(request);
     await ready(page);
     await expect(cards(page, section).locator('img')).toHaveAttribute('src', bad);
     await openEditorSection(page, 'colors');

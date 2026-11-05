@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -9,7 +10,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 test('three color roles use template defaults, custom text affects Preview and reset restores Auto', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByRole('button', { name: /7\. สีและดาวน์โหลด/ }).click();
   const picker = page.getByRole('region', { name: /สีและดาวน์โหลด/ });
@@ -30,7 +31,7 @@ test('old palettes gain automatic text while preserving saved primary and second
     'portfolio-colors:v1:00000000-0000-0000-0000-000000000001:a',
     JSON.stringify({ primary: '#303F9F', secondary: '#DCE8F3' })
   ));
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const cover = page.locator('main [data-portfolio-page]').first();
   await expect(cover).toHaveCSS('--portfolio-primary', '#303F9F');

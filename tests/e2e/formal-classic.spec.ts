@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -9,7 +10,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 test('Classic uses one portrait and formal A4 styling, while other templates remain isolated', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const selector = page.getByLabel('เทมเพลต', { exact: true });
   await selector.selectOption('classic');
@@ -32,7 +33,7 @@ test('Classic uses one portrait and formal A4 styling, while other templates rem
 });
 
 test('Classic image-count layout retains all images on A4 and numbering is unchanged', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('classic');
   const pages = page.locator('[data-portfolio-page][data-template=classic]');

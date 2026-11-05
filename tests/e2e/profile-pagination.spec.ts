@@ -1,6 +1,7 @@
 import { expectCurrentContents } from './helpers/toc';
 import { openEditorSection } from './helpers/editor';
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -14,8 +15,8 @@ test.beforeEach(async ({ context, request }) => {
 for(const template of ['classic','modern','minimal'])test(`${template}: profile columns continue without lost rows and export`,async({page,request},info)=>{
  const fields=Array.from({length:45},(_,i)=>({id:`field-${i}`,title:`หัวข้อ ${i}`,value:`รายละเอียดเพิ่มเติมลำดับ ${i}`}));
  const address='ที่อยู่ทดสอบภาษาไทย '.repeat(250);
- await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a',{data:{custom_fields:fields,address}});
- await page.setViewportSize({width:390,height:900});await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+ await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`,{data:{custom_fields:fields,address}});
+ await page.setViewportSize({width:390,height:900});await page.goto(editorUrl(portfolioA));await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);
  const pages=page.locator('main [data-portfolio-page][data-page-section=profile]');
  await expect.poll(()=>pages.count()).toBeGreaterThan(1);
@@ -30,7 +31,7 @@ for(const template of ['classic','modern','minimal'])test(`${template}: profile 
  const path=info.outputPath(template+'.pdf');await result.saveAs(path);
  const {execFileSync}=await import('node:child_process');const audit=JSON.parse(execFileSync(process.env.CODEX_PRIMARY_RUNTIME_PYTHON||'python',['tests/pdf-inspect.py',path],{encoding:'utf8'}));expect(audit.pages).toBe(count);
  for(const [w,h] of audit.boxes){expect(w).toBeCloseTo(595.28,1);expect(h).toBeCloseTo(841.89,1);}
- await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a',{data:{custom_fields:[],address:'ที่อยู่สั้น'}});
+ await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`,{data:{custom_fields:[],address:'ที่อยู่สั้น'}});
  await page.reload();await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();await expect(pages).toHaveCount(1);
  await expect(pages).toContainText('ที่อยู่สั้น');await expect(pages).not.toContainText(fields[44].value);
 });

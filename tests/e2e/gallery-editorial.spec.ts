@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -9,7 +10,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 test('Gallery Editorial renders a one-photo cover, a real sidebar profile and image-free Preface/TOC', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
   const coverPage = page.locator('main [data-portfolio-page][data-page-section="cover"]');
@@ -32,7 +33,7 @@ test('Gallery Editorial renders a one-photo cover, a real sidebar profile and im
 });
 
 test('Gallery Editorial remains scoped when the other two templates are selected', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const picker = page.getByLabel('เทมเพลต', { exact: true });
   await picker.selectOption('minimal');
@@ -46,7 +47,7 @@ test('Gallery Editorial remains scoped when the other two templates are selected
 });
 
 test('Gallery section cards have distinct structures and retain zero-image records', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
   const education = page.locator('main [data-template="minimal"] .gallery-education-card').first();
@@ -72,7 +73,7 @@ test('Gallery section cards have distinct structures and retain zero-image recor
 });
 
 test('Gallery A4 card structure is consistent with measurement portal', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('minimal');
   for (const section of ['education', 'activity', 'certificate']) {

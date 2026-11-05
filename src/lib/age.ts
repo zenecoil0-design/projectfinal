@@ -18,7 +18,6 @@ export function calculateAge(birthday: string, referenceDate: Date): number | nu
 }
 
 export type AgeMode = "auto" | "manual";
-export const manualAgeEnabled = process.env.NEXT_PUBLIC_MANUAL_AGE_ENABLED === "true";
 
 /** PostgreSQL integer range; reject fractions, exponents and signs. */
 export function parseManualAge(value: string): number | null {

@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
 import { expectCurrentContents } from './helpers/toc';
 import { execFileSync } from 'node:child_process';
+import { editorUrl, portfolioA, portfolioB, seedImages, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -32,7 +33,7 @@ async function assertNumbering(page: Page) {
 }
 
 test('all templates number seven physical pages as unnumbered, unnumbered, unnumbered, 1–4 without changing footer structure', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
@@ -58,12 +59,13 @@ for (const template of ['classic', 'modern', 'minimal']) {
     const many = template === 'minimal';
     await page.setViewportSize({ width: many ? 390 : 1440, height: many ? 1000 : 1600 });
     if (many) {
-      await page.route('**/rest/v1/user_library_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ id: `e-${i}`, school_name: `โรงเรียนลำดับ ${i} ` + 'รายละเอียดโรงเรียนภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })) }));
-      await page.route('**/rest/v1/portfolio_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ education_id: `e-${i}`, sort_order: i })) }));
-      await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: Array.from({ length: 10 }, (_, i) => ({ id: `a-${i}`, title: `ORDER ${i} / ผลงานภาษาไทย`, description: 'รายละเอียดกิจกรรมและการเรียนรู้ภาษาไทย\n'.repeat(20) })) }));
-      await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: Array.from({ length: 10 }, (_, i) => ({ activity_id: `a-${i}`, sort_order: i })) }));
+      // Portfolio A only: B keeps its empty selection.
+      const educations = await seedLibrary(page.request, 'education', Array.from({ length: 9 }, (_, i) => ({ school_name: `โรงเรียนลำดับ ${i} ` + 'รายละเอียดโรงเรียนภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์และคณิตศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })), 'e');
+      await selectItems(page.request, portfolioA, 'education', educations);
+      const activities = await seedLibrary(page.request, 'activity', Array.from({ length: 10 }, (_, i) => ({ title: `ORDER ${i} / ผลงานภาษาไทย`, description: 'รายละเอียดกิจกรรมและการเรียนรู้ภาษาไทย\n'.repeat(20) })), 'a');
+      await selectItems(page.request, portfolioA, 'activity', activities);
     }
-    await page.goto('/editor?portfolio=a');
+    await page.goto(editorUrl(portfolioA));
     await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
     await expect(page.locator(`[data-portfolio-page][data-template=${template}]`).first()).toBeAttached();
@@ -122,10 +124,10 @@ test('late image sizing is flushed before export even when ResizeObserver delive
   const gate = new Promise<void>(resolve => { release = resolve; });
   const image = await (await request.get('http://127.0.0.1:54321/sample.png')).body();
   await page.route('**/late-numbering.png', async route => { await gate; await route.fulfill({ contentType: 'image/png', body: image }); });
-  await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: [0, 1].map(i => ({ id: `late-${i}`, title: `LATE ${i}`, description: 'รายละเอียดกิจกรรมภาษาไทย\n'.repeat(5) })) }));
-  await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: [0, 1].map(i => ({ activity_id: `late-${i}`, sort_order: i })) }));
-  await page.route('**/rest/v1/user_library_activity_images?**', route => route.fulfill({ json: [0, 1].map(i => ({ id: `img-${i}`, activity_id: `late-${i}`, image_url: 'http://127.0.0.1:54321/late-numbering.png', sort_order: 0 })) }));
-  await page.goto('/editor?portfolio=a');
+  const late = await seedLibrary(request, 'activity', [0, 1].map(i => ({ title: `LATE ${i}`, description: 'รายละเอียดกิจกรรมภาษาไทย\n'.repeat(5) })), 'late');
+  for (const id of late) await seedImages(request, 'activity', id, ['http://127.0.0.1:54321/late-numbering.png'], 'late');
+  await selectItems(request, portfolioA, 'activity', late);
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('[data-page-section=activity]')).toHaveCount(1);
   await assertNumbering(page);
@@ -160,10 +162,10 @@ test('SPA portfolio/account changes clean up the old numbering observer and meas
       disconnect() { if (this.tracked) { this.tracked = false; state.active--; state.disconnected++; } super.disconnect(); }
     };
   });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await assertNumbering(page);
-  await page.evaluate(() => history.pushState(null, '', '/editor?portfolio=b'));
+  await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
   await expect(page.getByText('Portfolio B', { exact: true })).toBeVisible();
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await assertNumbering(page);
@@ -175,11 +177,12 @@ test('SPA portfolio/account changes clean up the old numbering observer and meas
 });
 
 test('multi-page education and activities update later offsets when selections change; empty rendered sections still count', async ({ page }) => {
-  await page.route('**/rest/v1/user_library_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ id: `edu-${i}`, school_name: `School ${i} ` + 'รายละเอียดสถานศึกษาภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })) }));
-  await page.route('**/rest/v1/portfolio_educations?**', route => route.fulfill({ json: new URL(route.request().url()).searchParams.get('portfolio_id') === 'eq.a' ? Array.from({ length: 9 }, (_, i) => ({ education_id: `edu-${i}`, sort_order: i })) : [] }));
-  await page.route('**/rest/v1/user_library_activities?**', route => route.fulfill({ json: Array.from({ length: 4 }, (_, i) => ({ id: `act-${i}`, title: `ORDER ${i}`, description: 'รายละเอียดผลงานภาษาไทย\n'.repeat(15) })) }));
-  await page.route('**/rest/v1/portfolio_activities?**', route => route.fulfill({ json: new URL(route.request().url()).searchParams.get('portfolio_id') === 'eq.a' ? Array.from({ length: 4 }, (_, i) => ({ activity_id: `act-${i}`, sort_order: i })) : [] }));
-  await page.goto('/editor?portfolio=a');
+  // Portfolio A only: B keeps its empty selection.
+  const educations = await seedLibrary(page.request, 'education', Array.from({ length: 9 }, (_, i) => ({ school_name: `School ${i} ` + 'รายละเอียดสถานศึกษาภาษาไทย '.repeat(4), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์', gpa: 3.5, start_year: '2566', end_year: '2569' })), 'edu');
+  await selectItems(page.request, portfolioA, 'education', educations);
+  const activities = await seedLibrary(page.request, 'activity', Array.from({ length: 4 }, (_, i) => ({ title: `ORDER ${i}`, description: 'รายละเอียดผลงานภาษาไทย\n'.repeat(15) })), 'act');
+  await selectItems(page.request, portfolioA, 'activity', activities);
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect.poll(() => page.locator('[data-page-section=education]').count()).toBeGreaterThan(1);
   await expect.poll(() => page.locator('[data-page-section=activity]').count()).toBeGreaterThan(1);
@@ -199,7 +202,7 @@ test('multi-page education and activities update later offsets when selections c
   await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toBeVisible();
   await openEditorSection(page, 'colors');
   await expect(page.getByRole('button', { name: 'ดาวน์โหลด PDF', exact: true })).toBeDisabled();
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('[data-portfolio-page]')).toHaveCount(7);
   await assertNumbering(page);

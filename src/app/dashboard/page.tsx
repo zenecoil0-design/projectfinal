@@ -418,7 +418,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <PortfolioActionsPanel ownerId={verifiedOwner || ""} enabled={process.env.NEXT_PUBLIC_PORTFOLIO_ACTIONS_ENABLED === "true" && listPhase === "success" && !!verifiedOwner} onConfirmed={(action,id)=>{
+          <PortfolioActionsPanel ownerId={verifiedOwner || ""} enabled={listPhase === "success" && !!verifiedOwner} onConfirmed={(action,id)=>{
             if(action==='duplicate') router.push(`/editor?portfolio=${encodeURIComponent(id)}`);
             else {setPortfolios(items=>items.filter(item=>item.id!==id));setRenameStatus('ลบพอร์ตแล้ว รายการในคลังยังอยู่');}
           }}>{renderActions => <>

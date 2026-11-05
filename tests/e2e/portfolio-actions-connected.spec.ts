@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -9,7 +10,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 async function openAction(page:Page, action:'duplicate'|'delete') {
  await page.goto('/dashboard');
- const panel=page.locator('article[data-portfolio-id="a"]');
+ const panel=page.locator(`article[data-portfolio-id="${portfolioA}"]`);
  await panel.getByRole('button',{name:action==='duplicate'?'ทำสำเนาพอร์ต':'ลบพอร์ต',exact:true}).click();
  return page.getByRole('dialog');
 }
@@ -22,8 +23,8 @@ test('confirmed delete uses one RPC and removes target card, preserving another'
  });
  const dialog=await openAction(page,'delete');
  await dialog.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
- await expect(page.locator('article[data-portfolio-id="a"]')).toHaveCount(0);
- await expect(page.locator('article[data-portfolio-id="b"]')).toBeVisible();
+ await expect(page.locator(`article[data-portfolio-id="${portfolioA}"]`)).toHaveCount(0);
+ await expect(page.locator(`article[data-portfolio-id="${portfolioB}"]`)).toBeVisible();
  expect(calls).toBe(1);
  expect(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('portfolio-action:')))).toEqual([]);
 });
@@ -32,7 +33,7 @@ test('uncertain copy survives reload, verification is read-only, explicit replay
  await page.route('**/rest/v1/rpc/perform_portfolio_action',async route=>{
   const r=route.request().postDataJSON();calls.push(r);
   if(calls.length===1)return route.fulfill({status:503,json:{message:'PRIVATE_ERROR'}});
-  await route.fulfill({json:{request_id:r.p_request_id,action:r.p_action,source_id:r.p_source_id,title:r.p_title,status:'confirmed',portfolio_id:'b'}});
+  await route.fulfill({json:{request_id:r.p_request_id,action:r.p_action,source_id:r.p_source_id,title:r.p_title,status:'confirmed',portfolio_id:portfolioB}});
  });
  await page.route('**/rest/v1/portfolio_action_receipts?**',route=>route.fulfill({json:null}));
  const dialog=await openAction(page,'duplicate');
@@ -45,14 +46,14 @@ test('uncertain copy survives reload, verification is read-only, explicit replay
  await expect(page.getByRole('button',{name:'ส่งคำขอเดิมซ้ำ'})).toBeEnabled();
  expect(calls).toHaveLength(1);
  await page.getByRole('button',{name:'ส่งคำขอเดิมซ้ำ'}).click();
- await expect(page).toHaveURL(/editor\?portfolio=b/);
+ await expect(page).toHaveURL(new RegExp(`editor\\?portfolio=${portfolioB}`));
  expect(calls).toHaveLength(2);expect(calls[1]).toEqual(calls[0]);
 });
 test('cancel never sends mutation and unavailable persistence prevents mutation',async({page})=>{
  let calls=0;await page.route('**/rest/v1/rpc/perform_portfolio_action',route=>{calls++;return route.fulfill({json:null});});
  let dialog=await openAction(page,'delete');await dialog.getByRole('button',{name:'ยกเลิก'}).click();expect(calls).toBe(0);
  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw new Error('unavailable');};});
- await page.locator('article[data-portfolio-id="a"]').getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
+ await page.locator(`article[data-portfolio-id="${portfolioA}"]`).getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
  dialog=page.getByRole('dialog');await dialog.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
  await expect(dialog.getByRole('alert')).toBeVisible();expect(calls).toBe(0);
 });
@@ -60,7 +61,7 @@ test('account change during pending request cannot navigate or consume old reque
  let release!:()=>void;const hold=new Promise<void>(r=>{release=r;});let started!:()=>void;const entered=new Promise<void>(r=>{started=r;});
  await page.route('**/rest/v1/rpc/perform_portfolio_action',async route=>{
   const r=route.request().postDataJSON();started();await hold;
-  await route.fulfill({json:{request_id:r.p_request_id,action:r.p_action,source_id:r.p_source_id,title:r.p_title,status:'confirmed',portfolio_id:'b'}});
+  await route.fulfill({json:{request_id:r.p_request_id,action:r.p_action,source_id:r.p_source_id,title:r.p_title,status:'confirmed',portfolio_id:portfolioB}});
  });
  const dialog=await openAction(page,'duplicate');await dialog.getByRole('button',{name:'ทำสำเนา',exact:true}).click();await entered;
  await page.evaluate(user=>{const c=new BroadcastChannel('sb-127-auth-token');c.postMessage({event:'SIGNED_IN',session:{user:{...user,id:'account-b'}}});c.close();},user);
@@ -70,12 +71,12 @@ test('account change during pending request cannot navigate or consume old reque
 });
 test('mobile recovery controls fit viewport and confirmed receipt avoids another mutation',async({page})=>{
  await page.setViewportSize({width:390,height:900});
- const pending={owner:user.id,requestId:'30000000-0000-0000-0000-000000000001',action:'delete',sourceId:'a',title:''};
+ const pending={owner:user.id,requestId:'30000000-0000-0000-0000-000000000001',action:'delete',sourceId:portfolioA,title:''};
  await page.goto('/dashboard');await page.evaluate(p=>localStorage.setItem(`portfolio-action:v1:${p.owner}`,JSON.stringify(p)),pending);
  let mutations=0;page.on('request',r=>{if(r.url().includes('/rpc/perform_portfolio_action'))mutations++;});
- await page.route('**/rest/v1/portfolio_action_receipts?**',route=>route.fulfill({json:{request_id:pending.requestId,action:'delete',source_id:'a',title:'',status:'confirmed',portfolio_id:'a'}}));
+ await page.route('**/rest/v1/portfolio_action_receipts?**',route=>route.fulfill({json:{request_id:pending.requestId,action:'delete',source_id:portfolioA,title:'',status:'confirmed',portfolio_id:portfolioA}}));
  await page.reload();await page.getByRole('button',{name:'ตรวจสอบผลคำขอค้าง'}).click();
- await expect(page.locator('article[data-portfolio-id="a"]')).toHaveCount(0);expect(mutations).toBe(0);
+ await expect(page.locator(`article[data-portfolio-id="${portfolioA}"]`)).toHaveCount(0);expect(mutations).toBe(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 
@@ -83,7 +84,7 @@ for (const width of [1440, 390]) {
  test(`card icon actions target their own portfolio at ${width}px`, async ({page}) => {
   await page.setViewportSize({width, height: 1000});
   await page.goto('/dashboard');
-  const card = page.locator('article[data-portfolio-id="b"]');
+  const card = page.locator(`article[data-portfolio-id="${portfolioB}"]`);
   const group = card.getByRole('group', {name:'จัดการพอร์ต'});
   await expect(group.getByRole('button', {name:'ทำสำเนาพอร์ต',exact:true})).toBeEnabled();
   await expect(page.getByRole('combobox')).toHaveCount(0);
@@ -99,7 +100,7 @@ for (const width of [1440, 390]) {
    expect(box.y).toBe(boxes[0].y);
    if(i) expect(box.x).toBeGreaterThan(boxes[i-1].x+boxes[i-1].width);
   }
-  await expect(group.getByRole('link')).toHaveAttribute('href','/editor?portfolio=b');
+  await expect(group.getByRole('link')).toHaveAttribute('href',editorUrl(portfolioB));
   const copy = group.getByRole('button',{name:'ทำสำเนาพอร์ต',exact:true});
   await copy.focus(); await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog');
@@ -114,7 +115,7 @@ for (const width of [1440, 390]) {
   });
   await group.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
   await dialog.getByRole('button',{name:'ลบพอร์ต',exact:true}).click();
-  await expect(card).toHaveCount(0); expect(source).toBe('b');
-  await expect(page.locator('article[data-portfolio-id="a"]')).toBeVisible();
+  await expect(card).toHaveCount(0); expect(source).toBe(portfolioB);
+  await expect(page.locator(`article[data-portfolio-id="${portfolioA}"]`)).toBeVisible();
  });
 }

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { portfolioA } from './helpers/fixtures';
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const internal = 'PRIVATE_HOME_SQL_CONSTRAINT_AUTH_42501';
 const listError = 'โหลดรายการพอร์ตล่าสุดไม่สำเร็จ กรุณาลองอีกครั้ง';
@@ -300,6 +301,6 @@ for (const width of [1440, 390]) {
     await page.screenshot({ path: testInfo.outputPath(`home-error-${width}.png`) });
     await page.unroute('**/rest/v1/portfolios?**'); await retry.press('Enter'); await expect(cards(page)).toHaveCount(2);
     await expect(page.locator('body')).not.toContainText(internal);
-    await recent(page).locator('[data-recent-portfolio-id="a"]').click(); await expect(page).toHaveURL(/editor\?portfolio=a$/);
+    await recent(page).locator(`[data-recent-portfolio-id="${portfolioA}"]`).click(); await expect(page).toHaveURL(new RegExp(`editor\\?portfolio=${portfolioA}$`));
   });
 }

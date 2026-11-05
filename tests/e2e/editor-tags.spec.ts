@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
 import { formSaveError } from '../../src/lib/editor/form-errors';
+import { editorUrl, libraryItem, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const configs = [
@@ -19,11 +20,11 @@ test.beforeEach(async ({ context, request }) => {
 async function fixtures(page: Page, config: Config, failure: 'tags' | 'relations' | 'both' | 'empty') {
   const state = { fail: failure !== 'empty', hold: false, release: () => {}, tagReads: 0, relationReads: 0, mainReads: 0 };
   await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${config.plural}`, {
-    data: ['b', 'c'].map(suffix => ({ id: `${config.section}-${suffix}`, user_id: user.id, [config.title]: `ITEM ${suffix}` })),
+    data: ['b', 'c'].map(suffix => ({ id: libraryItem(config.section, suffix), user_id: user.id, [config.title]: `ITEM ${suffix}` })),
   });
   await page.route(`**/rest/v1/user_library_${config.plural}?**`, route => {
     state.mainReads++;
-    return route.fulfill({ json: ['a', 'b', 'c'].map(suffix => ({ id: `${config.section}-${suffix}`, [config.title]: `ITEM ${suffix}`, level: 'มัธยมศึกษา', description: 'รายละเอียด', gpa: null })) });
+    return route.fulfill({ json: ['a', 'b', 'c'].map(suffix => ({ id: libraryItem(config.section, suffix), [config.title]: `ITEM ${suffix}`, level: 'มัธยมศึกษา', description: 'รายละเอียด', gpa: null })) });
   });
   await page.route('**/rest/v1/user_tags?**', route => {
     state.tagReads++;
@@ -34,7 +35,7 @@ async function fixtures(page: Page, config: Config, failure: 'tags' | 'relations
     state.relationReads++;
     if (state.hold) await new Promise<void>(resolve => { state.release = resolve; });
     if (state.fail && (failure === 'relations' || failure === 'both')) return route.fulfill({ status: 500, json: { message: 'INTERNAL RELATION SECRET' } });
-    return route.fulfill({ json: failure === 'empty' ? [] : [{ [`${config.section}_id`]: `${config.section}-b`, tag_id: 'tag-1' }] });
+    return route.fulfill({ json: failure === 'empty' ? [] : [{ [`${config.section}_id`]: libraryItem(config.section, 'b'), tag_id: 'tag-1' }] });
   });
   return state;
 }
@@ -43,7 +44,7 @@ for (const config of configs) {
   for (const failure of ['tags', 'relations', 'both'] as const) {
     test(`${config.section}: ${failure} failure is explicit; metadata retry preserves order, dirty baseline and payload`, async ({ page }) => {
       const state = await fixtures(page, config, failure);
-      await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+      await page.goto(editorUrl(portfolioA)); await openEditorSection(page, config.section);
       const form = page.locator('form:visible');
       await expect(form.getByRole('alert')).toContainText('ไม่สำเร็จ');
       await expect(form.getByRole('checkbox')).toHaveCount(3);
@@ -85,12 +86,12 @@ for (const config of configs) {
       await form.getByRole('button', { name: 'ทั้งหมด', exact: true }).click();
       const save = page.waitForRequest(request => request.url().endsWith('/rpc/replace_portfolio_selection') && request.method() === 'POST');
       await form.locator('button[type=submit]').click();
-      expect((await save).postDataJSON()).toEqual({ p_portfolio_id: 'a', p_section: config.section, p_item_ids: [`${config.section}-c`, `${config.section}-b`, `${config.section}-a`] });
+      expect((await save).postDataJSON()).toEqual({ p_portfolio_id: portfolioA, p_section: config.section, p_item_ids: [libraryItem(config.section, 'c'), libraryItem(config.section, 'b'), libraryItem(config.section)] });
     });
   }
   test(`${config.section}: successful empty tags are not a load error`, async ({ page }) => {
     await fixtures(page, config, 'empty');
-    await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+    await page.goto(editorUrl(portfolioA)); await openEditorSection(page, config.section);
     const form = page.locator('form:visible');
     await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
     await expect(form.getByRole('alert')).toHaveCount(0);
@@ -104,7 +105,7 @@ for (const config of configs) {
   test(`${config.section}: error survives Accordion/mobile; retry never saves; incomplete tags cannot damage a manual save`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 1000 });
     const state = await fixtures(page, config, 'relations');
-    await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+    await page.goto(editorUrl(portfolioA)); await openEditorSection(page, config.section);
     const form = page.locator('form:visible');
     await expect(form.getByRole('alert')).toContainText('โหลดความสัมพันธ์ Tags ไม่สำเร็จ');
     await expect(form.getByRole('checkbox').first()).toBeEnabled();
@@ -159,7 +160,7 @@ for (const config of configs) {
     await page.unroute('**/rest/v1/rpc/replace_portfolio_selection');
     const save = page.waitForRequest(request => request.url().endsWith('/rpc/replace_portfolio_selection') && request.method() === 'POST');
     await submit.click();
-    expect((await save).postDataJSON()).toEqual({ p_portfolio_id: 'a', p_section: config.section, p_item_ids: [`${config.section}-b`, `${config.section}-c`] });
+    expect((await save).postDataJSON()).toEqual({ p_portfolio_id: portfolioA, p_section: config.section, p_item_ids: [libraryItem(config.section, 'b'), libraryItem(config.section, 'c')] });
     const next = config.section === 'education' ? 'activity' : 'certificate';
     await expect(page.locator(`#editor-heading-${next}`)).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText('ยังไม่บันทึก:', { exact: false })).toHaveCount(0);
@@ -172,7 +173,7 @@ for (const config of configs) {
   for (const navigation of ['portfolio', 'account'] as const) {
     test(`${config.section}: a pending tag retry cannot publish after ${navigation} changes`, async ({ page }) => {
       const state = await fixtures(page, config, 'relations');
-      await page.goto('/editor?portfolio=a'); await openEditorSection(page, config.section);
+      await page.goto(editorUrl(portfolioA)); await openEditorSection(page, config.section);
       const form = page.locator('form:visible');
       await expect(form.getByRole('alert')).toContainText('โหลดความสัมพันธ์ Tags ไม่สำเร็จ');
       let release = () => {}; let held = false;
@@ -180,14 +181,14 @@ for (const config of configs) {
         if (held) return route.fallback();
         held = true;
         await new Promise<void>(resolve => { release = resolve; });
-        await route.fulfill({ json: [{ [`${config.section}_id`]: `${config.section}-a`, tag_id: 'tag-1' }] });
+        await route.fulfill({ json: [{ [`${config.section}_id`]: libraryItem(config.section), tag_id: 'tag-1' }] });
       });
       const request = page.waitForRequest(request => request.url().includes(`/user_library_${config.section}_tags?`));
       await form.getByRole('button', { name: 'ลองใหม่', exact: true }).click(); await request;
       if (navigation === 'portfolio') {
         await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await expect(page).toHaveURL(/dashboard/);
         state.fail = false;
-        await page.locator('a[href="/editor?portfolio=b"]').click();
+        await page.locator(`a[href="${editorUrl(portfolioB)}"]`).click();
         await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
         await openEditorSection(page, config.section);
         await form.getByRole('button', { name: 'TAG MATCH', exact: true }).click();

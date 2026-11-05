@@ -1,5 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 import {openEditorSection} from './helpers/editor';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 const user={id:'00000000-0000-0000-0000-000000000001',aud:'authenticated',role:'authenticated',email:'test@example.invalid',app_metadata:{},user_metadata:{},created_at:'2026-01-01T00:00:00Z'};
 test.beforeEach(async({context,request,page})=>{
  await request.get('http://127.0.0.1:54321/__reset');
@@ -8,8 +9,8 @@ test.beforeEach(async({context,request,page})=>{
  const session={access_token:`${part({alg:'HS256'})}.${part({sub:user.id,exp:4102444800})}.test`,refresh_token:'test-refresh',token_type:'bearer',expires_at:4102444800,expires_in:3600,user};
  await context.addCookies([{name:'sb-127-auth-token',value:'base64-'+part(session),domain:'127.0.0.1',path:'/'}]);
 });
-async function ready(page:Page,id='a'){
- await page.goto(`/editor?portfolio=${id}`);
+async function ready(page:Page,id=portfolioA){
+ await page.goto(editorUrl(id));
  await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await openEditorSection(page,'profile');
 }
@@ -61,12 +62,12 @@ for(const width of [1440,390])test(`manual age appears in all templates and no p
  }
  await page.screenshot({path:`test-results/manual-age-${width}.png`,fullPage:true});
  // A fresh document/session must not inherit A's unsaved mode or value.
- page.on('dialog',dialog=>dialog.accept());await ready(page,'b');
+ page.on('dialog',dialog=>dialog.accept());await ready(page,portfolioB);
  await expect(page.getByLabel('กรอกอายุเอง')).not.toBeChecked();await expect(page.locator('#editor-panel-profile output')).toHaveText('—');
 });
 test('malformed stored mode blocks profile/export rather than silently replacing with automatic age',async({page,request})=>{
- await request.patch('http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.a',{data:{age_mode:'unexpected',manual_age:18}});
- await page.goto('/editor?portfolio=a');await openEditorSection(page,'profile');
+ await request.patch(`http://127.0.0.1:54321/rest/v1/profiles?portfolio_id=eq.${portfolioA}`,{data:{age_mode:'unexpected',manual_age:18}});
+ await page.goto(editorUrl(portfolioA));await openEditorSection(page,'profile');
  await expect(page.locator('#editor-panel-profile [role=alert]')).toContainText('โหลดข้อมูลประวัติส่วนตัวไม่สำเร็จ');
  await openEditorSection(page, 'colors');
  await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF',exact:true})).toBeDisabled();

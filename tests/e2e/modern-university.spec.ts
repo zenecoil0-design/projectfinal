@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { editorUrl, portfolioA } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -9,7 +10,7 @@ test.beforeEach(async ({ context, request }) => {
 });
 
 test('Modern University uses split cover, two-column profile and all six A4 sections', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('modern');
   const cover = page.locator('main [data-portfolio-page][data-template="modern"][data-page-section="cover"]');
@@ -29,7 +30,7 @@ test('Modern University uses split cover, two-column profile and all six A4 sect
 });
 
 test('Modern University preserves image-count metadata, original entries and template isolation', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const template = page.getByLabel('เทมเพลต', { exact: true });
   await template.selectOption('modern');
@@ -49,10 +50,10 @@ test('Modern University preserves image-count metadata, original entries and tem
 test('Modern University cover displays an uploaded photo exactly once', async ({ page }) => {
   const image = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600"><rect width="400" height="600" fill="#8eb9c8"/></svg>');
   await page.route('**/rest/v1/covers?**', route => route.fulfill({ json: [{
-    id: 'cover-modern', portfolio_id: 'a', title: 'PORTFOLIO',
+    id: 'cover-modern', portfolio_id: portfolioA, title: 'PORTFOLIO',
     first_name: 'นักเรียน', last_name: 'ตัวอย่าง', school_name: 'โรงเรียนตัวอย่าง', cover_image_url: image,
   }] }));
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต', { exact: true }).selectOption('modern');
   const cover = page.locator('main [data-template="modern"][data-page-section="cover"]');

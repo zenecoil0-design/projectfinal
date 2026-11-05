@@ -2,6 +2,7 @@ import { test, expect, errors, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
 import { expectCurrentContents } from './helpers/toc';
+import { editorUrl, fixtureId, libraryItem, portfolioA, portfolioB, seedImages } from './helpers/fixtures';
 const owner = '00000000-0000-0000-0000-000000000001';
 const user = { id:owner,aud:'authenticated',role:'authenticated',email:'test@example.invalid',app_metadata:{},user_metadata:{},created_at:'2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -21,14 +22,14 @@ const api = 'http://127.0.0.1:54321/rest/v1';
 for (const section of sections) test(`${section.kind}: failed tag removal retains draft until retry confirms save`, async ({page,request}) => {
   const relation = `user_library_${section.kind}_tags`;
   await request.post(`${api}/user_tags`, {data:{id:'tag-review',user_id:owner,name:'Review tag'}});
-  await request.post(`${api}/${relation}`, {data:{[`${section.kind}_id`]:`${section.kind}-a`,tag_id:'tag-review'}});
+  await request.post(`${api}/${relation}`, {data:{[`${section.kind}_id`]:libraryItem(section.kind),tag_id:'tag-review'}});
   const card = await open(page,section);
   await card.getByRole('button',{name:/แก้ไข/}).click();
   const form = page.locator('main div[role=dialog]');
   await form.getByRole('button',{name:/Review tag/}).click();
   let fail = true, attempts = 0;
-  await page.route(`**/rest/v1/${relation}?**`, route => {
-    if(route.request().method() !== 'DELETE') return route.continue();
+  // Tag links change only inside the atomic library update; a failed RPC must leave them untouched.
+  await page.route('**/rest/v1/rpc/update_library_item_atomic', route => {
     attempts++;
     return fail ? route.fulfill({status:500,json:{message:'TAG_DELETE_FAILED'}}) : route.continue();
   });
@@ -66,7 +67,7 @@ for (const section of sections) test(`${section.kind}: impact/cancel and same-tu
     if(request.url().includes('/storage/v1/'))storageDeletes++;
     if(!request.url().includes(`/rest/v1/user_library_${section.plural}?`))return;
     deletes++;
-    const url=new URL(request.url());expect(url.searchParams.get('id')).toBe(`eq.${section.kind}-a`);expect(url.searchParams.get('user_id')).toBe(`eq.${owner}`);
+    const url=new URL(request.url());expect(url.searchParams.get('id')).toBe(`eq.${libraryItem(section.kind)}`);expect(url.searchParams.get('user_id')).toBe(`eq.${owner}`);
     expect(request.headers().prefer).toContain('return=representation');
   });
   await card.getByRole('button',{name:/ลบ/}).click();
@@ -83,9 +84,8 @@ for (const section of sections) test(`${section.kind}: impact/cancel and same-tu
   await deletion(page).getByRole('button',{name:'ปิด',exact:true}).click();
 });
 
-test('certificate: legacy four images remain visible/editable, cannot add, deliberate image removal needs confirmation',async ({page})=>{
-  const pictures=Array.from({length:4},(_,sort_order)=>({id:`legacy-${sort_order}`,certificate_id:'certificate-a',image_url:'http://127.0.0.1:54321/sample.png',sort_order}));
-  await page.route('**/rest/v1/user_library_certificate_images?**',route=>route.fulfill({json:pictures}));
+test('certificate: legacy four images remain visible/editable, cannot add, deliberate image removal needs confirmation',async ({page,request})=>{
+  await seedImages(request,'certificate',libraryItem('certificate'),Array(4).fill('http://127.0.0.1:54321/sample.png'),'legacy');
   const card=await open(page,sections[2]);await card.getByRole('button',{name:/แก้ไข/}).click();
   const form=page.locator('main div[role=dialog]');await expect(form.locator('img')).toHaveCount(4);
   await expect(form.getByRole('button',{name:'เพิ่มรูปไม่ได้ (สูงสุด 2 รูป)',exact:true})).toBeDisabled();
@@ -102,9 +102,9 @@ for (const section of sections) {
   const source = `user_library_${section.plural}`;
   test(`${section.kind}: failed/malformed impact cannot authorize delete; retry deduplicates; hidden B included; keyboard/mobile`,async({page,request},info)=>{
     const longTitle = section.title + ' ชื่อรายการภาษาไทยยาวไม่มีช่องว่าง'.repeat(3);
-    await request.patch(`${api}/${source}?id=eq.${section.kind}-a`,{data:{[section.kind==='education'?'school_name':'title']:longTitle}});
-    await request.post(`${api}/portfolio_${section.plural}`,{data:{portfolio_id:'b',[`${section.kind}_id`]:`${section.kind}-a`,sort_order:0}});
-    await request.post(`${api}/portfolio_section_visibility`,{data:{portfolio_id:'b',section:section.kind,visible:false}});
+    await request.patch(`${api}/${source}?id=eq.${libraryItem(section.kind)}`,{data:{[section.kind==='education'?'school_name':'title']:longTitle}});
+    await request.post(`${api}/portfolio_${section.plural}`,{data:{portfolio_id:portfolioB,[`${section.kind}_id`]:libraryItem(section.kind),sort_order:0}});
+    await request.post(`${api}/portfolio_section_visibility`,{data:{portfolio_id:portfolioB,section:section.kind,visible:false}});
     const held=gate();let reads=0,fail=true;let removes=0;
     page.on('request',r=>{if(r.method()==='DELETE')removes++;});
     await page.route(`**/rest/v1/portfolio_${section.plural}?**`,async route=>{
@@ -176,24 +176,23 @@ for (const section of sections) {
     const form=page.locator('main div[role=dialog]');
     const title=form.getByLabel(section.kind==='education'?'ชื่อสถานศึกษา *':section.kind==='activity'?'ชื่อผลงาน / กิจกรรม *':'ชื่อเกียรติบัตร / รางวัล *',{exact:true});
     await title.fill('Late draft retained');const held=gate();let writes=0;
-    await page.route(`**/rest/v1/${source}?**`,async route=>{
-      if(route.request().method()!=='PATCH')return route.continue();
+    await page.route('**/rest/v1/rpc/update_library_item_atomic',async route=>{
       writes++;await held.waiting;await route.continue();
     });
     await form.getByRole('button',{name:/^บันทึก/}).click();await expect.poll(()=>writes).toBe(1);
-    await request.delete(`${api}/${source}?id=eq.${section.kind}-a&user_id=eq.${owner}`);
+    await request.delete(`${api}/${source}?id=eq.${libraryItem(section.kind)}&user_id=eq.${owner}`);
     page.once('dialog',dialog=>dialog.accept());held.release();
     await expect(form.getByRole('button',{name:/^บันทึก/})).toBeEnabled();await expect(title).toHaveValue('Late draft retained');
     await form.getByRole('button',{name:'ยกเลิก',exact:true}).click();
     await expect(page.getByRole('dialog',{name:'ข้อมูลยังไม่ได้บันทึก',exact:true})).toBeVisible();
-    const rows=await (await request.get(`${api}/${source}?id=eq.${section.kind}-a`)).json();expect(rows).toEqual([]);
+    const rows=await (await request.get(`${api}/${source}?id=eq.${libraryItem(section.kind)}`)).json();expect(rows).toEqual([]);
   });
 
   test(`${section.kind}: changed impact requires confirmation again before any delete`,async({page,request})=>{
     const card=await open(page,section);let deletes=0;
     page.on('request',r=>{if(r.method()==='DELETE')deletes++;});
     await card.getByRole('button',{name:/ลบ/}).click();await expect(deletion(page)).toContainText('พอร์ตที่ได้รับผลกระทบ 1 พอร์ต');
-    await request.post(`${api}/portfolio_${section.plural}`,{data:{portfolio_id:'b',[`${section.kind}_id`]:`${section.kind}-a`,sort_order:0}});
+    await request.post(`${api}/portfolio_${section.plural}`,{data:{portfolio_id:portfolioB,[`${section.kind}_id`]:libraryItem(section.kind),sort_order:0}});
     await confirmDelete(page).click();await expect(deletion(page)).toContainText('พอร์ตที่ได้รับผลกระทบ 2 พอร์ต');expect(deletes).toBe(0);
     await confirmDelete(page).click();await expect(deletion(page).getByRole('status')).toContainText('ยืนยันแล้วว่าไม่มีรายการนี้ในคลัง');expect(deletes).toBe(1);
   });
@@ -225,8 +224,7 @@ for(const kind of ['activity','certificate'] as const)test(`${kind}: uploaded im
     if(route.request().method()==='DELETE')removes++;
     return route.fulfill({json:{Key:'synthetic-image'}});
   });
-  await page.route(`**/rest/v1/user_library_${kind}_images**`,async route=>{
-    if(route.request().method()!=='POST')return route.continue();
+  await page.route('**/rest/v1/rpc/update_library_item_atomic',async route=>{
     await route.fetch();return route.fulfill({status:500,json:{message:'INTERNAL_IMAGE_SAVE_RESPONSE'}});
   });
   const png=await(await request.get('http://127.0.0.1:54321/sample.png')).body();
@@ -236,14 +234,14 @@ for(const kind of ['activity','certificate'] as const)test(`${kind}: uploaded im
   page.once('dialog',async dialog=>{expect(dialog.message()).not.toContain('INTERNAL_IMAGE_SAVE_RESPONSE');await dialog.accept();});
   await form.getByRole('button',{name:/^บันทึก/}).click();await expect(form.getByRole('button',{name:/^บันทึก/})).toBeEnabled();
   await expect(form.locator('img')).toHaveAttribute('src',preview!);expect(uploads).toBe(1);expect(removes).toBe(0);
-  const saved=await(await request.get(`${api}/user_library_${kind}_images?${kind}_id=eq.${kind}-a`)).json();expect(saved).toHaveLength(1);
+  const saved=await(await request.get(`${api}/user_library_${kind}_images?${kind}_id=eq.${libraryItem(kind)}`)).json();expect(saved).toHaveLength(1);
   await form.getByRole('button',{name:'ยกเลิก',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'ข้อมูลยังไม่ได้บันทึก',exact:true})).toBeVisible();
 });
 
 for(const [kind,maximum] of [['activity',4],['certificate',2]] as const)test(`${kind}: current image limit rejects additional files without losing existing images`,async({page,request})=>{
   const section=sections.find(row=>row.kind===kind)!;
-  await request.post(`${api}/user_library_${kind}_images`,{data:Array.from({length:maximum},(_,i)=>({id:`limit-${i}`,[`${kind}_id`]:`${kind}-a`,image_url:'http://127.0.0.1:54321/sample.png',sort_order:i}))});
+  await request.post(`${api}/user_library_${kind}_images`,{data:Array.from({length:maximum},(_,i)=>({id:fixtureId(`limit-${kind}-${i}`),[`${kind}_id`]:libraryItem(kind),image_url:'http://127.0.0.1:54321/sample.png',sort_order:i}))});
   const card=await open(page,section);await card.getByRole('button',{name:/แก้ไข/}).click();const form=page.locator('main div[role=dialog]');
   await expect(form.locator('img')).toHaveCount(maximum);
   await expect(form.getByRole('button',{name:kind==='activity'?'ครบ 4 รูปแล้ว':`เพิ่มรูปไม่ได้ (สูงสุด ${maximum} รูป)`,exact:true})).toBeDisabled();
@@ -256,28 +254,28 @@ for(const [kind,maximum] of [['activity',4],['certificate',2]] as const)test(`${
 });
 
 for(const template of ['classic','modern','minimal'])test(`${template}: shared deletion including hidden portfolio survives reload and real mobile PDF retains other sections`,async({page,request},info)=>{
-  await request.patch(`${api}/portfolios?id=eq.a`,{data:{template_key:template}});
-  await request.post(`${api}/portfolio_section_visibility`,{data:{portfolio_id:'b',section:'activity',visible:false}});
+  await request.patch(`${api}/portfolios?id=eq.${portfolioA}`,{data:{template_key:template}});
+  await request.post(`${api}/portfolio_section_visibility`,{data:{portfolio_id:portfolioB,section:'activity',visible:false}});
   for(const section of sections){
     const kind=section.kind;
-    await request.post(`${api}/user_library_${section.plural}`,{data:{id:`${kind}-kept`,user_id:owner,school_name:'KEEP SCHOOL',title:`KEEP ${kind.toUpperCase()}`,level:'มัธยมศึกษา',gpa:null,study_plan:'',start_year:'',end_year:'',description:'ข้อมูลที่ต้องอยู่ครบหลังลบ',logo_url:'http://127.0.0.1:54321/sample.png',activity_date:null,issued_date:null}});
-    if(kind!=='education')await request.post(`${api}/user_library_${kind}_images`,{data:[0,3].map((sort_order,i)=>({id:`keep-${kind}-${i}`,[`${kind}_id`]:`${kind}-kept`,image_url:`http://127.0.0.1:54321/sample.png?order=${i}`,sort_order}))});
-    await request.post(`${api}/portfolio_${section.plural}`,{data:[{portfolio_id:'b',[`${kind}_id`]:`${kind}-a`,sort_order:0},{portfolio_id:'a',[`${kind}_id`]:`${kind}-kept`,sort_order:1}]});
+    await request.post(`${api}/user_library_${section.plural}`,{data:{id:libraryItem(kind,'kept'),user_id:owner,school_name:'KEEP SCHOOL',title:`KEEP ${kind.toUpperCase()}`,level:'มัธยมศึกษา',gpa:null,study_plan:'',start_year:'',end_year:'',description:'ข้อมูลที่ต้องอยู่ครบหลังลบ',logo_url:'http://127.0.0.1:54321/sample.png',activity_date:null,issued_date:null}});
+    if(kind!=='education')await request.post(`${api}/user_library_${kind}_images`,{data:[0,3].map((sort_order,i)=>({id:fixtureId(`keep-${kind}-${i}`),[`${kind}_id`]:libraryItem(kind,'kept'),image_url:`http://127.0.0.1:54321/sample.png?order=${i}`,sort_order}))});
+    await request.post(`${api}/portfolio_${section.plural}`,{data:[{portfolio_id:portfolioB,[`${kind}_id`]:libraryItem(kind),sort_order:0},{portfolio_id:portfolioA,[`${kind}_id`]:libraryItem(kind,'kept'),sort_order:1}]});
     // Deselecting A changes only that portfolio; library and B stay intact.
-    await request.post(`${api}/rpc/replace_portfolio_selection`,{data:{p_portfolio_id:'a',p_section:kind,p_item_ids:[`${kind}-kept`]}});
-    expect(await(await request.get(`${api}/user_library_${section.plural}?id=eq.${kind}-a`)).json()).toHaveLength(1);
-    expect(await(await request.get(`${api}/portfolio_${section.plural}?portfolio_id=eq.b`)).json()).toHaveLength(1);
-    await request.post(`${api}/rpc/replace_portfolio_selection`,{data:{p_portfolio_id:'a',p_section:kind,p_item_ids:[`${kind}-a`,`${kind}-kept`]}});
+    await request.post(`${api}/rpc/replace_portfolio_selection`,{data:{p_portfolio_id:portfolioA,p_section:kind,p_item_ids:[libraryItem(kind,'kept')]}});
+    expect(await(await request.get(`${api}/user_library_${section.plural}?id=eq.${libraryItem(kind)}`)).json()).toHaveLength(1);
+    expect(await(await request.get(`${api}/portfolio_${section.plural}?portfolio_id=eq.${portfolioB}`)).json()).toHaveLength(1);
+    await request.post(`${api}/rpc/replace_portfolio_selection`,{data:{p_portfolio_id:portfolioA,p_section:kind,p_item_ids:[libraryItem(kind),libraryItem(kind,'kept')]}});
     const card=await open(page,section);await card.getByRole('button',{name:/ลบ/}).click();
     await expect(deletion(page)).toContainText('พอร์ตที่ได้รับผลกระทบ 2 พอร์ต');await confirmDelete(page).click();
     await expect(deletion(page).getByRole('status')).toContainText('ยืนยันแล้วว่าไม่มีรายการนี้ในคลัง');await deletion(page).getByRole('button',{name:'ปิด',exact:true}).click();
-    expect(await(await request.get(`${api}/portfolio_${section.plural}?portfolio_id=eq.b`)).json()).toEqual([]);
+    expect(await(await request.get(`${api}/portfolio_${section.plural}?portfolio_id=eq.${portfolioB}`)).json()).toEqual([]);
   }
-  await page.setViewportSize({width:390,height:844});await page.goto('/editor?portfolio=b');
+  await page.setViewportSize({width:390,height:844});await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('[data-portfolio-page][data-page-section=activity]')).toHaveCount(0);
   for(const section of sections){await openEditorSection(page,section.kind);await expect(page.locator('form:visible').getByRole('checkbox',{name:section.title,exact:true})).toHaveCount(0);}
-  await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.goto(editorUrl(portfolioA));await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('[data-portfolio-page]')).toHaveCount(7);await expectCurrentContents(page);
   const papers=page.locator('main [data-portfolio-page]');await expect(papers).toHaveCount(7);
   for(const name of ['Saved School','Saved Activity','Saved Certificate'])await expect(papers.filter({hasText:name})).toHaveCount(0);

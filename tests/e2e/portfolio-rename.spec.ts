@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, portfolioA, portfolioB } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const internal = 'INTERNAL_SQL_CONSTRAINT_PERMISSION_STORAGE_42501';
@@ -10,9 +11,9 @@ test.beforeEach(async ({ context, request }) => {
   const session = { access_token: `${part({ alg: 'HS256' })}.${part({ sub: user.id, exp: 4102444800 })}.test`, refresh_token: 'test-refresh', token_type: 'bearer', expires_at: 4102444800, expires_in: 3600, user };
   await context.addCookies([{ name: 'sb-127-auth-token', value: 'base64-' + part(session), domain: '127.0.0.1', path: '/' }]);
 });
-const card = (page: Page, id = 'a') => page.locator(`article[data-portfolio-id="${id}"]`);
+const card = (page: Page, id = portfolioA) => page.locator(`article[data-portfolio-id="${id}"]`);
 const dialog = (page: Page) => page.getByRole('dialog', { name: 'เปลี่ยนชื่อพอร์ต', exact: true });
-async function open(page: Page, id = 'a') {
+async function open(page: Page, id = portfolioA) {
   await card(page, id).getByRole('button', { name: 'เปลี่ยนชื่อ', exact: false }).click();
   await expect(dialog(page)).toBeVisible();
 }
@@ -28,12 +29,12 @@ test('rename confirms only the target title with owner filters and survives relo
   await dialog(page).getByRole('button', { name: 'บันทึกชื่อ', exact: true }).click();
   const request = await patch, url = new URL(request.url());
   expect(request.postDataJSON()).toEqual({ title: 'พอร์ตสมัคร Science / 2026' });
-  expect(url.searchParams.get('id')).toBe('eq.a'); expect(url.searchParams.get('user_id')).toBe(`eq.${user.id}`);
+  expect(url.searchParams.get('id')).toBe(`eq.${portfolioA}`); expect(url.searchParams.get('user_id')).toBe(`eq.${user.id}`);
   expect(url.searchParams.get('select')).toBe('id,user_id,title,updated_at');
   expect(request.headers().prefer).toContain('return=representation');
   await expect(dialog(page)).toHaveCount(0);
   await expect(card(page).getByRole('heading')).toHaveText('พอร์ตสมัคร Science / 2026');
-  await expect(card(page, 'b').getByRole('heading')).toHaveText('Portfolio B');
+  await expect(card(page, portfolioB).getByRole('heading')).toHaveText('Portfolio B');
   await expect(page.getByRole('status')).toHaveText('เปลี่ยนชื่อพอร์ตแล้ว');
   await open(page); await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toHaveValue('พอร์ตสมัคร Science / 2026');
   await dialog(page).getByRole('button', { name: 'ยกเลิก', exact: true }).click();
@@ -63,7 +64,7 @@ for (const failure of ['backend', 'network', 'no-row', 'malformed'] as const) {
     await page.route('**/rest/v1/portfolios?**', route => {
       if (route.request().method() !== 'PATCH') return route.continue();
       if (failure === 'network') return route.abort('failed');
-      return route.fulfill({ status: failure === 'backend' ? 500 : 200, json: failure === 'backend' ? { message: internal } : failure === 'no-row' ? null : { id: 'b', title: 'wrong', user_id: user.id, updated_at: null } });
+      return route.fulfill({ status: failure === 'backend' ? 500 : 200, json: failure === 'backend' ? { message: internal } : failure === 'no-row' ? null : { id: portfolioB, title: 'wrong', user_id: user.id, updated_at: null } });
     });
     await name.press('Enter');
     await expect(dialog(page).getByRole('alert')).toHaveText(failureText);
@@ -94,14 +95,14 @@ test('saving is server-confirmed and synchronously locks submit, cancel, Escape 
   await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toBeDisabled();
   await page.keyboard.press('Escape'); await expect(dialog(page)).toBeVisible();
   // Programmatic background activation also cannot swap target during the request.
-  await card(page, 'b').getByRole('button', { name: /^เปลี่ยนชื่อ / }).evaluate(button => {
+  await card(page, portfolioB).getByRole('button', { name: /^เปลี่ยนชื่อ / }).evaluate(button => {
     if (!(button instanceof HTMLButtonElement)) throw new Error('Expected rename button');
     button.click();
   });
   await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toHaveValue('ยืนยันจาก server');
   release(); await expect(dialog(page)).toHaveCount(0); expect(updates).toBe(1);
   await expect(card(page).getByRole('heading')).toHaveText('ยืนยันจาก server');
-  await expect(card(page, 'b').getByRole('heading')).toHaveText('Portfolio B');
+  await expect(card(page, portfolioB).getByRole('heading')).toHaveText('Portfolio B');
 });
 
 for (const phase of ['auth', 'update'] as const) {
@@ -113,7 +114,7 @@ for (const phase of ['auth', 'update'] as const) {
     await page.route(phase === 'auth' ? '**/auth/v1/user' : '**/rest/v1/portfolios?**', async route => {
       if (phase === 'update' && route.request().method() !== 'PATCH') return route.continue();
       started = true; await gate;
-      await route.fulfill({ json: phase === 'auth' ? user : { id: 'a', user_id: user.id, title: 'old-session-draft', updated_at: null } }); settled = true;
+      await route.fulfill({ json: phase === 'auth' ? user : { id: portfolioA, user_id: user.id, title: 'old-session-draft', updated_at: null } }); settled = true;
     });
     await dialog(page).getByRole('button', { name: 'บันทึกชื่อ', exact: true }).click();
     await expect.poll(() => started).toBe(true);
@@ -129,22 +130,22 @@ for (const phase of ['auth', 'update'] as const) {
 }
 
 test('late response after browser Back cannot enter Editor or a subsequently opened target', async ({ page }) => {
-  await page.goto('/editor?portfolio=b'); await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+  await page.goto(editorUrl(portfolioB)); await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await open(page);
   await dialog(page).getByLabel('ชื่อพอร์ต', { exact: true }).fill('late rename');
   let release = () => {}; const gate = new Promise<void>(resolve => { release = resolve; }); let started = false; let settled = false;
   await page.route('**/rest/v1/portfolios?**', async route => {
     if (route.request().method() !== 'PATCH') return route.continue();
     started = true; await gate;
-    await route.fulfill({ json: { id: 'a', user_id: user.id, title: 'late rename', updated_at: null } }); settled = true;
+    await route.fulfill({ json: { id: portfolioA, user_id: user.id, title: 'late rename', updated_at: null } }); settled = true;
   });
   await dialog(page).getByLabel('ชื่อพอร์ต', { exact: true }).press('Enter'); await expect.poll(() => started).toBe(true);
-  await page.goBack(); await expect(page).toHaveURL(/editor\?portfolio=b/);
+  await page.goBack(); await expect(page).toHaveURL(new RegExp(`editor\\?portfolio=${portfolioB}`));
   release(); await expect.poll(() => settled).toBe(true);
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByText('Portfolio B', { exact: true })).toBeVisible();
   await expect(page.locator('body')).not.toContainText('late rename');
-  await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await open(page, 'b');
+  await page.getByRole('link', { name: 'กลับ Dashboard', exact: true }).click(); await open(page, portfolioB);
   await expect(dialog(page).getByLabel('ชื่อพอร์ต', { exact: true })).toHaveValue('Portfolio B');
   await expect(dialog(page).getByRole('alert')).toHaveCount(0);
 });
@@ -167,7 +168,7 @@ for (const value of [null, '', '   ']) {
     await page.route('**/rest/v1/portfolios?**', async route => {
       if (route.request().method() !== 'GET') return route.continue();
       const response = await route.fetch(); const rows: Array<Record<string, unknown>> = await response.json();
-      await route.fulfill({ json: rows.map(row => row.id === 'a' ? { ...row, title: value } : row) });
+      await route.fulfill({ json: rows.map(row => row.id === portfolioA ? { ...row, title: value } : row) });
     });
     await dashboard(page); await open(page); let updates = 0;
     page.on('request', r => { if (r.method() === 'PATCH') updates++; });
@@ -175,7 +176,7 @@ for (const value of [null, '', '   ']) {
     await name.press('Enter'); await expect(dialog(page).getByRole('alert')).toHaveText('กรุณาตั้งชื่อ Portfolio'); expect(updates).toBe(0);
     await name.fill('Portfolio B'); await name.press('Enter'); await expect(dialog(page)).toHaveCount(0);
     expect(updates).toBe(1); await expect(card(page).getByRole('heading')).toHaveText('Portfolio B');
-    await expect(card(page, 'b').getByRole('heading')).toHaveText('Portfolio B');
+    await expect(card(page, portfolioB).getByRole('heading')).toHaveText('Portfolio B');
   });
 }
 
@@ -196,14 +197,14 @@ for (const width of [1440, 390]) {
     expect(await dialog(page).evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath(`rename-${width}.png`) });
     await name.fill(' '); await name.press('Enter'); await expect(dialog(page).getByRole('alert')).toBeVisible();
-    await dialog(page).getByRole('button', { name: 'ยกเลิก', exact: true }).click(); await open(page, 'b');
+    await dialog(page).getByRole('button', { name: 'ยกเลิก', exact: true }).click(); await open(page, portfolioB);
     await expect(name).toHaveValue('Portfolio B'); await expect(dialog(page).getByRole('alert')).toHaveCount(0);
   });
 }
 
 test('rename preserves every content table/template/visibility and new Editor exports the sanitized new filename', async ({ page, request }, testInfo) => {
-  await request.patch('http://127.0.0.1:54321/rest/v1/portfolios?id=eq.a', { data: { template_key: 'minimal' } });
-  await request.post('http://127.0.0.1:54321/rest/v1/portfolio_section_visibility', { data: { portfolio_id: 'a', section: 'profile', visible: false } });
+  await request.patch(`http://127.0.0.1:54321/rest/v1/portfolios?id=eq.${portfolioA}`, { data: { template_key: 'minimal' } });
+  await request.post('http://127.0.0.1:54321/rest/v1/portfolio_section_visibility', { data: { portfolio_id: portfolioA, section: 'profile', visible: false } });
   const tables = ['covers', 'prefaces', 'profiles', 'portfolio_educations', 'portfolio_activities', 'portfolio_certificates', 'portfolio_section_visibility', 'user_library_educations', 'user_library_activities', 'user_library_certificates'];
   const before = await Promise.all(tables.map(async table => (await request.get(`http://127.0.0.1:54321/rest/v1/${table}`)).json()));
   await dashboard(page); await open(page);
@@ -240,10 +241,10 @@ test('existing create, open and logout still work', async ({ page }) => {
 test('untrusted returned owner, title and timestamp shapes cannot acknowledge success', async ({ page }) => {
   await dashboard(page); await open(page);
   const name = dialog(page).getByLabel('ชื่อพอร์ต', { exact: true }); await name.fill('new title');
-  const base = { id: 'a', user_id: user.id, title: 'new title', updated_at: null };
+  const base = { id: portfolioA, user_id: user.id, title: 'new title', updated_at: null };
   let response: unknown;
   await page.route('**/rest/v1/portfolios?**', route => route.request().method() !== 'PATCH' ? route.continue() : route.fulfill({ json: response }));
-  for (const value of [[], { ...base, user_id: 'other-owner' }, { ...base, title: 'different' }, { ...base, updated_at: 123 }, { id: 'a', user_id: user.id, title: 'new title' }]) {
+  for (const value of [[], { ...base, user_id: 'other-owner' }, { ...base, title: 'different' }, { ...base, updated_at: 123 }, { id: portfolioA, user_id: user.id, title: 'new title' }]) {
     response = value;
     const reply = page.waitForResponse(r => r.request().method() === 'PATCH');
     await name.press('Enter'); await reply;

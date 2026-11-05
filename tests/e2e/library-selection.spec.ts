@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, libraryItem, portfolioA } from './helpers/fixtures';
 
 const sections = [
   { section: 'education', plural: 'educations', step: 'การศึกษา', titleKey: 'school_name', heading: 'กรอกประวัติการศึกษา', nextHeading: 'กรอกผลงานและกิจกรรม', label: 'ประวัติการศึกษา' },
@@ -20,7 +21,7 @@ test.beforeEach(async ({ context, request }) => {
 async function fixtures(page: Page, config: Section) {
   const state = { mode: 'ready' as Mode, release: () => {} };
   const names = [`${config.label}ชื่อยาวไม่มีช่องว่าง`.repeat(3), 'รายการแนวนอน', 'รายการไม่มีรูปและไม่มีTags'];
-  const ids = ['a', 'b', 'c'].map(suffix => `${config.section}-${suffix}`);
+  const ids = ['a', 'b', 'c'].map(suffix => libraryItem(config.section, suffix));
   // The RPC mock validates source existence just like the SQL contract. Seed
   // the additional fixture IDs; a GET-only browser override is not persistence.
   await page.request.post(`http://127.0.0.1:54321/rest/v1/user_library_${config.plural}`, {
@@ -47,7 +48,7 @@ async function fixtures(page: Page, config: Section) {
 for (const config of sections) {
   test(`${config.section}: responsive checkbox cards preserve selection order, drafts and atomic saves`, async ({ page }, testInfo) => {
     const { ids, names } = await fixtures(page, config);
-    await page.goto('/editor?portfolio=a');
+    await page.goto(editorUrl(portfolioA));
     await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
     const open = () => openEditorSection(page, config.section);
     await open();
@@ -107,7 +108,7 @@ for (const config of sections) {
   test(`${config.section}: loading, failed load, empty library and empty filter are distinct`, async ({ page }) => {
     const { state } = await fixtures(page, config);
     state.mode = 'loading';
-    await page.goto('/editor?portfolio=a');
+    await page.goto(editorUrl(portfolioA));
     const open = () => openEditorSection(page, config.section);
     await open(); const form = page.locator('form:visible');
     await expect(form.getByText(`กำลังโหลด${config.label}...`, { exact: true })).toBeVisible();

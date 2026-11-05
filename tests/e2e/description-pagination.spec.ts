@@ -1,5 +1,6 @@
 import { openEditorSection } from './helpers/editor';
 import { test, expect } from '@playwright/test';
+import { editorUrl, fixtureId, libraryItem, portfolioA, recapture } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -12,10 +13,11 @@ test.beforeEach(async ({ context, request }) => {
 
 for(const template of ['classic','modern','minimal'])test(`${template}: long descriptions preserve text and export`,async({page,request},info)=>{
  const text=Array.from({length:90},(_,i)=>`รายละเอียดที่ ${i} ทดสอบการแบ่งหน้าข้อความภาษาไทย`).join('\n');
- for(const [table,id] of [['activities','activity-a'],['certificates','certificate-a']])await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_${table}?id=eq.${id}`,{data:{description:text}});
+ for(const [table,id] of [['activities',libraryItem('activity')],['certificates',libraryItem('certificate')]])await request.patch(`http://127.0.0.1:54321/rest/v1/user_library_${table}?id=eq.${id}`,{data:{description:text}});
  const image = await page.evaluate(()=>{const c=document.createElement('canvas');c.width=240;c.height=120;const x=c.getContext('2d')!;x.fillStyle='navy';x.fillRect(0,0,240,120);return c.toDataURL();});
- for(const kind of ['activity','certificate'])await request.post(`http://127.0.0.1:54321/rest/v1/user_library_${kind}_images`,{data:{id:`${kind}-split-img`,[`${kind}_id`]:`${kind}-a`,image_url:image,sort_order:0}});
- await page.setViewportSize({width:390,height:900});await page.goto('/editor?portfolio=a');await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
+ for(const kind of ['activity','certificate'] as const)await request.post(`http://127.0.0.1:54321/rest/v1/user_library_${kind}_images`,{data:{id:fixtureId(`${kind}-split-img`), [`${kind}_id`]:libraryItem(kind),image_url:image,sort_order:0}});
+ await recapture(request);
+ await page.setViewportSize({width:390,height:900});await page.goto(editorUrl(portfolioA));await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
  await page.getByLabel('เทมเพลต',{exact:true}).selectOption(template);
  for(const kind of ['activity','certificate']){
  const cards=page.locator(`main .${kind}-card`);await expect.poll(()=>cards.count()).toBeGreaterThan(1);

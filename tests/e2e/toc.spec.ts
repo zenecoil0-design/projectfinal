@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { openEditorSection } from './helpers/editor';
 import { expectCurrentContents } from './helpers/toc';
+import { api, editorUrl, libraryItem, portfolioA, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -12,7 +13,7 @@ test.beforeEach(async ({ context, request }) => {
 
 test('TOC uses current footer starts across all templates and inserting it preserves navigation to six form sections', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   for (const template of ['classic', 'modern', 'minimal']) {
     await page.getByLabel('เทมเพลต', { exact: true }).selectOption(template);
@@ -38,10 +39,12 @@ test('TOC uses current footer starts across all templates and inserting it prese
   await expect(page.locator('#editor-heading-profile')).toHaveAttribute('aria-expanded', 'true');
 });
 
-test('multi-page TOC updates after deselection, re-selection and template changes without resetting baseline', async ({ page }) => {
-  await page.route('**/rest/v1/user_library_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ id: `e-${i}`, school_name: `โรงเรียน ${i} ` + 'รายละเอียดภาษาไทย '.repeat(5), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์', start_year: '2566', end_year: '2569' })) }));
-  await page.route('**/rest/v1/portfolio_educations?**', route => route.fulfill({ json: Array.from({ length: 9 }, (_, i) => ({ education_id: `e-${i}`, sort_order: i })) }));
-  await page.goto('/editor?portfolio=a');
+test('multi-page TOC updates after deselection, re-selection and template changes without resetting baseline', async ({ page, request }) => {
+  // Library holds exactly these nine rows in selection order, so re-checking all restores the saved baseline.
+  await request.delete(`${api}/user_library_educations?id=eq.${libraryItem('education')}`);
+  const educations = await seedLibrary(request, 'education', Array.from({ length: 9 }, (_, i) => ({ school_name: `โรงเรียน ${i} ` + 'รายละเอียดภาษาไทย '.repeat(5), level: 'มัธยมศึกษา', study_plan: 'วิทยาศาสตร์', start_year: '2566', end_year: '2569' })), 'toc');
+  await selectItems(request, portfolioA, 'education', educations);
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect.poll(() => page.locator('[data-page-section=education]').count()).toBeGreaterThan(1);
   await expectCurrentContents(page);

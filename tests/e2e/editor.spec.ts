@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { openEditorSection } from './helpers/editor';
+import { editorUrl, portfolioA, portfolioB, seedLibrary, selectItems } from './helpers/fixtures';
 
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 test.beforeEach(async ({ context, request }) => {
@@ -12,7 +13,7 @@ test.beforeEach(async ({ context, request }) => {
 
 test('mobile Editor navigation has touch-sized links and panel toggles', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const controls = [
     page.getByRole('link', { name: 'กลับ Dashboard', exact: true }),
@@ -32,7 +33,7 @@ test('mobile Editor navigation has touch-sized links and panel toggles', async (
 });
 
 test('all sections load without opening their forms; drafts survive step switches; PDF downloads', async ({ page }, testInfo) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('main')).toContainText('Saved Activity');
   await expect(page.locator('main')).toContainText('Saved Certificate');
@@ -57,9 +58,9 @@ test('all sections load without opening their forms; drafts survive step switche
 });
 
 test('switching portfolio clears every section and failed loads cannot be saved', async ({ page }) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('main')).not.toContainText('Saved Activity');
   await expect(page.locator('main')).not.toContainText('Alpha Student');
@@ -72,7 +73,7 @@ test('switching portfolio clears every section and failed loads cannot be saved'
 });
 
 test('failed atomic save retains selection and warns before leaving', async ({page}) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await openEditorSection(page, 'activity');
   await page.getByText('Saved Activity',{exact:true}).first().click();
@@ -87,7 +88,7 @@ test('failed atomic save retains selection and warns before leaving', async ({pa
 
 test('cropped image remains selected after changing steps on a phone viewport', async ({page}, testInfo) => {
   await page.setViewportSize({width:390,height:844});
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const data = await page.evaluate(() => { const c=document.createElement('canvas'); c.width=400;c.height=200; const ctx=c.getContext('2d')!; ctx.fillStyle='#2563eb';ctx.fillRect(0,0,200,200);ctx.fillStyle='#f59e0b';ctx.fillRect(200,0,200,200);return c.toDataURL('image/png').split(',')[1]; });
   await page.locator('form:visible input[type="file"]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(data,'base64')});
@@ -107,17 +108,17 @@ test('cropped image remains selected after changing steps on a phone viewport', 
 });
 
 test('PDF still blocks overflowing text', async ({page}) => {
-  await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:'a',content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
-  await page.goto('/editor?portfolio=a');
+  await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:portfolioA,content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
   await expect(page.getByText('เนื้อหาล้นหน้า',{exact:false})).toBeVisible();
 });
 
-test('PDF exports all pages in portfolios over ten pages', async ({page}, testInfo) => {
-  await page.route('**/rest/v1/user_library_activities?**',route=>route.fulfill({json:Array.from({length:20},(_,i)=>({id:`a-${i}`,title:`Activity ${i}`,description:'Description '.repeat(90),activity_date:'2026-01-01',organization:'School'}))}));
-  await page.route('**/rest/v1/portfolio_activities?**',route=>route.fulfill({json:Array.from({length:20},(_,i)=>({activity_id:`a-${i}`,sort_order:i}))}));
-  await page.goto('/editor?portfolio=a');
+test('PDF exports all pages in portfolios over ten pages', async ({page, request}, testInfo) => {
+  const ids = await seedLibrary(request, 'activity', Array.from({length:20},(_,i)=>({title:`Activity ${i}`,description:'Description '.repeat(90),activity_date:'2026-01-01',organization:'School'})), 'over-ten');
+  await selectItems(request, portfolioA, 'activity', ids);
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect.poll(() => page.locator('[data-portfolio-page]').count()).toBeGreaterThan(10);
   await expect(page.getByRole('button',{name:'ดาวน์โหลด PDF'})).toBeEnabled();
@@ -135,14 +136,14 @@ test('a late response from the previous portfolio cannot overwrite the current o
   let finishOld: () => void = () => {};
   const oldFinished = new Promise<void>(resolve => { finishOld = resolve; });
   await page.route('**/rest/v1/profiles?**',async route => {
-    if (!route.request().url().includes('portfolio_id=eq.a')) return route.continue();
+    if (!route.request().url().includes(`portfolio_id=eq.${portfolioA}`)) return route.continue();
     await new Promise(resolve => setTimeout(resolve, 800));
-    try { await route.fulfill({json:[{id:'old-profile',portfolio_id:'a',first_name:'STALE RESPONSE',social_links:[],custom_fields:[]}]}); } finally { finishOld(); }
+    try { await route.fulfill({json:[{id:'old-profile',portfolio_id:portfolioA,first_name:'STALE RESPONSE',age_mode:'auto',manual_age:null,social_links:[],custom_fields:[]}]}); } finally { finishOld(); }
   });
-  const oldRequest = page.waitForRequest(request => request.url().includes('/profiles?') && request.url().includes('portfolio_id=eq.a'));
-  await page.goto('/editor?portfolio=a');
+  const oldRequest = page.waitForRequest(request => request.url().includes('/profiles?') && request.url().includes(`portfolio_id=eq.${portfolioA}`));
+  await page.goto(editorUrl(portfolioA));
   await oldRequest;
-  await page.evaluate(() => history.pushState(null,'','/editor?portfolio=b'));
+  await page.evaluate(url => history.pushState(null, '', url), editorUrl(portfolioB));
   await expect(page.getByText('Portfolio B',{exact:true})).toBeVisible();
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await oldFinished;
@@ -151,7 +152,7 @@ test('a late response from the previous portfolio cannot overwrite the current o
 });
 
 test('A4 scales uniformly on desktop and phone; persisted editorial template exports seven pages', async ({page}, testInfo) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
   await expect(page.getByText('บันทึกเทมเพลตแล้ว')).toBeVisible();
@@ -182,7 +183,7 @@ test('A4 scales uniformly on desktop and phone; persisted editorial template exp
 });
 
 test('failed template save preserves prior design and keeps PDF usable', async ({page}, testInfo) => {
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await page.route('**/rest/v1/portfolios?**',route => route.request().method()==='PATCH' ? route.fulfill({status:403,json:{message:'Template save denied'}}) : route.continue());
   await page.getByLabel('เทมเพลต',{exact:true}).selectOption('modern');
@@ -197,8 +198,8 @@ test('failed template save preserves prior design and keeps PDF usable', async (
 
 test('mobile export detects overflowing content while preview tab is hidden', async ({page}) => {
   await page.setViewportSize({width:390,height:844});
-  await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:'a',content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
-  await page.goto('/editor?portfolio=a');
+  await page.route('**/rest/v1/prefaces?**',route=>route.fulfill({json:[{id:'p',portfolio_id:portfolioA,content:'ข้อความยาว '.repeat(3000),signature_name:'A'}]}));
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.locator('main')).toBeHidden();
   await page.getByRole('button',{name:'ดาวน์โหลด PDF'}).click();
@@ -206,7 +207,7 @@ test('mobile export detects overflowing content while preview tab is hidden', as
 });
 
 test('cover names preview, persist independently, survive reload and clear on portfolio switch', async ({page}, testInfo) => {
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('Alpha');
   await page.getByLabel('ชื่อบนหน้าปก',{exact:true}).fill('โฟล์ค');
@@ -230,7 +231,7 @@ test('cover names preview, persist independently, survive reload and clear on po
   await expect(page.locator('[data-section="หน้าปก"]')).toContainText('โฟล์ค ทดสอบ');
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:testInfo.outputPath('cover-name-fields-mobile.png')});
-  await page.goto('/editor?portfolio=b');
+  await page.goto(editorUrl(portfolioB));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   await expect(page.getByLabel('ชื่อบนหน้าปก',{exact:true})).toHaveValue('');
   await expect(page.getByLabel('นามสกุลบนหน้าปก',{exact:true})).toHaveValue('');
@@ -249,7 +250,7 @@ test('cover frames use the cover image independently of the profile in both temp
     const rows = await response.json();
     await route.fulfill({ json: rows.map((row: object) => ({ ...row, profile_image_url: profileUrl })) });
   });
-  await page.goto('/editor?portfolio=a');
+  await page.goto(editorUrl(portfolioA));
   await expect(page.getByText('โหลดข้อมูลครบทุกหมวดแล้ว')).toBeVisible();
   const cover = page.locator('[data-section="หน้าปก"]');
   const framedImage = cover.getByRole('img', { name: 'รูปหน้าปก', exact: true, includeHidden: true });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { portfolioA } from './helpers/fixtures';
 const user = { id: '00000000-0000-0000-0000-000000000001', aud: 'authenticated', role: 'authenticated', email: 'test@example.invalid', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
 const copy = 'โหลดรายการพอร์ตไม่สำเร็จ กรุณาลองอีกครั้ง';
 const internal = 'PRIVATE_SQL_PERMISSION_CONSTRAINT_42501';
@@ -117,13 +118,13 @@ test('confirmed rename after a recovered list is not undone by reads or retry cl
   });
   await page.goto('/dashboard'); await expect(page.locator('main').getByRole('alert')).toHaveText(copy);
   await page.getByRole('button', { name: 'ลองใหม่', exact: true }).click(); await expect(page.getByText('มีทั้งหมด 2 Portfolio')).toBeVisible();
-  await page.locator('article[data-portfolio-id=a]').getByRole('button', { name: /^เปลี่ยนชื่อ / }).click();
+  await page.locator(`article[data-portfolio-id="${portfolioA}"]`).getByRole('button', { name: /^เปลี่ยนชื่อ / }).click();
   await page.getByRole('dialog').getByLabel('ชื่อพอร์ต', { exact: true }).fill('confirmed name');
   await page.getByRole('dialog').getByLabel('ชื่อพอร์ต', { exact: true }).press('Enter'); await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.locator('article[data-portfolio-id=a] h3')).toHaveText('confirmed name');
+  await expect(page.locator(`article[data-portfolio-id="${portfolioA}"] h3`)).toHaveText('confirmed name');
   await expect(page.getByRole('button', { name: 'ลองใหม่', exact: true })).toHaveCount(0);
   expect(reads).toBe(2);
-  await page.reload(); await expect(page.locator('article[data-portfolio-id=a] h3')).toHaveText('confirmed name');
+  await page.reload(); await expect(page.locator(`article[data-portfolio-id="${portfolioA}"] h3`)).toHaveText('confirmed name');
 });
 
 for (const width of [1440, 390]) {
